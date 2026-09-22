@@ -184,34 +184,20 @@ fun PadScreen() {
                 }
                 i++
             }
-            // Fine tick ring just outside the hub.
-            i = 0
-            while (i < 48) {
-                val a = i * 7.5
-                val major = i % 4 == 0
-                drawLine(
-                    palette.secondary.copy(alpha = if (major) 0.35f else 0.14f),
-                    at(a, R * if (major) 0.575f else 0.60f),
-                    at(a, R * 0.635f),
-                    if (major) 1.6f else 1f,
-                )
-                i++
-            }
-            // Dot ring in the band between keycaps and rim.
+            // Dot ring under the text pairs in the diagonal gaps.
             i = 0
             while (i < 36) {
                 val a = i * 10.0
                 drawCircle(
                     palette.primary.copy(alpha = if (i % 3 == 0) 0.35f else 0.12f),
                     radius = if (i % 3 == 0) 1.6f else 1f,
-                    center = at(a, R * 0.745f),
+                    center = at(a, R * 0.735f),
                 )
                 i++
             }
         }
 
-        // ---- live symbol ring: four diagonal corners, two mini diamonds
-        // each — every spare corner of the dial becomes a real input ----
+        // ---- live symbol ring: bare text pairs in the diagonal gaps ----
         val ringPairs = listOf(
             45.0 to (Symbol.CROWN_CW to Symbol.CROWN_CCW),
             135.0 to (Symbol.STEM to Symbol.STEM_LONG),
@@ -219,12 +205,12 @@ fun PadScreen() {
             315.0 to (Symbol.GESTURE_3 to Symbol.GESTURE_4),
         )
         ringPairs.forEach { (center, pair) ->
-            listOf(pair.first to -14.0, pair.second to 14.0).forEach { (sym, off) ->
-                MiniDiamond(
+            listOf(pair.first to -12.0, pair.second to 12.0).forEach { (sym, off) ->
+                RingSymbol(
                     symbol = sym,
                     active = sym in liveSymbols,
                     angleDeg = center + off,
-                    radiusDp = 88f,
+                    radiusDp = 83f,
                     modifier = Modifier.align(Alignment.Center),
                 ) { feed(sym) }
             }
@@ -236,28 +222,28 @@ fun PadScreen() {
             direction = ArcDir.UP,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = (-88).dp),
+                .offset(y = (-84).dp),
         ) { feed(Symbol.UP) }
         ArcCapCell(
             symbol = Symbol.DOWN,
             direction = ArcDir.DOWN,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = 88.dp),
+                .offset(y = 84.dp),
         ) { feed(Symbol.DOWN) }
         ArcCapCell(
             symbol = Symbol.LEFT,
             direction = ArcDir.LEFT,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(x = (-88).dp),
+                .offset(x = (-84).dp),
         ) { feed(Symbol.LEFT) }
         ArcCapCell(
             symbol = Symbol.RIGHT,
             direction = ArcDir.RIGHT,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(x = 88.dp),
+                .offset(x = 84.dp),
         ) { feed(Symbol.RIGHT) }
 
         // ---- hub plaque ----
@@ -269,7 +255,7 @@ fun PadScreen() {
             flare = flare,
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(124.dp),
+                .size(108.dp),
             onCycle = {
                 haptics.tick()
                 app.configRepo.cycleActiveProfile()
@@ -279,12 +265,9 @@ fun PadScreen() {
     }
 }
 
-/**
- * Mini diamond input on the live ring: same rotated-square silhouette as the
- * arc keycaps at a fifth of the size; gold when bound, grey when dormant.
- */
+/** Bare text input on the live ring: tangential glyph, gold when bound. */
 @Composable
-private fun MiniDiamond(
+private fun RingSymbol(
     symbol: Symbol,
     active: Boolean,
     angleDeg: Double,
@@ -293,58 +276,28 @@ private fun MiniDiamond(
     onClick: () -> Unit,
 ) {
     val palette = LocalHdPalette.current
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
     val dx = sin(Math.toRadians(angleDeg)).toFloat()
     val dy = -cos(Math.toRadians(angleDeg)).toFloat()
     val label = symbol.display ?: symbol.code
-
-    Box(
-        modifier
+    Text(
+        text = label,
+        fontFamily = FontFamily.Monospace,
+        fontSize = if (label.length > 1) 9.sp else 11.sp,
+        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+        color = if (active) palette.primary.copy(alpha = 0.95f) else palette.muted.copy(alpha = 0.8f),
+        maxLines = 1,
+        modifier = modifier
             .offset(x = (dx * radiusDp).dp, y = (dy * radiusDp).dp)
-            .size(30.dp),
-    ) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .graphicsLayer { rotationZ = 45f }
-                .background(
-                    if (pressed) {
-                        Brush.verticalGradient(listOf(palette.primary, palette.goldDeep))
-                    } else {
-                        Brush.verticalGradient(listOf(palette.panelTop, palette.panelBottom))
-                    },
-                    RoundedCornerShape(5.dp),
-                )
-                .border(
-                    1.dp,
-                    when {
-                        pressed -> palette.goldDeep
-                        active -> palette.primary.copy(alpha = 0.75f)
-                        else -> palette.hairline
-                    },
-                    RoundedCornerShape(5.dp),
-                )
-                .combinedClickable(
-                    interactionSource = interaction,
-                    indication = null,
-                    onClick = onClick,
-                ),
-        )
-        Text(
-            text = label,
-            fontFamily = FontFamily.Monospace,
-            fontSize = if (label.length > 1) 8.sp else 10.sp,
-            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-            color = when {
-                pressed -> palette.onPrimary
-                active -> palette.primary.copy(alpha = 0.95f)
-                else -> palette.muted.copy(alpha = 0.75f)
-            },
-            maxLines = 1,
-            modifier = Modifier.align(Alignment.Center),
-        )
-    }
+            .graphicsLayer {
+                rotationZ = if (angleDeg <= 180) (angleDeg + 90).toFloat() else (angleDeg - 90).toFloat()
+            }
+            .clickable(
+                interactionSource = null,
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 5.dp, vertical = 4.dp),
+    )
 }
 
 private enum class ArcDir { UP, DOWN, LEFT, RIGHT }
@@ -364,8 +317,8 @@ private fun ArcCapCell(
     val palette = LocalHdPalette.current
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val wide = if (direction == ArcDir.UP || direction == ArcDir.DOWN) 76.dp else 40.dp
-    val tall = if (direction == ArcDir.UP || direction == ArcDir.DOWN) 40.dp else 76.dp
+    val wide = if (direction == ArcDir.UP || direction == ArcDir.DOWN) 76.dp else 49.dp
+    val tall = if (direction == ArcDir.UP || direction == ArcDir.DOWN) 49.dp else 76.dp
 
     Box(modifier.size(width = wide, height = tall)) {
         Canvas(Modifier.fillMaxSize()) {
