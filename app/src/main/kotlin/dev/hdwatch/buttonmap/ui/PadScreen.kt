@@ -133,10 +133,14 @@ fun PadScreen() {
             val cx = size.width / 2f
             val cy = size.height / 2f
             val R = size.minDimension / 2f
-            fun at(angleDeg: Double, radius: Float) = Offset(
-                cx + (radius * sin(angleDeg)).toFloat(),
-                cy - (radius * cos(angleDeg)).toFloat(),
-            )
+            // Dial bearing: 0° = up, clockwise, degrees in — radians inside.
+            fun at(angleDeg: Double, radius: Float): Offset {
+                val rad = Math.toRadians(angleDeg)
+                return Offset(
+                    cx + (radius * sin(rad)).toFloat(),
+                    cy - (radius * cos(rad)).toFloat(),
+                )
+            }
 
             drawCircle(
                 brush = Brush.radialGradient(
@@ -187,20 +191,22 @@ fun PadScreen() {
                 }
                 i++
             }
-            // Dot ring under the text pairs in the diagonal gaps.
+            // Dashed gold ring threading through the eight text inputs.
             i = 0
-            while (i < 36) {
-                val a = i * 10.0
-                drawCircle(
-                    palette.primary.copy(alpha = if (i % 3 == 0) 0.35f else 0.12f),
-                    radius = if (i % 3 == 0) 1.6f else 1f,
-                    center = at(a, R * 0.735f),
+            while (i < 48) {
+                val a = i * 7.5
+                drawLine(
+                    color = palette.primary.copy(alpha = 0.38f),
+                    start = at(a, R * 0.7345f),
+                    end = at(a + 4.2, R * 0.7345f),
+                    strokeWidth = 1.6f,
                 )
                 i++
             }
             // ---- keycap sectors: true annular fans at real radii, so the
-            // painted band always spans inner 56dp → outer 104dp exactly ----
-            val rIn = R * 0.4956f
+            // painted band always spans inner 62dp → outer 104dp exactly
+            // (8dp clear of the hub edge) ----
+            val rIn = R * 0.5487f
             val rOut = R * 0.9204f
             val half = 24f
             ArcDir.entries.forEach { dir ->
@@ -265,32 +271,32 @@ fun PadScreen() {
             symbol = Symbol.UP,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = (-80).dp)
-                .size(width = 66.dp, height = 48.dp),
+                .offset(y = (-83).dp)
+                .size(width = 68.dp, height = 42.dp),
             onPressedChange = { pressedDir = if (it) ArcDir.UP else null },
         ) { feed(Symbol.UP) }
         ArrowCap(
             symbol = Symbol.DOWN,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = 80.dp)
-                .size(width = 66.dp, height = 48.dp),
+                .offset(y = 83.dp)
+                .size(width = 68.dp, height = 42.dp),
             onPressedChange = { pressedDir = if (it) ArcDir.DOWN else null },
         ) { feed(Symbol.DOWN) }
         ArrowCap(
             symbol = Symbol.LEFT,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(x = (-80).dp)
-                .size(width = 48.dp, height = 66.dp),
+                .offset(x = (-83).dp)
+                .size(width = 42.dp, height = 68.dp),
             onPressedChange = { pressedDir = if (it) ArcDir.LEFT else null },
         ) { feed(Symbol.LEFT) }
         ArrowCap(
             symbol = Symbol.RIGHT,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(x = 80.dp)
-                .size(width = 48.dp, height = 66.dp),
+                .offset(x = 83.dp)
+                .size(width = 42.dp, height = 68.dp),
             onPressedChange = { pressedDir = if (it) ArcDir.RIGHT else null },
         ) { feed(Symbol.RIGHT) }
 
