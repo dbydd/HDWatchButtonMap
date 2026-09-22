@@ -119,7 +119,7 @@ data class Config(
 ) {
     val activeProfile: Profile
         get() = profiles.firstOrNull { it.id == activeProfileId } ?: profiles.firstOrNull()
-            ?: Profile("default", "按键", ProfileKind.KEYS)
+            ?: Profile("default", "直控", ProfileKind.KEYS)
 
     fun withActive(id: String): Config =
         if (profiles.any { it.id == id }) copy(activeProfileId = id) else this
@@ -138,7 +138,7 @@ data class Config(
 
         fun legacyDefault(): Config = Config(
             profiles = listOf(
-                Profile("keys", "按键", ProfileKind.KEYS),
+                Profile("keys", "直控", ProfileKind.KEYS),
                 Profile("macros", "宏", ProfileKind.MACRO),
             ),
             activeProfileId = "keys",

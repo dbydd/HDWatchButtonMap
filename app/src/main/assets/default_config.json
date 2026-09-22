@@ -15,7 +15,7 @@
   "profiles": [
     {
       "id": "keys",
-      "name": "按键",
+      "name": "直控",
       "kind": "KEYS",
       "single": {
         "U": { "key": "W" },
@@ -30,8 +30,8 @@
       "macros": []
     },
     {
-      "id": "battle",
-      "name": "作战",
+      "id": "macro",
+      "name": "宏",
       "kind": "MACRO",
       "single": {
         "CW": { "mouse": { "wheel": -1 } },

@@ -143,7 +143,7 @@ fun MenuScreen() {
         ) { showProfiles = !showProfiles }
         if (showProfiles) {
             config.profiles.forEach { profile ->
-                val kindLabel = if (profile.kind == ProfileKind.KEYS) "按键模式" else "宏模式"
+                val kindLabel = if (profile.kind == ProfileKind.KEYS) "直控 · 按啥发啥" else "宏 · 序列触发"
                 MenuRow(
                     label = if (profile.id == config.activeProfileId) "✓ ${profile.name}" else profile.name,
                     hint = kindLabel,

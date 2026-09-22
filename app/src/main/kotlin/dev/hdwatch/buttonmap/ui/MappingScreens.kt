@@ -1,16 +1,21 @@
 package dev.hdwatch.buttonmap.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,20 +26,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
 import dev.hdwatch.buttonmap.config.KeyMod
+import dev.hdwatch.buttonmap.config.ProfileKind
 import dev.hdwatch.buttonmap.config.Step
 import dev.hdwatch.buttonmap.hid.HidKey
 import dev.hdwatch.buttonmap.hid.HidPage
 import dev.hdwatch.buttonmap.hid.KeyTable
 import dev.hdwatch.buttonmap.input.Symbol
-import dev.hdwatch.buttonmap.config.ProfileKind
 
-/** 单键映射：列表页显示每个输入符号的当前动作与宏序列冲突，编辑页选择 HID 键/修饰键/快捷键。 */
+/**
+ * 单键映射：列表页每个符号一行（键帽 + 当前动作 + 序列冲突标记），
+ * 编辑页选 HID 键 / 修饰键 / 快捷键；全部走玻璃面板语言（HdPanel + 微标签 + 等宽键码）。
+ */
 
 @Composable
 fun MappingListScreen() {
@@ -56,10 +68,11 @@ fun MappingListScreen() {
             } else {
                 0
             }
-            val hint = if (seqCount > 0) "${summarize(step)} · 序列中×$seqCount" else summarize(step)
-            MenuRow(
-                label = "${sym.display} ${sym.label}",
-                hint = hint,
+            SymbolRow(
+                symbol = sym,
+                action = summarize(step),
+                mapped = step != null,
+                seqCount = seqCount,
             ) { nav.push(Route.MappingEdit(sym)) }
         }
         Text(
@@ -120,35 +133,54 @@ fun MappingEditScreen(symbol: Symbol) {
     val categoryKeys = KeyTable.categories.firstOrNull { it.first == category }?.second.orEmpty()
 
     ScreenScaffold(title = "映射：${symbol.display} ${symbol.label} · 模式 ${config.activeProfile.name}") {
-        Column(
+        HdPanel(
             modifier = Modifier
-                .background(palette.surface, RoundedCornerShape(9.dp))
-                .border(1.dp, palette.primary.copy(alpha = 0.35f), RoundedCornerShape(9.dp))
-                .padding(horizontal = 10.dp, vertical = 6.dp),
+                .widthIn(min = 140.dp, max = 176.dp)
+                .fillMaxWidth()
+                .padding(vertical = 3.dp),
+            shape = RoundedCornerShape(8.dp),
         ) {
-            Text("当前动作", color = palette.muted, fontSize = 9.sp, maxLines = 1)
-            Text(
-                if (pending == null) "未选择" else summarize(pending),
-                color = palette.primary,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
+            CornerBrackets(
+                color = palette.primary.copy(alpha = 0.55f),
+                size = 8.dp,
+                stroke = 1.2.dp,
+                inset = 2.dp,
             )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                MicroLabel("当前动作", palette.primary.copy(alpha = 0.6f))
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = if (pending == null) "未选择" else summarize(pending),
+                    fontFamily = FontFamily.Monospace,
+                    color = if (pending == null) palette.muted else palette.primary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(6.dp))
         Row(
-            modifier = Modifier.padding(top = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
         ) {
             Chip("保存", active = true) { save() }
             Chip("清除", danger = true) { clear() }
         }
 
-        MappingSectionLabel("快捷键")
+        SectionLabel("快捷键")
         Row(
             modifier = Modifier.padding(top = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Chip("左键", active = pendingMatches { it is Step.MouseClick && it.button == "left" }) { pending = Step.MouseClick("left") }
             Chip("右键", active = pendingMatches { it is Step.MouseClick && it.button == "right" }) { pending = Step.MouseClick("right") }
@@ -156,14 +188,14 @@ fun MappingEditScreen(symbol: Symbol) {
         }
         Row(
             modifier = Modifier.padding(top = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Chip("滚轮↑", active = pendingMatches { it is Step.Mouse && it.wheel > 0 }) { pending = Step.Mouse(wheel = 1) }
             Chip("滚轮↓", active = pendingMatches { it is Step.Mouse && it.wheel < 0 }) { pending = Step.Mouse(wheel = -1) }
         }
         Row(
             modifier = Modifier.padding(top = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Chip("播放", active = pendingMatches { it is Step.ConsumerKey && it.usage == "PLAY_PAUSE" }) { pending = Step.ConsumerKey("PLAY_PAUSE") }
             Chip("音量+", active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_UP" }) { pending = Step.ConsumerKey("VOL_UP") }
@@ -171,17 +203,17 @@ fun MappingEditScreen(symbol: Symbol) {
         }
         Row(
             modifier = Modifier.padding(top = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Chip("静音", active = pendingMatches { it is Step.ConsumerKey && it.usage == "MUTE" }) { pending = Step.ConsumerKey("MUTE") }
             Chip("下一曲", active = pendingMatches { it is Step.ConsumerKey && it.usage == "NEXT_TRACK" }) { pending = Step.ConsumerKey("NEXT_TRACK") }
             Chip("上一曲", active = pendingMatches { it is Step.ConsumerKey && it.usage == "PREV_TRACK" }) { pending = Step.ConsumerKey("PREV_TRACK") }
         }
 
-        MappingSectionLabel("修饰键")
+        SectionLabel("修饰键")
         Row(
             modifier = Modifier.padding(top = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             KeyMod.entries.forEach { mod ->
                 Chip(
@@ -191,43 +223,169 @@ fun MappingEditScreen(symbol: Symbol) {
             }
         }
 
-        MappingSectionLabel(if (category == null) "选择键 · 先选类别" else "选择键 · $category")
+        SectionLabel(if (category == null) "选择键 · 先选类别" else "选择键 · $category")
         if (category == null) {
             KeyTable.categories.forEach { (name, keys) ->
-                MenuRow(name, "${keys.size} 个键") { openCategory = name }
+                HudRow(name, "${keys.size} 个键") { openCategory = name }
             }
         } else {
-            MenuRow("← 返回类别") { openCategory = null }
+            HudRow("← 返回类别") { openCategory = null }
             categoryKeys.forEach { key ->
-                MenuRow(
+                HudRow(
                     label = if (key.name == activeKey) "✓ ${key.name}" else key.name,
                     hint = if (key.page == HidPage.CONSUMER) "媒体页" else "",
+                    selected = key.name == activeKey,
                 ) { pickKey(key) }
             }
         }
 
-        Spacer(Modifier.height(8.dp))
-        MenuRow("← 返回（不保存）") { nav.pop() }
+        Spacer(Modifier.height(6.dp))
+        HudRow("← 返回（不保存）") { nav.pop() }
     }
 }
 
+/** Mapping row: keycap, symbol code, bound action, sequence-conflict flag. */
 @Composable
-private fun MappingSectionLabel(text: String) {
+private fun SymbolRow(
+    symbol: Symbol,
+    action: String,
+    mapped: Boolean,
+    seqCount: Int,
+    onClick: () -> Unit,
+) {
     val palette = LocalHdPalette.current
-    Text(
-        text = text,
-        color = palette.muted,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.SemiBold,
-        textAlign = TextAlign.Start,
-        maxLines = 2,
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    HdPanel(
         modifier = Modifier
+            .widthIn(min = 132.dp, max = 168.dp)
             .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 2.dp),
-    )
+            .padding(vertical = 2.dp),
+        shape = RoundedCornerShape(8.dp),
+        pressed = pressed,
+        interactionSource = interaction,
+        onClick = onClick,
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 9.dp, end = 11.dp, top = 7.dp, bottom = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(26.dp)
+                    .height(22.dp)
+                    .background(
+                        Brush.verticalGradient(listOf(palette.panelTop, palette.panelBottom)),
+                        RoundedCornerShape(4.dp),
+                    )
+                    .border(1.dp, palette.hairline, RoundedCornerShape(4.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = symbol.display,
+                    fontFamily = FontFamily.Monospace,
+                    color = if (pressed) palette.onPrimary else palette.primary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp,
+                    maxLines = 1,
+                )
+            }
+            Column(Modifier.padding(start = 8.dp)) {
+                Text(
+                    text = "${symbol.code} ${symbol.label}",
+                    fontFamily = FontFamily.Monospace,
+                    color = if (pressed) palette.onPrimary else palette.text,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = if (seqCount > 0) "$action · 序列中×$seqCount" else action,
+                    fontFamily = FontFamily.Monospace,
+                    color = when {
+                        pressed -> palette.onPrimary.copy(alpha = 0.7f)
+                        seqCount > 0 -> palette.primary.copy(alpha = 0.9f)
+                        mapped -> palette.secondary.copy(alpha = 0.85f)
+                        else -> palette.muted
+                    },
+                    fontSize = 9.sp,
+                    letterSpacing = 0.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
 }
 
-/** Compact tappable label; [active]/[danger] only change colors, never size. */
+/** Panel row in the menu language, key codes set in console monospace. */
+@Composable
+private fun HudRow(
+    label: String,
+    hint: String = "",
+    selected: Boolean = false,
+    onClick: () -> Unit,
+) {
+    val palette = LocalHdPalette.current
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    HdPanel(
+        modifier = Modifier
+            .widthIn(min = 132.dp, max = 168.dp)
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        shape = RoundedCornerShape(8.dp),
+        pressed = pressed,
+        interactionSource = interaction,
+        onClick = onClick,
+    ) {
+        if (selected) {
+            Box(
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(vertical = 7.dp)
+                    .width(2.dp)
+                    .fillMaxHeight()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(palette.primary, palette.primary.copy(alpha = 0.15f)),
+                        ),
+                        RoundedCornerShape(1.dp),
+                    ),
+            )
+        }
+        Column(Modifier.padding(start = 13.dp, end = 12.dp, top = 8.dp, bottom = 8.dp)) {
+            Text(
+                label,
+                fontFamily = FontFamily.Monospace,
+                color = when {
+                    pressed -> palette.onPrimary
+                    selected -> palette.primary
+                    else -> palette.text
+                },
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.5.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (hint.isNotEmpty()) {
+                Text(
+                    hint,
+                    color = if (pressed) palette.onPrimary.copy(alpha = 0.7f) else palette.muted,
+                    fontSize = 9.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+/** Compact tappable keycap; [active] adds a gold focus rule, never a size change. */
 @Composable
 private fun Chip(
     label: String,
@@ -237,30 +395,48 @@ private fun Chip(
     onClick: () -> Unit,
 ) {
     val palette = LocalHdPalette.current
-    val background = when {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val tint = when {
+        pressed -> palette.onPrimary
         active -> palette.primary
-        danger -> palette.danger.copy(alpha = 0.18f)
-        else -> palette.surface
-    }
-    val foreground = when {
-        active -> palette.onPrimary
         danger -> palette.danger
         else -> palette.text
     }
-    Box(
-        modifier = modifier
-            .height(40.dp)
-            .background(background, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick),
+    HdPanel(
+        modifier = modifier.heightIn(min = 34.dp),
+        shape = RoundedCornerShape(7.dp),
+        pressed = pressed,
+        interactionSource = interaction,
+        onClick = onClick,
         contentAlignment = Alignment.Center,
     ) {
+        if (active && !pressed) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 5.dp, vertical = 2.dp)
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(Color.Transparent, palette.primary, Color.Transparent),
+                        ),
+                        RoundedCornerShape(1.dp),
+                    ),
+            )
+        }
         Text(
             text = label,
-            color = foreground,
-            fontSize = 11.sp,
+            fontFamily = FontFamily.Monospace,
+            color = tint,
+            fontSize = 10.sp,
             fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+            letterSpacing = 0.5.sp,
             textAlign = TextAlign.Center,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 6.dp),
         )
     }
 }

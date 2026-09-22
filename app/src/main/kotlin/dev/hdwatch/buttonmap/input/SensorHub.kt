@@ -1,113 +1,202 @@
 package dev.hdwatch.buttonmap.input
 
 import android.app.Application
-import android.os.Build
+import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
 import dev.hdwatch.buttonmap.config.ConfigRepository
 import dev.hdwatch.buttonmap.engine.SequenceEngine
 import dev.hdwatch.buttonmap.hid.ReportRing
 import java.lang.reflect.Modifier
 
-/**
- * Gesture-sensor front door.
- *
- * Android's *usable* gesture surface on watches is the ambient sensor family
- * (tilt detector / pick-up / glance / double-tap / wrist-off …). Which of them
- * exist is OEM-dependent, so instead of a hardcoded list we reflect over every
- * public `Sensor.TYPE_*` constant, ask SensorManager whether the device has
- * one, and keep the ones whose name smells like a gesture. Each matched
- * sensor is offered to the config as `sensorToSymbol[sensorName] = "G1".."G4"`;
- * unmapped candidates still show up on the settings screen so the user can
- * assign them.
- */
+/** Probing gesture backend: probed sensor scan / @hide types / IMU shake → bindable capabilities. */
 class SensorHub(
-    app: Application,
+    private val app: Application,
     private val repo: ConfigRepository,
     private val engine: SequenceEngine,
     private val ring: ReportRing,
-) {
+) : GestureBackend {
 
     private val sensorManager = app.getSystemService(SensorManager::class.java)
 
-    data class Candidate(val sensor: Sensor, val type: Int)
+    /** One probed gesture source plus the sensor it listens on. */
+    private class Entry(
+        /** Map key inside Settings.sensorToSymbol: Sensor.name, or "imu:shake". */
+        val id: String,
+        val label: String,
+        /** Sensor.name for demotion checks ("native shake owns it"); "" for imu. */
+        val sensorName: String,
+        val sensor: Sensor,
+        val rate: Int,
+        val shake: Boolean,
+        val permission: String?,
+        /** False → BROKEN (registration failed, no hardware, superseded). */
+        @Volatile var hardwareOk: Boolean,
+        val detail: String,
+    )
 
-    /** Gesture-flavored public sensor types present on this device. */
-    fun candidates(): List<Candidate> {
-        val manager = sensorManager ?: return emptyList()
-        val seenTypes = HashSet<Int>()
-        val out = mutableListOf<Candidate>()
-        GESTURE_NAME_HINTS.forEach { hint ->
-            Sensor::class.java.fields
-                .filter { it.modifierHasIntType() && it.name.startsWith("TYPE_") && it.name.contains(hint) }
-                .forEach { field ->
-                    val type = runCatching { field.getInt(null) }.getOrNull() ?: return@forEach
-                    if (!seenTypes.add(type)) return@forEach
-                    // The emulator's goldfish sensors HAL aborts on @hide gesture
-                    // activations (type 22..27 verified crash). Real hardware may
-                    // support them, so the guard is emulator-only.
-                    if (isEmulator && type in EMULATOR_UNSAFE_TYPES) return@forEach
-                    manager.getSensorList(type).firstOrNull()?.let { out += Candidate(it, type) }
-                }
+    /** Cached probe result; recomputed by refresh(). */
+    @Volatile private var entries: List<Entry> = emptyList()
+
+    init {
+        refresh()
+    }
+
+    // ------------------------------------------------------------- backend api
+
+    override fun capabilities(): List<GestureCapability> = entries.map { entry ->
+        val status = when {
+            !gateEnabled -> CapStatus.GATED
+            entry.permission != null &&
+                app.checkSelfPermission(entry.permission) != PackageManager.PERMISSION_GRANTED ->
+                CapStatus.NEEDS_PERMISSION
+            !entry.hardwareOk -> CapStatus.BROKEN
+            else -> CapStatus.AVAILABLE
         }
-        return out
+        GestureCapability(
+            id = entry.id,
+            label = entry.label,
+            status = status,
+            // Hardware/status info only; the settings row renders the binding itself.
+            detail = entry.detail,
+        )
     }
 
-    /** Symbol a sensor fires: config override first, else positional fallback. */
-    fun symbolFor(candidateIndex: Int, sensor: Sensor): Symbol? {
-        val mapped = repo.config.value.settings.sensorToSymbol[sensor.name]
-            ?.let { Symbol.fromCode(it) }
-        if (mapped != null) return mapped
-        if (repo.config.value.settings.sensorToSymbol.containsKey(sensor.name)) return null // explicitly unbound
-        return FALLBACK[candidateIndex % FALLBACK.size]
+    override fun refresh() {
+        val manager = sensorManager
+        if (manager == null) {
+            entries = emptyList()
+            return
+        }
+        val out = mutableListOf<Entry>()
+        val seenTypes = HashSet<Int>()
+
+        fun offer(sensor: Sensor, shake: Boolean) {
+            val type = sensor.type
+            // The emulator's goldfish sensors HAL aborts on @hide gesture
+            // activations (type 20..29 verified crash). Real hardware may
+            // support them, so the guard is emulator-only.
+            if (isEmulator && type in EMULATOR_UNSAFE_TYPES) return
+            if (!seenTypes.add(type)) return
+            val permission = runCatching {
+                sensor.javaClass.getMethod("getRequiredPermission").invoke(sensor) as? String
+            }.getOrNull()?.takeIf { it.isNotBlank() }
+            out += Entry(
+                id = sensor.name,
+                label = friendlyLabel(sensor),
+                sensorName = sensor.name,
+                sensor = sensor,
+                rate = if (shake) SensorManager.SENSOR_DELAY_GAME else SensorManager.SENSOR_DELAY_NORMAL,
+                shake = shake,
+                permission = permission,
+                hardwareOk = probe(manager, sensor),
+                detail = "类型 #$type · ${sensor.name}",
+            )
+        }
+
+        // 1. every sensor the HAL reports, kept when name or type smells gestural
+        runCatching { manager.getSensorList(Sensor.TYPE_ALL) }.getOrDefault(emptyList())
+            .filter { it.isGestureFlavored() }
+            .forEach { offer(it, shake = false) }
+
+        // 2. public TYPE_* constants, merged in and deduped by type
+        Sensor::class.java.fields.forEach { field ->
+            if (!field.isPublicIntStatic) return@forEach
+            if (REFLECT_HINTS.none { field.name.contains(it) }) return@forEach
+            val type = runCatching { field.getInt(null) }.getOrNull() ?: return@forEach
+            val sensor = runCatching { manager.getDefaultSensor(type) }.getOrNull() ?: return@forEach
+            offer(sensor, shake = false)
+        }
+
+        // 3. self-built shake; superseded when the HAL already exposes one
+        val linear = runCatching { manager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) }.getOrNull()
+        if (linear != null) {
+            val native = out.any { it.sensorName.uppercase().contains("SHAKE") }
+            out += Entry(
+                id = IMU_SHAKE_ID,
+                label = "抖动",
+                sensorName = "",
+                sensor = linear,
+                rate = SensorManager.SENSOR_DELAY_GAME,
+                shake = true,
+                permission = null,
+                hardwareOk = !native && probe(manager, linear),
+                detail = if (native) "已被原生接管" else "|a|>18 峰值 4 次 / 800ms",
+            )
+        }
+
+        entries = out
+        ring.log("SNS  probed ${out.size} capability(ies): " +
+            out.joinToString(", ") { "${it.label}/${it.id}" })
     }
 
-    fun describeAvailable(): String =
-        candidates().joinToString("; ") { "${it.sensor.name} (#${it.type})" }
-            .ifBlank { "本机无可用手势传感器" }
+    override fun bind(capabilityId: String, symbol: Symbol?) {
+        if (entries.none { it.id == capabilityId }) {
+            ring.log("SNS  bind ignored unknown capability '$capabilityId'")
+            return
+        }
+        // "" is an explicit unbind; null arrives as the same empty value.
+        val code = symbol?.code ?: ""
+        repo.updateSettings { it.copy(sensorToSymbol = it.sensorToSymbol + (capabilityId to code)) }
+        ring.log("SNS  bind $capabilityId -> ${code.ifEmpty { "无" }}")
+    }
 
-    // ------------------------------------------------------------ listening
+    // ------------------------------------------------------------- listening
 
     @Volatile private var listening = false
     private val listeners = mutableListOf<Pair<Sensor, SensorEventListener>>()
-    private val lastFire = HashMap<String, Long>()
+    private val shakeDetector = ImuShakeDetector {
+        val symbol = boundSymbol(IMU_SHAKE_ID) ?: return@ImuShakeDetector
+        fire(IMU_SHAKE_ID, symbol)
+    }
 
-    fun start() {
+    override fun start() {
         if (listening) return
-        if (!repo.config.value.settings.gestureSensorsEnabled) {
+        if (!gateEnabled) {
             ring.log("SNS  监听未启用（设置中打开 gestureSensorsEnabled）")
             return
         }
         val manager = sensorManager ?: return
-        candidates().forEachIndexed { index, cand ->
-            val listener = object : SensorEventListener {
-                override fun onSensorChanged(event: SensorEvent) {
-                    if (event.values.isEmpty() || event.values[0] < 0.5f) return
-                    val now = System.currentTimeMillis()
-                    val key = cand.sensor.name
-                    val prev = lastFire[key] ?: 0L
-                    if (now - prev < DEBOUNCE_MS) return
-                    lastFire[key] = now
-                    val sym = symbolFor(index, cand.sensor) ?: return
-                    ring.log("SNS  ${cand.sensor.name} -> ${sym.code}")
-                    engine.feed(sym)
+        entries.forEach { entry ->
+            val status = statusOf(entry)
+            if (status == CapStatus.BROKEN) {
+                ring.log("SNS  skip broken ${entry.label}")
+                return@forEach
+            }
+            if (status != CapStatus.AVAILABLE) return@forEach
+            val listener: SensorEventListener = if (entry.shake) {
+                object : SensorEventListener {
+                    override fun onSensorChanged(event: SensorEvent) = shakeDetector.onSensorChanged(event)
+                    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) = Unit
                 }
-
-                override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) = Unit
+            } else {
+                object : SensorEventListener {
+                    private var lastFire = 0L
+                    override fun onSensorChanged(event: SensorEvent) {
+                        if (event.values.isEmpty() || event.values[0] < 0.5f) return
+                        val now = System.currentTimeMillis()
+                        if (now - lastFire < DEBOUNCE_MS) return
+                        lastFire = now
+                        val symbol = boundSymbol(entry.id) ?: return
+                        fire(entry.id, symbol)
+                    }
+                    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) = Unit
+                }
             }
             val ok = runCatching {
-                manager.registerListener(listener, cand.sensor, SensorManager.SENSOR_DELAY_NORMAL)
+                manager.registerListener(listener, entry.sensor, entry.rate)
             }.getOrDefault(false)
-            if (ok) listeners += cand.sensor to listener
-            else ring.log("SNS  cannot register ${cand.sensor.name}")
+            if (ok) listeners += entry.sensor to listener
+            else ring.log("SNS  cannot register ${entry.label}")
         }
         listening = listeners.isNotEmpty()
-        ring.log("SNS  start: ${listeners.size} sensor(s)")
+        ring.log("SNS  start: ${listeners.size} capability(ies)")
     }
 
-    fun stop() {
+    override fun stop() {
         if (!listening) return
         val manager = sensorManager
         listeners.forEach { (sensor, listener) ->
@@ -118,18 +207,84 @@ class SensorHub(
         ring.log("SNS  stop")
     }
 
+    /** Short-lived registration probe: must never crash and never stay resident. */
+    private fun probe(manager: SensorManager, sensor: Sensor): Boolean {
+        val noop = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) = Unit
+            override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) = Unit
+        }
+        val ok = runCatching {
+            manager.registerListener(noop, sensor, SensorManager.SENSOR_DELAY_NORMAL)
+        }.getOrDefault(false)
+        runCatching { manager.unregisterListener(noop) }
+        return ok
+    }
+
+    // --------------------------------------------------------------- internals
+
+    private fun statusOf(entry: Entry): CapStatus = when {
+        !gateEnabled -> CapStatus.GATED
+        entry.permission != null &&
+            app.checkSelfPermission(entry.permission) != PackageManager.PERMISSION_GRANTED ->
+            CapStatus.NEEDS_PERMISSION
+        !entry.hardwareOk -> CapStatus.BROKEN
+        else -> CapStatus.AVAILABLE
+    }
+
+    /** Raw map value → Symbol; blank or unknown code → null (explicit unbind). */
+    private fun boundSymbol(capabilityId: String): Symbol? {
+        val raw = repo.config.value.settings.sensorToSymbol[capabilityId] ?: return null
+        val code = raw.trim()
+        if (code.isEmpty()) return null
+        return Symbol.fromCode(code)
+    }
+
+    private fun fire(capabilityId: String, symbol: Symbol) {
+        val label = entries.firstOrNull { it.id == capabilityId }?.label ?: capabilityId
+        ring.log("SNS  $label -> ${symbol.code}")
+        engine.feed(symbol)
+    }
+
+    private val gateEnabled: Boolean
+        get() = repo.config.value.settings.gestureSensorsEnabled
+
+    private fun Sensor.isGestureFlavored(): Boolean {
+        val haystack = "${this.name} ${stringType ?: ""}".uppercase()
+        return SCAN_HINTS.any { haystack.contains(it) }
+    }
+
+    private fun friendlyLabel(sensor: Sensor): String {
+        val haystack = "${sensor.name} ${sensor.stringType ?: ""}".uppercase()
+        FRIENDLY.forEach { (key, label) -> if (haystack.contains(key)) return label }
+        return sensor.name.take(20)
+    }
+
+    private val java.lang.reflect.Field.isPublicIntStatic: Boolean
+        get() = Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers) &&
+            type == Int::class.javaPrimitiveType
+
     private companion object {
         const val DEBOUNCE_MS = 800L
-        val GESTURE_NAME_HINTS = listOf("GESTURE", "TILT", "WRIST", "DOUBLE_TAP", "PICK_UP", "GLANCE", "TAP_")
+        const val IMU_SHAKE_ID = "imu:shake"
         val EMULATOR_UNSAFE_TYPES = 20..29
-        val FALLBACK = listOf(
-            Symbol.GESTURE_1, Symbol.GESTURE_2, Symbol.GESTURE_3, Symbol.GESTURE_4,
+        val SCAN_HINTS = listOf(
+            "TILT", "WRIST", "PICK", "GLANCE", "DOUBLE_TAP", "SHAKE", "FLIP", "GRIP", "PALM", "GESTURE",
+        )
+        val REFLECT_HINTS = listOf("GESTURE", "TILT", "WRIST", "DOUBLE_TAP", "PICK_UP", "GLANCE", "TAP_")
+        val FRIENDLY = listOf(
+            "WRIST" to "抬腕",
+            "DOUBLE_TAP" to "双击",
+            "SHAKE" to "抖动",
+            "FLIP" to "翻转",
+            "GRIP" to "握持",
+            "PALM" to "掌心",
+            "PICK" to "拿起",
+            "GLANCE" to "瞥视",
+            "TILT" to "倾斜",
+            "GESTURE" to "手势",
         )
         val isEmulator: Boolean
             get() = Build.HARDWARE.contains("goldfish") || Build.HARDWARE.contains("ranchu") ||
                 Build.FINGERPRINT.contains("generic")
-
-        private fun java.lang.reflect.Field.modifierHasIntType(): Boolean =
-            Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers) && type == Int::class.javaPrimitiveType
     }
 }

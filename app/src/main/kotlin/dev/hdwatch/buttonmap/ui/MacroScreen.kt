@@ -198,7 +198,7 @@ fun MacroListScreen() {
     ScreenScaffold(title = "宏命令") {
         if (config.activeProfile.kind != ProfileKind.MACRO) {
             Text(
-                text = "当前是按键模式，宏只存而不触发——到菜单切换模式",
+                text = "当前是直控模式，宏只存而不触发——到菜单切换模式",
                 color = palette.primary,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,

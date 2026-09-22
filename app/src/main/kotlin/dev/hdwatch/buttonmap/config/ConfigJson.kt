@@ -13,11 +13,11 @@ import org.json.JSONObject
  *   "settings": { ... },
  *   "activeProfile": "keys",
  *   "profiles": [
- *     { "id": "keys", "name": "按键", "kind": "KEYS",
+ *     { "id": "keys", "name": "直控", "kind": "KEYS",
  *       "rotateThreshold": 3,
  *       "single": { "U": {"key":"W"}, "CW": {"mouse":{"wheel":-1}} },
  *       "macros": [] },
- *     { "id": "battle", "name": "作战", "kind": "MACRO",
+ *     { "id": "macro", "name": "宏", "kind": "MACRO",
  *       "single": { "U": {"key":"W"} },
  *       "macros": [ { "id":"resupply","name":"补给仓","seq":"U R D D D CW",
  *                     "steps":[{"key":"1"},{"delay":120},{"click":"left"}] } ] }
@@ -232,7 +232,7 @@ object ConfigJson {
     private fun migrateV1(root: JSONObject, problems: MutableList<String>): List<Profile> {
         val single = decodeSingleMap(root.optJSONObject("single"), "v1", problems)
         val macros = decodeMacros(root.optJSONArray("macros"), "v1", problems)
-        val keys = Profile("keys", "按键", ProfileKind.KEYS, single = single)
+        val keys = Profile("keys", "直控", ProfileKind.KEYS, single = single)
         return if (macros.isEmpty()) listOf(keys)
         else listOf(keys, Profile("macros", "宏", ProfileKind.MACRO, single = single, macros = macros))
     }
