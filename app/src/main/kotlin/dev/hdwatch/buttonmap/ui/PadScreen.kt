@@ -83,6 +83,7 @@ fun PadScreen() {
     val config by app.configRepo.config.collectAsState()
     val buffer by app.engine.bufferState.collectAsState()
     val hint by app.engine.hintState.collectAsState()
+    val latched by app.runner.latched.collectAsState()
     val event by app.engine.event.collectAsState()
     val transport = remember(config.settings.forceLoggingTransport) {
         app.transports.forSettings(config.settings)
@@ -119,13 +120,6 @@ fun PadScreen() {
         app.engine.feed(sym)
     }
 
-    // Which ring symbols currently do something (mapping or sequence start).
-    val liveSymbols = remember(profile) {
-        buildSet {
-            profile.single.keys.forEach { add(it) }
-            profile.macros.filter { it.enabled }.forEach { m -> m.sequence.firstOrNull()?.let { add(it) } }
-        }
-    }
     // Which keycap is under the finger. Held in a state holder that is read
     // only inside the draw lambda: a press repaints the dial without
     // recomposing the screen (worth ~10ms a tap on this SoC).
@@ -165,15 +159,19 @@ fun PadScreen() {
         ringPairs.forEach { (center, pair) ->
             // Keep clear of the keycap angular footprint: hug the diagonal.
             listOf(pair.first to -7.0, pair.second to 7.0).forEach { (sym, off) ->
-                val hold = profile.ringSteps[sym.code]
+                val slotStep = profile.ringSteps[sym.code]
+                // A slot lights up only while it is pressed or its hold is on;
+                // idle slots all read the same grey.
+                val holdKey = (slotStep as? dev.hdwatch.buttonmap.config.Step.Hold)?.key
+                    ?: (profile.single[sym] as? dev.hdwatch.buttonmap.config.Step.Hold)?.key
                 RingSymbol(
                     symbol = sym,
-                    active = hold != null || sym in liveSymbols,
+                    lit = holdKey != null && latched.contains(holdKey),
                     angleDeg = center + off,
                     radiusDp = 83f,
                     modifier = Modifier.align(Alignment.Center),
-                    onPress = { if (hold != null) app.runner.holdStep(hold) else feed(sym) },
-                    onRelease = { hold?.let { app.runner.releaseHold(it) } },
+                    onPress = { if (slotStep != null) app.runner.holdStep(slotStep) else feed(sym) },
+                    onRelease = { slotStep?.let { app.runner.releaseHold(it) } },
                 )
             }
         }
@@ -237,7 +235,7 @@ fun PadScreen() {
 @Composable
 private fun RingSymbol(
     symbol: Symbol,
-    active: Boolean,
+    lit: Boolean,
     angleDeg: Double,
     radiusDp: Float,
     modifier: Modifier = Modifier,
@@ -245,6 +243,8 @@ private fun RingSymbol(
     onRelease: () -> Unit,
 ) {
     val palette = LocalHdPalette.current
+    var pressed by remember { mutableStateOf(false) }
+    val on = lit || pressed
     val dx = sin(Math.toRadians(angleDeg)).toFloat()
     val dy = -cos(Math.toRadians(angleDeg)).toFloat()
     val label = symbol.display ?: symbol.code
@@ -252,8 +252,8 @@ private fun RingSymbol(
         text = label,
         fontFamily = FontFamily.Monospace,
         fontSize = if (label.length > 1) 9.sp else 11.sp,
-        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-        color = if (active) palette.primary.copy(alpha = 0.95f) else palette.muted.copy(alpha = 0.8f),
+        fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+        color = if (on) palette.primary.copy(alpha = 0.95f) else palette.muted.copy(alpha = 0.8f),
         maxLines = 1,
         modifier = modifier
             .offset(x = (dx * radiusDp).dp, y = (dy * radiusDp).dp)
@@ -264,8 +264,10 @@ private fun RingSymbol(
             .pointerInput(Unit) {
                 awaitEachGesture {
                     awaitFirstDown(requireUnconsumed = false)
+                    pressed = true
                     onPress()
                     waitForUpOrCancellation()
+                    pressed = false
                     onRelease()
                 }
             }

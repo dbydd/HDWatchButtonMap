@@ -11,6 +11,9 @@ import dev.hdwatch.buttonmap.hid.KeyTable
 import dev.hdwatch.buttonmap.hid.ReportRing
 import dev.hdwatch.buttonmap.hid.TransportManager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -31,6 +34,15 @@ class MacroRunner(
     private val heldKeys = LinkedHashSet<HeldKey>()
     /** KeyDown steps currently latched by a slot or a gesture. */
     private val holds = LinkedHashSet<Step.KeyDown>()
+
+    private val _latched = MutableStateFlow<Set<String>>(emptySet())
+
+    /** Key names currently latched — the dial lights its slots from this. */
+    val latched: StateFlow<Set<String>> = _latched.asStateFlow()
+
+    private fun syncLatched() {
+        _latched.value = holds.map { it.key }.toSet()
+    }
     private var mouseButtons = 0
 
     fun runMacro(macro: Macro) {
@@ -62,6 +74,7 @@ class MacroRunner(
                     holds += step
                     press(step.key, step.mods)
                     sendKeyboard()
+                    syncLatched()
                 }
                 else -> execute(step)
             }
@@ -76,6 +89,7 @@ class MacroRunner(
                     holds -= step
                     release(step.key, step.mods)
                     sendKeyboard()
+                    syncLatched()
                 }
                 else -> Unit
             }
@@ -97,6 +111,7 @@ class MacroRunner(
                 press(step.key, step.mods)
             }
             sendKeyboard()
+            syncLatched()
         }
     }
 
@@ -111,6 +126,7 @@ class MacroRunner(
             holds.toList().forEach { h -> release(h.key, h.mods) }
             holds.clear()
             sendKeyboard()
+            syncLatched()
             ring.log("RUN  holds released ($n)")
         }
     }
@@ -150,6 +166,7 @@ class MacroRunner(
                 mouseButtons = 0
                 transports.forSettings(settings()).sendMouseReport(0, 0, 0, 0)
             }
+            is Step.Hold -> toggleHold(Step.KeyDown(step.key, step.mods))
             is Step.ConsumerKey -> consumerKey(step.usage)
         }
     }

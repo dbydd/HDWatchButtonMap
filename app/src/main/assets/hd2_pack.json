@@ -1,7 +1,7 @@
 {
  "version": 2,
  "settings": {
-  "rotateThreshold": 3,
+  "rotateThreshold": 1,
   "invertRotation": true,
   "sequenceTimeoutMs": 3000,
   "textDelayMs": 40,
@@ -19,18 +19,19 @@
    "id": "hd2",
    "name": "HD2",
    "kind": "MACRO",
+   "rotateThreshold": 1,
    "single": {
     "CCW": {
-     "keydown": "CTRL"
+     "hold": "CTRL"
     },
     "G1": {
-     "keydown": "CTRL"
+     "hold": "CTRL"
     },
     "G2": {
-     "keydown": "SHIFT"
+     "hold": "SHIFT"
     },
     "G3": {
-     "keydown": "ALT"
+     "hold": "ALT"
     },
     "CW": {
      "mouse": {
@@ -45,7 +46,7 @@
     {
      "id": "orbital-precision-strike",
      "name": "Orbital Precision Strike",
-     "seq": "R R U",
+     "seq": "R R U CW",
      "enabled": true,
      "steps": [
       {
@@ -65,7 +66,7 @@
     {
      "id": "orbital-gatling-barrage",
      "name": "Orbital Gatling Barrage",
-     "seq": "R D L U U",
+     "seq": "R D L U U CW",
      "enabled": true,
      "steps": [
       {
@@ -91,7 +92,7 @@
     {
      "id": "orbital-gas-strike",
      "name": "Orbital Gas Strike",
-     "seq": "R R D R",
+     "seq": "R R D R CW",
      "enabled": true,
      "steps": [
       {
@@ -114,7 +115,7 @@
     {
      "id": "orbital-120mm-he-barrage",
      "name": "Orbital 120mm HE Barrage",
-     "seq": "R R D L R D",
+     "seq": "R R D L R D CW",
      "enabled": true,
      "steps": [
       {
@@ -143,7 +144,7 @@
     {
      "id": "orbital-airburst-strike",
      "name": "Orbital Airburst Strike",
-     "seq": "R R R",
+     "seq": "R R R CW",
      "enabled": true,
      "steps": [
       {
@@ -163,7 +164,7 @@
     {
      "id": "orbital-smoke-strike",
      "name": "Orbital Smoke Strike",
-     "seq": "R R D U",
+     "seq": "R R D U CW",
      "enabled": true,
      "steps": [
       {
@@ -186,7 +187,7 @@
     {
      "id": "orbital-ems-strike",
      "name": "Orbital EMS Strike",
-     "seq": "R R L D",
+     "seq": "R R L D CW",
      "enabled": true,
      "steps": [
       {
@@ -209,7 +210,7 @@
     {
      "id": "orbital-380mm-he-barrage",
      "name": "Orbital 380mm HE Barrage",
-     "seq": "R D U U L D D",
+     "seq": "R D U U L D D CW",
      "enabled": true,
      "steps": [
       {
@@ -241,7 +242,7 @@
     {
      "id": "orbital-walking-barrage",
      "name": "Orbital Walking Barrage",
-     "seq": "R D R D R D",
+     "seq": "R D R D R D CW",
      "enabled": true,
      "steps": [
       {
@@ -270,7 +271,7 @@
     {
      "id": "orbital-laser",
      "name": "Orbital Laser",
-     "seq": "R D U R D",
+     "seq": "R D U R D CW",
      "enabled": true,
      "steps": [
       {
@@ -296,7 +297,7 @@
     {
      "id": "orbital-napalm-barrage",
      "name": "Orbital Napalm Barrage",
-     "seq": "R R D L R U",
+     "seq": "R R D L R U CW",
      "enabled": true,
      "steps": [
       {
@@ -325,7 +326,7 @@
     {
      "id": "orbital-railcannon-strike",
      "name": "Orbital Railcannon Strike",
-     "seq": "R U D D R",
+     "seq": "R U D D R CW",
      "enabled": true,
      "steps": [
       {
@@ -351,7 +352,7 @@
     {
      "id": "eagle-gas-airstrike",
      "name": "Eagle Gas Airstrike",
-     "seq": "U R L R",
+     "seq": "U R L R CW",
      "enabled": true,
      "steps": [
       {
@@ -374,7 +375,7 @@
     {
      "id": "eagle-strafing-run",
      "name": "Eagle Strafing Run",
-     "seq": "U R R",
+     "seq": "U R R CW",
      "enabled": true,
      "steps": [
       {
@@ -394,7 +395,7 @@
     {
      "id": "eagle-airstrike",
      "name": "Eagle Airstrike",
-     "seq": "U R D R",
+     "seq": "U R D R CW",
      "enabled": true,
      "steps": [
       {
@@ -417,7 +418,7 @@
     {
      "id": "eagle-cluster-bomb",
      "name": "Eagle Cluster Bomb",
-     "seq": "U R D D R",
+     "seq": "U R D D R CW",
      "enabled": true,
      "steps": [
       {
@@ -443,7 +444,7 @@
     {
      "id": "eagle-smoke-strike",
      "name": "Eagle Smoke Strike",
-     "seq": "U R U D",
+     "seq": "U R U D CW",
      "enabled": true,
      "steps": [
       {
@@ -466,7 +467,7 @@
     {
      "id": "eagle-napalm-airstrike",
      "name": "Eagle Napalm Airstrike",
-     "seq": "U R D U",
+     "seq": "U R D U CW",
      "enabled": true,
      "steps": [
       {
@@ -489,7 +490,7 @@
     {
      "id": "eagle-110mm-rocket-pods",
      "name": "Eagle 110mm Rocket Pods",
-     "seq": "U R U L",
+     "seq": "U R U L CW",
      "enabled": true,
      "steps": [
       {
@@ -512,7 +513,7 @@
     {
      "id": "eagle-500kg-bomb",
      "name": "Eagle 500kg Bomb",
-     "seq": "U R D D D",
+     "seq": "U R D D D CW",
      "enabled": true,
      "steps": [
       {
@@ -538,7 +539,7 @@
     {
      "id": "mg-43-machine-gun",
      "name": "MG-43 Machine Gun",
-     "seq": "D L D U R",
+     "seq": "D L D U R CW",
      "enabled": true,
      "steps": [
       {
@@ -564,7 +565,7 @@
     {
      "id": "eat-17-expendable-anti-tank",
      "name": "EAT-17 Expendable Anti-Tank",
-     "seq": "D D L U R",
+     "seq": "D D L U R CW",
      "enabled": true,
      "steps": [
       {
@@ -590,7 +591,7 @@
     {
      "id": "m-105-stalwart",
      "name": "M-105 Stalwart",
-     "seq": "D L D U U L",
+     "seq": "D L D U U L CW",
      "enabled": true,
      "steps": [
       {
@@ -619,7 +620,7 @@
     {
      "id": "las-98-laser-cannon",
      "name": "LAS-98 Laser Cannon",
-     "seq": "D L D U L",
+     "seq": "D L D U L CW",
      "enabled": true,
      "steps": [
       {
@@ -645,7 +646,7 @@
     {
      "id": "apw-1-anti-materiel-rifle",
      "name": "APW-1 Anti-Materiel Rifle",
-     "seq": "D L R U D",
+     "seq": "D L R U D CW",
      "enabled": true,
      "steps": [
       {
@@ -671,7 +672,7 @@
     {
      "id": "gr-8-recoilless-rifle",
      "name": "GR-8 Recoilless Rifle",
-     "seq": "D L R R L",
+     "seq": "D L R R L CW",
      "enabled": true,
      "steps": [
       {
@@ -697,7 +698,7 @@
     {
      "id": "gl-21-grenade-launcher",
      "name": "GL-21 Grenade Launcher",
-     "seq": "D L U L D",
+     "seq": "D L U L D CW",
      "enabled": true,
      "steps": [
       {
@@ -723,7 +724,7 @@
     {
      "id": "flam-40-flamethrower",
      "name": "FLAM-40 Flamethrower",
-     "seq": "D L U D U",
+     "seq": "D L U D U CW",
      "enabled": true,
      "steps": [
       {
@@ -749,7 +750,7 @@
     {
      "id": "mg-206-heavy-machine-gun",
      "name": "MG-206 Heavy Machine Gun",
-     "seq": "D L U D D",
+     "seq": "D L U D D CW",
      "enabled": true,
      "steps": [
       {
@@ -775,7 +776,7 @@
     {
      "id": "ac-8-autocannon",
      "name": "AC-8 Autocannon",
-     "seq": "D L D U U R",
+     "seq": "D L D U U R CW",
      "enabled": true,
      "steps": [
       {
@@ -804,7 +805,7 @@
     {
      "id": "arc-3-arc-thrower",
      "name": "ARC-3 Arc Thrower",
-     "seq": "D R D U L L",
+     "seq": "D R D U L L CW",
      "enabled": true,
      "steps": [
       {
@@ -833,7 +834,7 @@
     {
      "id": "las-99-quasar-cannon",
      "name": "LAS-99 Quasar Cannon",
-     "seq": "D D U L R",
+     "seq": "D D U L R CW",
      "enabled": true,
      "steps": [
       {
@@ -859,7 +860,7 @@
     {
      "id": "rl-77-airburst-rocket-launcher",
      "name": "RL-77 Airburst Rocket Launcher",
-     "seq": "D U U L R",
+     "seq": "D U U L R CW",
      "enabled": true,
      "steps": [
       {
@@ -885,7 +886,7 @@
     {
      "id": "mls-4x-commando",
      "name": "MLS-4X Commando",
-     "seq": "D L U D R",
+     "seq": "D L U D R CW",
      "enabled": true,
      "steps": [
       {
@@ -911,7 +912,7 @@
     {
      "id": "faf-14-spear",
      "name": "FAF-14 Spear",
-     "seq": "D D U D D",
+     "seq": "D D U D D CW",
      "enabled": true,
      "steps": [
       {
@@ -937,7 +938,7 @@
     {
      "id": "rs-422-railgun",
      "name": "RS-422 Railgun",
-     "seq": "D R D U L R",
+     "seq": "D R D U L R CW",
      "enabled": true,
      "steps": [
       {
@@ -966,7 +967,7 @@
     {
      "id": "sta-x3-w-a-s-p-launcher",
      "name": "StA-X3 W.A.S.P. Launcher",
-     "seq": "D D U D R",
+     "seq": "D D U D R CW",
      "enabled": true,
      "steps": [
       {
@@ -992,7 +993,7 @@
     {
      "id": "cqc-20-breaching-hammer",
      "name": "CQC-20 Breaching Hammer",
-     "seq": "D L R L U",
+     "seq": "D L R L U CW",
      "enabled": true,
      "steps": [
       {
@@ -1018,7 +1019,7 @@
     {
      "id": "plas-45-epoch",
      "name": "PLAS-45 Epoch",
-     "seq": "D L U L R",
+     "seq": "D L U L R CW",
      "enabled": true,
      "steps": [
       {
@@ -1044,7 +1045,7 @@
     {
      "id": "mgx-42-bullet-storm",
      "name": "MGX-42 Bullet Storm",
-     "seq": "D L D R U L",
+     "seq": "D L D R U L CW",
      "enabled": true,
      "steps": [
       {
@@ -1073,7 +1074,7 @@
     {
      "id": "s-11-speargun",
      "name": "S-11 Speargun",
-     "seq": "D R D L U R",
+     "seq": "D R D L U R CW",
      "enabled": true,
      "steps": [
       {
@@ -1102,7 +1103,7 @@
     {
      "id": "cqc-9-defoliation-tool",
      "name": "CQC-9 Defoliation Tool",
-     "seq": "D L R R D",
+     "seq": "D L R R D CW",
      "enabled": true,
      "steps": [
       {
@@ -1128,7 +1129,7 @@
     {
      "id": "gl-52-de-escalator",
      "name": "GL-52 De-Escalator",
-     "seq": "D R U L R",
+     "seq": "D R U L R CW",
      "enabled": true,
      "steps": [
       {
@@ -1154,7 +1155,7 @@
     {
      "id": "eat-700-expendable-napalm",
      "name": "EAT-700 Expendable Napalm",
-     "seq": "D D L U L",
+     "seq": "D D L U L CW",
      "enabled": true,
      "steps": [
       {
@@ -1180,7 +1181,7 @@
     {
      "id": "tx-41-sterilizer",
      "name": "TX-41 Sterilizer",
-     "seq": "D L U D L",
+     "seq": "D L U D L CW",
      "enabled": true,
      "steps": [
       {
@@ -1206,7 +1207,7 @@
     {
      "id": "eat-411-leveller",
      "name": "EAT-411 Leveller",
-     "seq": "D D L U D",
+     "seq": "D D L U D CW",
      "enabled": true,
      "steps": [
       {
@@ -1232,7 +1233,7 @@
     {
      "id": "gl-28-belt-fed-grenade-launcher",
      "name": "GL-28 Belt-Fed Grenade Launcher",
-     "seq": "D L U L U U",
+     "seq": "D L U L U U CW",
      "enabled": true,
      "steps": [
       {
@@ -1261,7 +1262,7 @@
     {
      "id": "b-md-c4-pack",
      "name": "B/MD C4 Pack",
-     "seq": "D R U U R U",
+     "seq": "D R U U R U CW",
      "enabled": true,
      "steps": [
       {
@@ -1290,7 +1291,7 @@
     {
      "id": "ms-11-solo-silo",
      "name": "MS-11 Solo Silo",
-     "seq": "D U R D D",
+     "seq": "D U R D D CW",
      "enabled": true,
      "steps": [
       {
@@ -1316,7 +1317,7 @@
     {
      "id": "b-flam-80-cremator",
      "name": "B/FLAM-80 Cremator",
-     "seq": "D D R D U U",
+     "seq": "D D R D U U CW",
      "enabled": true,
      "steps": [
       {
@@ -1345,7 +1346,7 @@
     {
      "id": "m-1000-maxigun",
      "name": "M-1000 Maxigun",
-     "seq": "D L R D U U",
+     "seq": "D L R D U U CW",
      "enabled": true,
      "steps": [
       {
@@ -1374,7 +1375,7 @@
     {
      "id": "cqc-1-one-true-flag",
      "name": "CQC-1 One True Flag",
-     "seq": "D L R R U",
+     "seq": "D L R R U CW",
      "enabled": true,
      "steps": [
       {
@@ -1400,7 +1401,7 @@
     {
      "id": "40-k-meltagun",
      "name": "40-K Meltagun",
-     "seq": "D L U L L D",
+     "seq": "D L U L L D CW",
      "enabled": true,
      "steps": [
       {
@@ -1429,7 +1430,7 @@
     {
      "id": "b-1-supply-pack",
      "name": "B-1 Supply Pack",
-     "seq": "D L D U U D",
+     "seq": "D L D U U D CW",
      "enabled": true,
      "steps": [
       {
@@ -1458,7 +1459,7 @@
     {
      "id": "lift-850-jump-pack",
      "name": "LIFT-850 Jump Pack",
-     "seq": "D U U D U",
+     "seq": "D U U D U CW",
      "enabled": true,
      "steps": [
       {
@@ -1484,7 +1485,7 @@
     {
      "id": "sh-20-ballistic-shield-backpack",
      "name": "SH-20 Ballistic Shield Backpack",
-     "seq": "D L D D U L",
+     "seq": "D L D D U L CW",
      "enabled": true,
      "steps": [
       {
@@ -1513,7 +1514,7 @@
     {
      "id": "ax-ar-23-guard-dog",
      "name": "AX/AR-23 Guard Dog",
-     "seq": "D U L U R D",
+     "seq": "D U L U R D CW",
      "enabled": true,
      "steps": [
       {
@@ -1542,7 +1543,7 @@
     {
      "id": "ax-las-5-rover",
      "name": "AX/LAS-5 Rover",
-     "seq": "D U L U R R",
+     "seq": "D U L U R R CW",
      "enabled": true,
      "steps": [
       {
@@ -1571,7 +1572,7 @@
     {
      "id": "sh-32-shield-generator-pack",
      "name": "SH-32 Shield Generator Pack",
-     "seq": "D U L R L R",
+     "seq": "D U L R L R CW",
      "enabled": true,
      "steps": [
       {
@@ -1600,7 +1601,7 @@
     {
      "id": "sh-51-directional-shield",
      "name": "SH-51 Directional Shield",
-     "seq": "D U L R U U",
+     "seq": "D U L R U U CW",
      "enabled": true,
      "steps": [
       {
@@ -1629,7 +1630,7 @@
     {
      "id": "ax-flam-75-hot-dog",
      "name": "AX/FLAM-75 Hot Dog",
-     "seq": "D U L U L L",
+     "seq": "D U L U L L CW",
      "enabled": true,
      "steps": [
       {
@@ -1658,7 +1659,7 @@
     {
      "id": "b-100-portable-hellbomb",
      "name": "B-100 Portable Hellbomb",
-     "seq": "D R U U U",
+     "seq": "D R U U U CW",
      "enabled": true,
      "steps": [
       {
@@ -1684,7 +1685,7 @@
     {
      "id": "ax-arc-3-k-9",
      "name": "AX/ARC-3 K-9",
-     "seq": "D U L U R L",
+     "seq": "D U L U R L CW",
      "enabled": true,
      "steps": [
       {
@@ -1713,7 +1714,7 @@
     {
      "id": "lift-860-hover-pack",
      "name": "LIFT-860 Hover Pack",
-     "seq": "D U U D L R",
+     "seq": "D U U D L R CW",
      "enabled": true,
      "steps": [
       {
@@ -1742,7 +1743,7 @@
     {
      "id": "ax-tx-13-dog-breath",
      "name": "AX/TX-13 Dog Breath",
-     "seq": "D U L U R U",
+     "seq": "D U L U R U CW",
      "enabled": true,
      "steps": [
       {
@@ -1771,7 +1772,7 @@
     {
      "id": "lift-182-warp-pack",
      "name": "LIFT-182 Warp Pack",
-     "seq": "D L R D L R",
+     "seq": "D L R D L R CW",
      "enabled": true,
      "steps": [
       {
@@ -1800,7 +1801,7 @@
     {
      "id": "m-103-supply-frv",
      "name": "M-103 Supply FRV",
-     "seq": "L D L L D U R",
+     "seq": "L D L L D U R CW",
      "enabled": true,
      "steps": [
       {
@@ -1832,7 +1833,7 @@
     {
      "id": "m-104-incinerator-frv",
      "name": "M-104 Incinerator FRV",
-     "seq": "L D R L D U U",
+     "seq": "L D R L D U U CW",
      "enabled": true,
      "steps": [
       {
@@ -1864,7 +1865,7 @@
     {
      "id": "exo-49-emancipator-exosuit",
      "name": "EXO-49 Emancipator Exosuit",
-     "seq": "L D R U L D U",
+     "seq": "L D R U L D U CW",
      "enabled": true,
      "steps": [
       {
@@ -1896,7 +1897,7 @@
     {
      "id": "exo-45-patriot-exosuit",
      "name": "EXO-45 Patriot Exosuit",
-     "seq": "L D R U L D D",
+     "seq": "L D R U L D D CW",
      "enabled": true,
      "steps": [
       {
@@ -1928,7 +1929,7 @@
     {
      "id": "m-102-gunner-frv",
      "name": "M-102 Gunner FRV",
-     "seq": "L D R D R D U",
+     "seq": "L D R D R D U CW",
      "enabled": true,
      "steps": [
       {
@@ -1960,7 +1961,7 @@
     {
      "id": "td-220-bastion-mk-xvi",
      "name": "TD-220 Bastion MK XVI",
-     "seq": "L D R D L D U D U",
+     "seq": "L D R D L D U D U CW",
      "enabled": true,
      "steps": [
       {
@@ -1998,7 +1999,7 @@
     {
      "id": "exo-55-breakthrough-exosuit",
      "name": "EXO-55 Breakthrough Exosuit",
-     "seq": "L D R L R D U",
+     "seq": "L D R L R D U CW",
      "enabled": true,
      "steps": [
       {
@@ -2030,7 +2031,7 @@
     {
      "id": "exo-51-lumberer-exosuit",
      "name": "EXO-51 Lumberer Exosuit",
-     "seq": "L D R U R L U",
+     "seq": "L D R U R L U CW",
      "enabled": true,
      "steps": [
       {
@@ -2062,7 +2063,7 @@
     {
      "id": "a-mg-43-machine-gun-sentry",
      "name": "A/MG-43 Machine Gun Sentry",
-     "seq": "D U R R U",
+     "seq": "D U R R U CW",
      "enabled": true,
      "steps": [
       {
@@ -2088,7 +2089,7 @@
     {
      "id": "a-g-16-gatling-sentry",
      "name": "A/G-16 Gatling Sentry",
-     "seq": "D U R L",
+     "seq": "D U R L CW",
      "enabled": true,
      "steps": [
       {
@@ -2111,7 +2112,7 @@
     {
      "id": "a-ac-8-autocannon-sentry",
      "name": "A/AC-8 Autocannon Sentry",
-     "seq": "D U R U L U",
+     "seq": "D U R U L U CW",
      "enabled": true,
      "steps": [
       {
@@ -2140,7 +2141,7 @@
     {
      "id": "a-m-12-mortar-sentry",
      "name": "A/M-12 Mortar Sentry",
-     "seq": "D U R R D",
+     "seq": "D U R R D CW",
      "enabled": true,
      "steps": [
       {
@@ -2166,7 +2167,7 @@
     {
      "id": "a-mls-4x-rocket-sentry",
      "name": "A/MLS-4X Rocket Sentry",
-     "seq": "D U R R L",
+     "seq": "D U R R L CW",
      "enabled": true,
      "steps": [
       {
@@ -2192,7 +2193,7 @@
     {
      "id": "a-arc-3-tesla-tower",
      "name": "A/ARC-3 Tesla Tower",
-     "seq": "D U R U L R",
+     "seq": "D U R U L R CW",
      "enabled": true,
      "steps": [
       {
@@ -2221,7 +2222,7 @@
     {
      "id": "a-m-23-ems-mortar-sentry",
      "name": "A/M-23 EMS Mortar Sentry",
-     "seq": "D U R D R",
+     "seq": "D U R D R CW",
      "enabled": true,
      "steps": [
       {
@@ -2247,7 +2248,7 @@
     {
      "id": "a-las-98-laser-sentry",
      "name": "A/LAS-98 Laser Sentry",
-     "seq": "D U R D U R",
+     "seq": "D U R D U R CW",
      "enabled": true,
      "steps": [
       {
@@ -2276,7 +2277,7 @@
     {
      "id": "a-flam-40-flame-sentry",
      "name": "A/FLAM-40 Flame Sentry",
-     "seq": "D U R D U U",
+     "seq": "D U R D U U CW",
      "enabled": true,
      "steps": [
       {
@@ -2305,7 +2306,7 @@
     {
      "id": "a-gm-17-gas-mortar-sentry",
      "name": "A/GM-17 Gas Mortar Sentry",
-     "seq": "D U R D L",
+     "seq": "D U R D L CW",
      "enabled": true,
      "steps": [
       {
@@ -2331,7 +2332,7 @@
     {
      "id": "md-6-anti-personnel-minefield",
      "name": "MD-6 Anti-Personnel Minefield",
-     "seq": "D L U R",
+     "seq": "D L U R CW",
      "enabled": true,
      "steps": [
       {
@@ -2354,7 +2355,7 @@
     {
      "id": "md-i4-incendiary-mines",
      "name": "MD-I4 Incendiary Mines",
-     "seq": "D L L D",
+     "seq": "D L L D CW",
      "enabled": true,
      "steps": [
       {
@@ -2377,7 +2378,7 @@
     {
      "id": "md-17-anti-tank-mines",
      "name": "MD-17 Anti-Tank Mines",
-     "seq": "D L U U",
+     "seq": "D L U U CW",
      "enabled": true,
      "steps": [
       {
@@ -2400,7 +2401,7 @@
     {
      "id": "fx-12-shield-generator-relay",
      "name": "FX-12 Shield Generator Relay",
-     "seq": "D D L R L R",
+     "seq": "D D L R L R CW",
      "enabled": true,
      "steps": [
       {
@@ -2429,7 +2430,7 @@
     {
      "id": "e-mg-101-hmg-emplacement",
      "name": "E/MG-101 HMG Emplacement",
-     "seq": "D U L R R L",
+     "seq": "D U L R R L CW",
      "enabled": true,
      "steps": [
       {
@@ -2458,7 +2459,7 @@
     {
      "id": "e-gl-21-grenadier-battlement",
      "name": "E/GL-21 Grenadier Battlement",
-     "seq": "D R D L R",
+     "seq": "D R D L R CW",
      "enabled": true,
      "steps": [
       {
@@ -2484,7 +2485,7 @@
     {
      "id": "md-8-gas-mines",
      "name": "MD-8 Gas Mines",
-     "seq": "D L L R",
+     "seq": "D L L R CW",
      "enabled": true,
      "steps": [
       {
@@ -2507,7 +2508,7 @@
     {
      "id": "e-at-12-anti-tank-emplacement",
      "name": "E/AT-12 Anti-Tank Emplacement",
-     "seq": "D U L R R R",
+     "seq": "D U L R R R CW",
      "enabled": true,
      "steps": [
       {
@@ -2536,7 +2537,7 @@
     {
      "id": "eagle-rearm",
      "name": "Eagle Rearm",
-     "seq": "U U L U R",
+     "seq": "U U L U R CW",
      "enabled": true,
      "steps": [
       {
@@ -2562,7 +2563,7 @@
     {
      "id": "call-in-super-destroyer",
      "name": "Call In Super Destroyer",
-     "seq": "U U D D L R L R",
+     "seq": "U U D D L R L R CW",
      "enabled": true,
      "steps": [
       {
@@ -2597,7 +2598,7 @@
     {
      "id": "sos-beacon",
      "name": "SoS Beacon",
-     "seq": "U D R U",
+     "seq": "U D R U CW",
      "enabled": true,
      "steps": [
       {
@@ -2620,7 +2621,7 @@
     {
      "id": "resupply",
      "name": "Resupply",
-     "seq": "D D U R",
+     "seq": "D D U R CW",
      "enabled": true,
      "steps": [
       {
@@ -2643,7 +2644,7 @@
     {
      "id": "reinforce",
      "name": "Reinforce",
-     "seq": "U D R L U",
+     "seq": "U D R L U CW",
      "enabled": true,
      "steps": [
       {
@@ -2669,7 +2670,7 @@
     {
      "id": "cargo-container",
      "name": "Cargo Container",
-     "seq": "U U D D R D",
+     "seq": "U U D D R D CW",
      "enabled": true,
      "steps": [
       {
@@ -2698,7 +2699,7 @@
     {
      "id": "nux-223-hellbomb",
      "name": "NUX-223 Hellbomb",
-     "seq": "D U L D U R D U",
+     "seq": "D U L D U R D U CW",
      "enabled": true,
      "steps": [
       {
@@ -2733,7 +2734,7 @@
     {
      "id": "seismic-probe",
      "name": "Seismic Probe",
-     "seq": "U U L R D D",
+     "seq": "U U L R D D CW",
      "enabled": true,
      "steps": [
       {
@@ -2762,7 +2763,7 @@
     {
      "id": "sssd-delivery",
      "name": "SSSD Delivery",
-     "seq": "D D D D D U U",
+     "seq": "D D D D D U U CW",
      "enabled": true,
      "steps": [
       {
@@ -2794,7 +2795,7 @@
     {
      "id": "tectonic-drill",
      "name": "Tectonic Drill",
-     "seq": "U D U D U D",
+     "seq": "U D U D U D CW",
      "enabled": true,
      "steps": [
       {
@@ -2823,7 +2824,7 @@
     {
      "id": "upload-data",
      "name": "Upload Data",
-     "seq": "L R U U U",
+     "seq": "L R U U U CW",
      "enabled": true,
      "steps": [
       {
@@ -2849,7 +2850,7 @@
     {
      "id": "reinforcement-pods",
      "name": "Reinforcement Pods",
-     "seq": "L R U U U",
+     "seq": "L R U U U CW",
      "enabled": true,
      "steps": [
       {
@@ -2875,7 +2876,7 @@
     {
      "id": "aquifer-drill",
      "name": "Aquifer Drill",
-     "seq": "L L L U D R D D",
+     "seq": "L L L U D R D D CW",
      "enabled": true,
      "steps": [
       {
@@ -2910,7 +2911,7 @@
     {
      "id": "portable-comms-relay",
      "name": "Portable Comms Relay",
-     "seq": "U U D D L L D",
+     "seq": "U U D D L L D CW",
      "enabled": true,
      "steps": [
       {
@@ -2942,7 +2943,7 @@
     {
      "id": "prospecting-drill",
      "name": "Prospecting Drill",
-     "seq": "D D L R D D",
+     "seq": "D D L R D D CW",
      "enabled": true,
      "steps": [
       {
@@ -2971,7 +2972,7 @@
     {
      "id": "hive-breaker-drill",
      "name": "Hive Breaker Drill",
-     "seq": "L U D R D D",
+     "seq": "L U D R D D CW",
      "enabled": true,
      "steps": [
       {
@@ -3000,7 +3001,7 @@
     {
      "id": "activate-e-711-extraction-drill",
      "name": "Activate E-711 Extraction Drill",
-     "seq": "D D L L D D",
+     "seq": "D D L L D D CW",
      "enabled": true,
      "steps": [
       {
@@ -3029,7 +3030,7 @@
     {
      "id": "dark-fluid-vessel",
      "name": "Dark Fluid Vessel",
-     "seq": "U L R D U U",
+     "seq": "U L R D U U CW",
      "enabled": true,
      "steps": [
       {
@@ -3058,7 +3059,7 @@
     {
      "id": "super-earth-flag",
      "name": "Super Earth Flag",
-     "seq": "D U D U",
+     "seq": "D U D U CW",
      "enabled": true,
      "steps": [
       {
@@ -3081,7 +3082,7 @@
     {
      "id": "seaf-artillery",
      "name": "SEAF Artillery",
-     "seq": "R U U D",
+     "seq": "R U U D CW",
      "enabled": true,
      "steps": [
       {
@@ -3104,7 +3105,7 @@
     {
      "id": "tactical-video-camera",
      "name": "Tactical Video Camera",
-     "seq": "R D D U L L U",
+     "seq": "R D D U L L U CW",
      "enabled": true,
      "steps": [
       {

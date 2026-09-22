@@ -25,6 +25,13 @@ sealed interface Step {
     /** Type a string: per-char key taps with [Settings.textDelayMs] gap. */
     data class TypeText(val text: String) : Step
 
+    /**
+     * Latch a key: the first press puts it down and leaves it there, the next
+     * press lifts it. Bound to a dial slot this is how CTRL is held while a
+     * stratagem code is typed; the engine also drops it when a sequence lands.
+     */
+    data class Hold(val key: String, val mods: Set<KeyMod> = emptySet()) : Step
+
     /** Idle wait in milliseconds. */
     data class Wait(val ms: Long) : Step
 

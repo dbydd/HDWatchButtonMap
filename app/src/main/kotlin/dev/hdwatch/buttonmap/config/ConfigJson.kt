@@ -287,6 +287,9 @@ object ConfigJson {
         o.optString("keyup").takeIf { it.isNotBlank() }?.let {
             return Step.KeyUp(it, optMods(o.optJSONArray("mods")))
         }
+        o.optString("hold").takeIf { it.isNotBlank() }?.let { name ->
+            return Step.Hold(name, optMods(o.optJSONArray("mods")))
+        }
         o.optString("text").takeIf { it.isNotEmpty() }?.let {
             return Step.TypeText(it)
         }
@@ -335,6 +338,10 @@ object ConfigJson {
         }
         is Step.KeyUp -> JSONObject().apply {
             put("keyup", step.key)
+            if (step.mods.isNotEmpty()) put("mods", JSONArray(step.mods.map { it.name.lowercase() }))
+        }
+        is Step.Hold -> JSONObject().apply {
+            put("hold", step.key)
             if (step.mods.isNotEmpty()) put("mods", JSONArray(step.mods.map { it.name.lowercase() }))
         }
         is Step.TypeText -> JSONObject().put("text", step.text)

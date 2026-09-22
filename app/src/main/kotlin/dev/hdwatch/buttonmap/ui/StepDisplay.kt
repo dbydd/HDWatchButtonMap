@@ -12,6 +12,10 @@ fun summarize(step: Step?): String = when (step) {
     }
     is Step.KeyDown -> "按住 ${step.key}"
     is Step.KeyUp -> "松开 ${step.key}"
+    is Step.Hold -> {
+        val mods = step.mods.sortedBy { it.ordinal }.joinToString("") { modShort(it) }
+        if (mods.isEmpty()) "锁存 ${step.key}" else "锁存 $mods+${step.key}"
+    }
     is Step.TypeText -> "打字「${step.text.take(8)}${if (step.text.length > 8) "…" else ""}」"
     is Step.Wait -> "等 ${step.ms}ms"
     is Step.Mouse -> {
