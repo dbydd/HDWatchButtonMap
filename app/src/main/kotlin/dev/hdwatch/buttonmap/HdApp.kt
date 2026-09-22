@@ -1,12 +1,14 @@
 package dev.hdwatch.buttonmap
 
 import android.app.Application
+import android.os.VibratorManager
 import dev.hdwatch.buttonmap.config.ConfigRepository
 import dev.hdwatch.buttonmap.engine.MacroRunner
 import dev.hdwatch.buttonmap.engine.SequenceEngine
 import dev.hdwatch.buttonmap.hid.ReportRing
 import dev.hdwatch.buttonmap.hid.TransportManager
 import dev.hdwatch.buttonmap.input.SensorHub
+import dev.hdwatch.buttonmap.ui.Haptics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,14 +29,20 @@ class HdApp : Application() {
         private set
     lateinit var sensorHub: SensorHub
         private set
+    lateinit var haptics: Haptics
+        private set
 
     override fun onCreate() {
         super.onCreate()
         instance = this
+        val vibrator = runCatching {
+            getSystemService(VibratorManager::class.java).defaultVibrator
+        }.getOrNull()
+        haptics = Haptics(vibrator)
         configRepo = ConfigRepository(this, ring)
         transports = TransportManager(this, ring)
         runner = MacroRunner(scope, transports, { configRepo.config.value.settings }, ring)
-        engine = SequenceEngine(configRepo, runner, scope, ring)
+        engine = SequenceEngine(configRepo, runner, scope, ring, onEvent = { haptics.onEvent(it) })
         sensorHub = SensorHub(this, configRepo, engine, ring)
     }
 

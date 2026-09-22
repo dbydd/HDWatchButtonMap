@@ -3,9 +3,12 @@ package dev.hdwatch.buttonmap.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +70,17 @@ fun PadScreen() {
 
     val measurer = rememberTextMeasurer()
     var pressed by remember { mutableStateOf<Symbol?>(null) }
+    val haptics = LocalHaptics.current
+
+    // firing pulse: gold halo sweeping from hub to rim
+    val flash = remember { Animatable(0f) }
+    LaunchedEffect(event) {
+        when (event) {
+            is EngineEvent.FiredMacro -> { flash.snapTo(1f); flash.animateTo(0f, tween(650)) }
+            is EngineEvent.FiredSingle -> { flash.snapTo(0.5f); flash.animateTo(0f, tween(320)) }
+            else -> Unit
+        }
+    }
 
     fun feedOrMenu(offset: Offset, w: Float, h: Float): Symbol? {
         val cx = w / 2f
@@ -92,6 +106,7 @@ fun PadScreen() {
                 detectTapGestures(
                     onPress = { off ->
                         pressed = feedOrMenu(off, size.width.toFloat(), size.height.toFloat())
+                        if (pressed != null) haptics.press()
                         tryAwaitRelease()
                         pressed = null
                     },
@@ -110,6 +125,17 @@ fun PadScreen() {
             val cy = size.height / 2f
             val radius = min(cx, cy)
             val s = radius * HUB_HALF
+
+            // firing halo: expanding ring between hub and rim
+            if (flash.value > 0.01f) {
+                val f = flash.value
+                drawCircle(
+                    color = palette.primary.copy(alpha = 0.55f * f),
+                    radius = (s * 1.42f) + (radius * 0.98f - s * 1.42f) * (1f - f),
+                    center = Offset(cx, cy),
+                    style = Stroke(width = (1f + 3f * f).dp.toPx()),
+                )
+            }
 
             // screen rim: silver hairline
             drawCircle(

@@ -44,6 +44,7 @@ class SequenceEngine(
     private val runner: MacroRunner,
     private val scope: CoroutineScope,
     private val ring: ReportRing,
+    private val onEvent: (EngineEvent) -> Unit = {},
 ) {
 
     private val lock = Any()
@@ -56,6 +57,11 @@ class SequenceEngine(
     private val _event = MutableStateFlow<EngineEvent>(EngineEvent.Idle)
     val event: StateFlow<EngineEvent> = _event.asStateFlow()
 
+    private fun emit(e: EngineEvent) {
+        _event.value = e
+        onEvent(e)
+    }
+
     fun feed(symbol: Symbol) = synchronized(lock) {
         val cfg = repo.config.value
         val attempt = buffer + symbol
@@ -65,14 +71,14 @@ class SequenceEngine(
             commitAttempt(attempt)
             finishBuffer()
             ring.log("ENG  ${render(attempt)} -> macro '${macro.name}'")
-            _event.value = EngineEvent.FiredMacro(macro)
+            emit(EngineEvent.FiredMacro(macro))
             runner.runMacro(macro)
             return@synchronized
         }
 
         if (isPrefix(macros, attempt)) {
             commitAttempt(attempt)
-            _event.value = EngineEvent.Pending(attempt)
+            emit(EngineEvent.Pending(attempt))
             ring.log("ENG  pend ${render(attempt)}")
             restartTimeout(cfg)
             return@synchronized
@@ -95,14 +101,14 @@ class SequenceEngine(
         matchExact(macros, listOf(symbol))?.let { macro ->
             buffer = emptyList()
             _bufferFlow.value = emptyList()
-            _event.value = EngineEvent.FiredMacro(macro)
+            emit(EngineEvent.FiredMacro(macro))
             runner.runMacro(macro)
             return
         }
         buffer = listOf(symbol)
         _bufferFlow.value = buffer
         if (isPrefix(macros, buffer)) {
-            _event.value = EngineEvent.Pending(buffer)
+            emit(EngineEvent.Pending(buffer))
             restartTimeout(cfg)
         } else {
             fireSingle(cfg, symbol)
@@ -113,11 +119,11 @@ class SequenceEngine(
         finishBuffer()
         val step = cfg.single[symbol]
         if (step == null) {
-            _event.value = EngineEvent.Unmapped(symbol)
+            emit(EngineEvent.Unmapped(symbol))
             ring.log("ENG  '${symbol.code}' unmapped")
             return
         }
-        _event.value = EngineEvent.FiredSingle(symbol, step)
+        emit(EngineEvent.FiredSingle(symbol, step))
         ring.log("ENG  '${symbol.code}' -> single $step")
         runner.runStep(step)
     }
@@ -128,7 +134,7 @@ class SequenceEngine(
         timeoutJob = null
         buffer = emptyList()
         _bufferFlow.value = emptyList()
-        _event.value = EngineEvent.Idle
+        emit(EngineEvent.Idle)
     }
 
     private fun commitAttempt(attempt: List<Symbol>) {
@@ -152,7 +158,7 @@ class SequenceEngine(
                 if (buffer.isNotEmpty()) {
                     ring.log("ENG  timeout, drop ${render(buffer)}")
                     finishBuffer()
-                    _event.value = EngineEvent.SequenceTimeout
+                    emit(EngineEvent.SequenceTimeout)
                 }
             }
         }

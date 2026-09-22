@@ -170,8 +170,18 @@ class MainActivity : ComponentActivity() {
     // ---------------------------------------------------------- rotary input
 
     override fun dispatchGenericMotionEvent(event: android.view.MotionEvent): Boolean {
+        val deltaRaw = dev.hdwatch.buttonmap.input.RotaryAccumulator.rotaryDelta(event)
+        if (app.configRepo.config.value.settings.captureUnknownInput && deltaRaw != 0f) {
+            app.ring.log(
+                "GEN  act=${android.view.MotionEvent.actionToString(event.action)} " +
+                    "src=0x${Integer.toHexString(event.source)} " +
+                    "scroll=${event.getAxisValue(android.view.MotionEvent.AXIS_SCROLL)} " +
+                    "v=${event.getAxisValue(android.view.MotionEvent.AXIS_VSCROLL)} " +
+                    "h=${event.getAxisValue(android.view.MotionEvent.AXIS_HSCROLL)}",
+            )
+        }
         if (nav.current == Route.Pad) {
-            val delta = dev.hdwatch.buttonmap.input.RotaryAccumulator.rotaryDelta(event)
+            val delta = deltaRaw
             if (delta != 0f) {
                 val s = app.configRepo.config.value.settings
                 rotary.feed(event, s.rotateThreshold, s.invertRotation).forEach { sym ->

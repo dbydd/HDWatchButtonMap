@@ -17,3 +17,5 @@ data class PlatformActions(
 )
 
 val LocalPlatformActions = staticCompositionLocalOf { PlatformActions() }
+
+val LocalHaptics = staticCompositionLocalOf { Haptics(null) }
