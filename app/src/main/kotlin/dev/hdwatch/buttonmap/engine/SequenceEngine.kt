@@ -145,13 +145,15 @@ class SequenceEngine(
             ring.log("ENG  '${symbol.code}' unmapped")
             return
         }
-        // A latch bound to the crown must not flicker: twisting three detents
-        // the same way is one gesture, so repeats inside the window are
-        // swallowed instead of toggling the key on/off/on/off.
-        if (step is Step.Hold && lastSource == InputSource.ROTARY) {
+        // Only a *latched* step bound to the crown is debounced — twisting
+        // three detents the same way is one toggle, not on/off/on. A crown
+        // mapped to a wheel (the direct profile) is untouched and keeps
+        // firing per detent.
+        val latchWindow = cfg.settings.rotaryLatchDebounceMs
+        if (step is Step.Hold && lastSource == InputSource.ROTARY && latchWindow > 0) {
             val now = android.os.SystemClock.uptimeMillis()
             val prev = lastLatchAt[symbol] ?: 0L
-            if (now - prev < LATCH_WINDOW_MS) {
+            if (now - prev < latchWindow) {
                 ring.log("ENG  '${symbol.code}' latch repeat ignored")
                 return
             }
@@ -220,8 +222,4 @@ class SequenceEngine(
         }
 
     private fun render(seq: List<Symbol>): String = seq.joinToString(" ") { it.code }
-    private companion object {
-        /** Same-direction detents inside this window count as one latch. */
-        const val LATCH_WINDOW_MS = 700L
-    }
 }

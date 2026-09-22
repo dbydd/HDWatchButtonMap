@@ -112,6 +112,12 @@ data class Settings(
     /** Per-character gap when typing text; also the down gap for single taps. */
     val textDelayMs: Long = 40,
     /**
+     * Repeat window for a *latched* step driven by the crown: detents inside
+     * it count as one toggle. It never applies to plain rotary mappings, so a
+     * wheel-bound crown keeps firing on every detent. 0 disables the guard.
+     */
+    val rotaryLatchDebounceMs: Long = 700,
+    /**
      * Upper bound of a random extra gap inserted between consecutive macro
      * key steps. Mechanical, perfectly even bursts look synthetic to game
      * input handlers; 0 disables the jitter.

@@ -35,7 +35,9 @@ network permission.
     slots — off by default.
 - **Hold steps** — `{"hold":"CTRL"}` latches a key: first press down, next press
   up. Holds are also dropped automatically when a sequence lands, times out, or
-  the pad closes, so nothing stays stuck on the host.
+  the pad closes, so nothing stays stuck on the host. A latch driven by the
+  crown is debounced (`rotaryLatchDebounceMs`, default 700 ms) so several
+  detents count as one toggle; a crown mapped to a wheel is never debounced.
 - **Key jitter** — a small randomised gap between macro key steps (default
   ≤25 ms, configurable, 0 disables); perfectly even bursts read as synthetic to
   game input handlers.
@@ -77,7 +79,8 @@ Config sketch:
 ```json
 {
   "version": 2,
-  "settings": { "rotateThreshold": 3, "sequenceTimeoutMs": 3000, "keyJitterMs": 25 },
+  "settings": { "rotateThreshold": 3, "sequenceTimeoutMs": 3000, "keyJitterMs": 25,
+                "rotaryLatchDebounceMs": 700 },
   "activeProfile": "macro",
   "profiles": [
     {
