@@ -11,6 +11,7 @@ import dev.hdwatch.buttonmap.hid.KeyTable
 import dev.hdwatch.buttonmap.hid.ReportRing
 import dev.hdwatch.buttonmap.hid.TransportManager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -28,10 +29,13 @@ class MacroRunner(
     private data class HeldKey(val key: HidKey, val mods: Set<KeyMod>)
 
     private val heldKeys = LinkedHashSet<HeldKey>()
+    /** KeyDown steps currently latched by a slot or a gesture. */
+    private val holds = LinkedHashSet<Step.KeyDown>()
     private var mouseButtons = 0
 
     fun runMacro(macro: Macro) {
-        scope.launch {
+        // Same trick as runStep: the first step hits the wire immediately.
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
             ring.log("MACRO ${macro.name} x${macro.repeat} (${macro.steps.size} steps)")
             repeat(macro.repeat) {
                 macro.steps.forEach { execute(it) }
@@ -40,7 +44,75 @@ class MacroRunner(
     }
 
     fun runStep(step: Step) {
-        scope.launch { execute(step) }
+        // UNDISPATCHED: the press/send part of the step runs inline on the
+        // caller's thread, so the HID report leaves the watch one hop earlier;
+        // only suspensions (delays) resume on the scope's dispatcher.
+        scope.launch(start = CoroutineStart.UNDISPATCHED) { execute(step) }
+    }
+
+    /**
+     * Hold-style step: a KeyDown goes down now and stays down until
+     * [releaseHold]; any other step kind just executes on press. This is what
+     * lets a dial slot (or a gesture) act as a held CTRL.
+     */
+    fun holdStep(step: Step) {
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            when (step) {
+                is Step.KeyDown -> {
+                    holds += step
+                    press(step.key, step.mods)
+                    sendKeyboard()
+                }
+                else -> execute(step)
+            }
+        }
+    }
+
+    /** Counterpart of [holdStep]: lifts a held KeyDown. */
+    fun releaseHold(step: Step) {
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            when (step) {
+                is Step.KeyDown -> {
+                    holds -= step
+                    release(step.key, step.mods)
+                    sendKeyboard()
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    /**
+     * Gesture-driven hold: a fist clench presses CTRL, the next one lifts it.
+     * Sensors report one-shot detections, so a toggle is the only honest
+     * mapping for a held modifier.
+     */
+    fun toggleHold(step: Step.KeyDown) {
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            if (holds.contains(step)) {
+                holds -= step
+                release(step.key, step.mods)
+            } else {
+                holds += step
+                press(step.key, step.mods)
+            }
+            sendKeyboard()
+        }
+    }
+
+    /**
+     * Drop every hold this runner still owns — called when a sequence lands,
+     * times out, or the pad goes away. Nothing stays stuck on the host.
+     */
+    fun releaseHolds() {
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            if (holds.isEmpty()) return@launch
+            val n = holds.size
+            holds.toList().forEach { h -> release(h.key, h.mods) }
+            holds.clear()
+            sendKeyboard()
+            ring.log("RUN  holds released ($n)")
+        }
     }
 
     /** Kill switch: every held key/button up. */

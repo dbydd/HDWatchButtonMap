@@ -89,6 +89,11 @@ object ConfigJson {
                     put("single", JSONObject().apply {
                         p.single.forEach { (sym, step) -> put(sym.code, stepJson(step)) }
                     })
+                    if (p.ringSteps.isNotEmpty()) {
+                        put("ring", JSONObject().apply {
+                            p.ringSteps.forEach { (slot, step) -> put(slot, stepJson(step)) }
+                        })
+                    }
                     put("macros", JSONArray().apply {
                         p.macros.forEach { m ->
                             put(JSONObject().apply {
@@ -161,7 +166,18 @@ object ConfigJson {
             val threshold = if (o.has("rotateThreshold")) o.optInt("rotateThreshold").takeIf { it >= 1 } else null
             val single = decodeSingleMap(o.optJSONObject("single"), "profiles[$i]($id)", problems)
             val macros = decodeMacros(o.optJSONArray("macros"), "profiles[$i]($id)", problems)
-            out += Profile(id, name, kind, single, macros, threshold)
+            val ring = LinkedHashMap<String, Step>()
+            o.optJSONObject("ring")?.keys()?.forEach { slot ->
+                val obj = runCatching { o.getJSONObject("ring").getJSONObject(slot) }.getOrNull()
+                if (obj == null) {
+                    problems += "profiles[$i]($id) ring.$slot: not an object"
+                } else {
+                    runCatching { decodeStep(obj) }
+                        .onSuccess { ring[slot] = it }
+                        .onFailure { problems += "profiles[$i]($id) ring.$slot: ${it.message}" }
+                }
+            }
+            out += Profile(id, name, kind, single, macros, threshold, ring)
         }
         return out
     }

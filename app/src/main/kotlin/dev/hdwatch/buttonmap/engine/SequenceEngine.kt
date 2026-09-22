@@ -27,6 +27,9 @@ sealed interface EngineEvent {
     data class Unmapped(val symbol: Symbol) : EngineEvent
 }
 
+/** Where a symbol came from; rotary stays silent because it fires densely. */
+enum class InputSource { TOUCH, ROTARY, SENSOR }
+
 /**
  * Input state machine over the *active profile*.
  *
@@ -43,25 +46,36 @@ class SequenceEngine(
     private val runner: MacroRunner,
     private val scope: CoroutineScope,
     private val ring: ReportRing,
-    private val onEvent: (EngineEvent) -> Unit = {},
+    private val onEvent: (EngineEvent, InputSource) -> Unit = { _, _ -> },
 ) {
 
     private val lock = Any()
     private var buffer: List<Symbol> = emptyList()
     private var timeoutJob: Job? = null
+    @Volatile private var lastSource: InputSource = InputSource.TOUCH
 
     private val _bufferFlow = MutableStateFlow<List<Symbol>>(emptyList())
     val bufferState: StateFlow<List<Symbol>> = _bufferFlow.asStateFlow()
+
+    /**
+     * Sequence so far with rotary entries dropped: the hub's hint panel keys
+     * off this, so twisting the crown never changes what the menu suggests.
+     */
+    private val _hintFlow = MutableStateFlow<List<Symbol>>(emptyList())
+    val hintState: StateFlow<List<Symbol>> = _hintFlow.asStateFlow()
+
+    private var bufferSources: List<InputSource> = emptyList()
 
     private val _event = MutableStateFlow<EngineEvent>(EngineEvent.Idle)
     val event: StateFlow<EngineEvent> = _event.asStateFlow()
 
     private fun emit(e: EngineEvent) {
         _event.value = e
-        onEvent(e)
+        onEvent(e, lastSource)
     }
 
-    fun feed(symbol: Symbol) = synchronized(lock) {
+    fun feed(symbol: Symbol, source: InputSource = InputSource.TOUCH) = synchronized(lock) {
+        lastSource = source
         val cfg = repo.config.value
         val profile = cfg.activeProfile
 
@@ -73,18 +87,20 @@ class SequenceEngine(
 
         val macros = profile.macros.filter { it.enabled && it.sequence.isNotEmpty() }
         val attempt = buffer + symbol
+        val attemptSources = bufferSources + source
 
         matchExact(macros, attempt)?.let { macro ->
-            commitAttempt(attempt)
+            commitAttempt(attempt, attemptSources)
             finishBuffer()
             ring.log("ENG  ${render(attempt)} -> macro '${macro.name}'")
             emit(EngineEvent.FiredMacro(macro))
+            runner.releaseHolds()
             runner.runMacro(macro)
             return@synchronized
         }
 
         if (isPrefix(macros, attempt)) {
-            commitAttempt(attempt)
+            commitAttempt(attempt, attemptSources)
             emit(EngineEvent.Pending(attempt))
             ring.log("ENG  pend ${render(attempt)}")
             restartTimeout(cfg)
@@ -96,7 +112,7 @@ class SequenceEngine(
             retrySolo(cfg, profile, symbol)
             return@synchronized
         }
-        commitAttempt(attempt)
+        commitAttempt(attempt, attemptSources)
         fireSingle(cfg, profile, symbol)
     }
 
@@ -110,7 +126,8 @@ class SequenceEngine(
             return
         }
         buffer = listOf(symbol)
-        _bufferFlow.value = buffer
+        bufferSources = listOf(lastSource)
+        publish()
         if (isPrefix(macros, buffer)) {
             emit(EngineEvent.Pending(buffer))
             restartTimeout(cfg)
@@ -128,6 +145,13 @@ class SequenceEngine(
             return
         }
         emit(EngineEvent.FiredSingle(symbol, step))
+        // A gesture carries no release edge, so a KeyDown bound to a sensor is
+        // a toggle: clench to hold CTRL, clench again to let go.
+        if (lastSource == InputSource.SENSOR && step is Step.KeyDown) {
+            runner.toggleHold(step)
+            ring.log("ENG  gesture '${symbol.code}' -> hold ${step.key} toggled")
+            return
+        }
         ring.log("ENG  '${symbol.code}' -> single $step")
         runner.runStep(step)
     }
@@ -137,21 +161,34 @@ class SequenceEngine(
         timeoutJob?.cancel()
         timeoutJob = null
         buffer = emptyList()
-        _bufferFlow.value = emptyList()
+        bufferSources = emptyList()
+        publish()
         _event.value = EngineEvent.Idle
+        runner.releaseHolds()
     }
 
-    private fun commitAttempt(attempt: List<Symbol>) {
+    private fun commitAttempt(attempt: List<Symbol>, sources: List<InputSource>) {
         timeoutJob?.cancel()
         buffer = attempt
-        _bufferFlow.value = attempt
+        bufferSources = sources
+        publish()
     }
 
     private fun finishBuffer() {
         timeoutJob?.cancel()
         timeoutJob = null
         buffer = emptyList()
-        _bufferFlow.value = emptyList()
+        bufferSources = emptyList()
+        publish()
+    }
+
+    private fun publish() {
+        _bufferFlow.value = buffer
+        _hintFlow.value = if (bufferSources.contains(InputSource.ROTARY)) {
+            buffer.filterIndexed { i, _ -> bufferSources.getOrNull(i) != InputSource.ROTARY }
+        } else {
+            buffer
+        }
     }
 
     private fun restartTimeout(cfg: Config) {
@@ -163,6 +200,7 @@ class SequenceEngine(
                     ring.log("ENG  timeout, drop ${render(buffer)}")
                     finishBuffer()
                     emit(EngineEvent.SequenceTimeout)
+                    runner.releaseHolds()
                 }
             }
         }

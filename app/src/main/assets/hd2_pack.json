@@ -1,0 +1,3141 @@
+{
+ "version": 2,
+ "settings": {
+  "rotateThreshold": 3,
+  "invertRotation": true,
+  "sequenceTimeoutMs": 3000,
+  "textDelayMs": 40,
+  "captureUnknownInput": true,
+  "forceLoggingTransport": false,
+  "gestureSensorsEnabled": true,
+  "keepAliveService": true,
+  "sensorToSymbol": {
+   "imu:shake": "G1"
+  }
+ },
+ "activeProfile": "hd2",
+ "profiles": [
+  {
+   "id": "hd2",
+   "name": "HD2",
+   "kind": "MACRO",
+   "single": {
+    "G1": {
+     "keydown": "CTRL"
+    },
+    "G2": {
+     "keydown": "SHIFT"
+    },
+    "G3": {
+     "keydown": "ALT"
+    },
+    "CW": {
+     "mouse": {
+      "wheel": -1
+     }
+    },
+    "CCW": {
+     "mouse": {
+      "wheel": 1
+     }
+    },
+    "S": {
+     "click": "left"
+    }
+   },
+   "macros": [
+    {
+     "id": "orbital-precision-strike",
+     "name": "Orbital Precision Strike",
+     "seq": "R R U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "orbital-gatling-barrage",
+     "name": "Orbital Gatling Barrage",
+     "seq": "R D L U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "orbital-gas-strike",
+     "name": "Orbital Gas Strike",
+     "seq": "R R D R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "orbital-120mm-he-barrage",
+     "name": "Orbital 120mm HE Barrage",
+     "seq": "R R D L R D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "orbital-airburst-strike",
+     "name": "Orbital Airburst Strike",
+     "seq": "R R R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "orbital-smoke-strike",
+     "name": "Orbital Smoke Strike",
+     "seq": "R R D U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "orbital-ems-strike",
+     "name": "Orbital EMS Strike",
+     "seq": "R R L D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "orbital-380mm-he-barrage",
+     "name": "Orbital 380mm HE Barrage",
+     "seq": "R D U U L D D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "orbital-walking-barrage",
+     "name": "Orbital Walking Barrage",
+     "seq": "R D R D R D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "orbital-laser",
+     "name": "Orbital Laser",
+     "seq": "R D U R D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "orbital-napalm-barrage",
+     "name": "Orbital Napalm Barrage",
+     "seq": "R R D L R U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "orbital-railcannon-strike",
+     "name": "Orbital Railcannon Strike",
+     "seq": "R U D D R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "eagle-gas-airstrike",
+     "name": "Eagle Gas Airstrike",
+     "seq": "U R L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "eagle-strafing-run",
+     "name": "Eagle Strafing Run",
+     "seq": "U R R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "eagle-airstrike",
+     "name": "Eagle Airstrike",
+     "seq": "U R D R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "eagle-cluster-bomb",
+     "name": "Eagle Cluster Bomb",
+     "seq": "U R D D R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "eagle-smoke-strike",
+     "name": "Eagle Smoke Strike",
+     "seq": "U R U D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "eagle-napalm-airstrike",
+     "name": "Eagle Napalm Airstrike",
+     "seq": "U R D U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "eagle-110mm-rocket-pods",
+     "name": "Eagle 110mm Rocket Pods",
+     "seq": "U R U L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "eagle-500kg-bomb",
+     "name": "Eagle 500kg Bomb",
+     "seq": "U R D D D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "mg-43-machine-gun",
+     "name": "MG-43 Machine Gun",
+     "seq": "D L D U R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "eat-17-expendable-anti-tank",
+     "name": "EAT-17 Expendable Anti-Tank",
+     "seq": "D D L U R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "m-105-stalwart",
+     "name": "M-105 Stalwart",
+     "seq": "D L D U U L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "las-98-laser-cannon",
+     "name": "LAS-98 Laser Cannon",
+     "seq": "D L D U L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "apw-1-anti-materiel-rifle",
+     "name": "APW-1 Anti-Materiel Rifle",
+     "seq": "D L R U D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "gr-8-recoilless-rifle",
+     "name": "GR-8 Recoilless Rifle",
+     "seq": "D L R R L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "gl-21-grenade-launcher",
+     "name": "GL-21 Grenade Launcher",
+     "seq": "D L U L D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "flam-40-flamethrower",
+     "name": "FLAM-40 Flamethrower",
+     "seq": "D L U D U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "mg-206-heavy-machine-gun",
+     "name": "MG-206 Heavy Machine Gun",
+     "seq": "D L U D D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "ac-8-autocannon",
+     "name": "AC-8 Autocannon",
+     "seq": "D L D U U R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "arc-3-arc-thrower",
+     "name": "ARC-3 Arc Thrower",
+     "seq": "D R D U L L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "las-99-quasar-cannon",
+     "name": "LAS-99 Quasar Cannon",
+     "seq": "D D U L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "rl-77-airburst-rocket-launcher",
+     "name": "RL-77 Airburst Rocket Launcher",
+     "seq": "D U U L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "mls-4x-commando",
+     "name": "MLS-4X Commando",
+     "seq": "D L U D R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "faf-14-spear",
+     "name": "FAF-14 Spear",
+     "seq": "D D U D D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "rs-422-railgun",
+     "name": "RS-422 Railgun",
+     "seq": "D R D U L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "sta-x3-w-a-s-p-launcher",
+     "name": "StA-X3 W.A.S.P. Launcher",
+     "seq": "D D U D R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "cqc-20-breaching-hammer",
+     "name": "CQC-20 Breaching Hammer",
+     "seq": "D L R L U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "plas-45-epoch",
+     "name": "PLAS-45 Epoch",
+     "seq": "D L U L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "mgx-42-bullet-storm",
+     "name": "MGX-42 Bullet Storm",
+     "seq": "D L D R U L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "s-11-speargun",
+     "name": "S-11 Speargun",
+     "seq": "D R D L U R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "cqc-9-defoliation-tool",
+     "name": "CQC-9 Defoliation Tool",
+     "seq": "D L R R D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "gl-52-de-escalator",
+     "name": "GL-52 De-Escalator",
+     "seq": "D R U L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "eat-700-expendable-napalm",
+     "name": "EAT-700 Expendable Napalm",
+     "seq": "D D L U L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "tx-41-sterilizer",
+     "name": "TX-41 Sterilizer",
+     "seq": "D L U D L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "eat-411-leveller",
+     "name": "EAT-411 Leveller",
+     "seq": "D D L U D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "gl-28-belt-fed-grenade-launcher",
+     "name": "GL-28 Belt-Fed Grenade Launcher",
+     "seq": "D L U L U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "b-md-c4-pack",
+     "name": "B/MD C4 Pack",
+     "seq": "D R U U R U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "ms-11-solo-silo",
+     "name": "MS-11 Solo Silo",
+     "seq": "D U R D D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "b-flam-80-cremator",
+     "name": "B/FLAM-80 Cremator",
+     "seq": "D D R D U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "m-1000-maxigun",
+     "name": "M-1000 Maxigun",
+     "seq": "D L R D U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "cqc-1-one-true-flag",
+     "name": "CQC-1 One True Flag",
+     "seq": "D L R R U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "40-k-meltagun",
+     "name": "40-K Meltagun",
+     "seq": "D L U L L D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "b-1-supply-pack",
+     "name": "B-1 Supply Pack",
+     "seq": "D L D U U D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "lift-850-jump-pack",
+     "name": "LIFT-850 Jump Pack",
+     "seq": "D U U D U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "sh-20-ballistic-shield-backpack",
+     "name": "SH-20 Ballistic Shield Backpack",
+     "seq": "D L D D U L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "ax-ar-23-guard-dog",
+     "name": "AX/AR-23 Guard Dog",
+     "seq": "D U L U R D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "ax-las-5-rover",
+     "name": "AX/LAS-5 Rover",
+     "seq": "D U L U R R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "sh-32-shield-generator-pack",
+     "name": "SH-32 Shield Generator Pack",
+     "seq": "D U L R L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "sh-51-directional-shield",
+     "name": "SH-51 Directional Shield",
+     "seq": "D U L R U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "ax-flam-75-hot-dog",
+     "name": "AX/FLAM-75 Hot Dog",
+     "seq": "D U L U L L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "b-100-portable-hellbomb",
+     "name": "B-100 Portable Hellbomb",
+     "seq": "D R U U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "ax-arc-3-k-9",
+     "name": "AX/ARC-3 K-9",
+     "seq": "D U L U R L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "lift-860-hover-pack",
+     "name": "LIFT-860 Hover Pack",
+     "seq": "D U U D L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "ax-tx-13-dog-breath",
+     "name": "AX/TX-13 Dog Breath",
+     "seq": "D U L U R U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "lift-182-warp-pack",
+     "name": "LIFT-182 Warp Pack",
+     "seq": "D L R D L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "m-103-supply-frv",
+     "name": "M-103 Supply FRV",
+     "seq": "L D L L D U R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "m-104-incinerator-frv",
+     "name": "M-104 Incinerator FRV",
+     "seq": "L D R L D U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "exo-49-emancipator-exosuit",
+     "name": "EXO-49 Emancipator Exosuit",
+     "seq": "L D R U L D U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "exo-45-patriot-exosuit",
+     "name": "EXO-45 Patriot Exosuit",
+     "seq": "L D R U L D D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "m-102-gunner-frv",
+     "name": "M-102 Gunner FRV",
+     "seq": "L D R D R D U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "td-220-bastion-mk-xvi",
+     "name": "TD-220 Bastion MK XVI",
+     "seq": "L D R D L D U D U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "exo-55-breakthrough-exosuit",
+     "name": "EXO-55 Breakthrough Exosuit",
+     "seq": "L D R L R D U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "exo-51-lumberer-exosuit",
+     "name": "EXO-51 Lumberer Exosuit",
+     "seq": "L D R U R L U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "a-mg-43-machine-gun-sentry",
+     "name": "A/MG-43 Machine Gun Sentry",
+     "seq": "D U R R U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "a-g-16-gatling-sentry",
+     "name": "A/G-16 Gatling Sentry",
+     "seq": "D U R L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "a-ac-8-autocannon-sentry",
+     "name": "A/AC-8 Autocannon Sentry",
+     "seq": "D U R U L U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "a-m-12-mortar-sentry",
+     "name": "A/M-12 Mortar Sentry",
+     "seq": "D U R R D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "a-mls-4x-rocket-sentry",
+     "name": "A/MLS-4X Rocket Sentry",
+     "seq": "D U R R L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "a-arc-3-tesla-tower",
+     "name": "A/ARC-3 Tesla Tower",
+     "seq": "D U R U L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "a-m-23-ems-mortar-sentry",
+     "name": "A/M-23 EMS Mortar Sentry",
+     "seq": "D U R D R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "a-las-98-laser-sentry",
+     "name": "A/LAS-98 Laser Sentry",
+     "seq": "D U R D U R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "a-flam-40-flame-sentry",
+     "name": "A/FLAM-40 Flame Sentry",
+     "seq": "D U R D U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "a-gm-17-gas-mortar-sentry",
+     "name": "A/GM-17 Gas Mortar Sentry",
+     "seq": "D U R D L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "md-6-anti-personnel-minefield",
+     "name": "MD-6 Anti-Personnel Minefield",
+     "seq": "D L U R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "md-i4-incendiary-mines",
+     "name": "MD-I4 Incendiary Mines",
+     "seq": "D L L D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "md-17-anti-tank-mines",
+     "name": "MD-17 Anti-Tank Mines",
+     "seq": "D L U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "fx-12-shield-generator-relay",
+     "name": "FX-12 Shield Generator Relay",
+     "seq": "D D L R L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "e-mg-101-hmg-emplacement",
+     "name": "E/MG-101 HMG Emplacement",
+     "seq": "D U L R R L",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "e-gl-21-grenadier-battlement",
+     "name": "E/GL-21 Grenadier Battlement",
+     "seq": "D R D L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "md-8-gas-mines",
+     "name": "MD-8 Gas Mines",
+     "seq": "D L L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "e-at-12-anti-tank-emplacement",
+     "name": "E/AT-12 Anti-Tank Emplacement",
+     "seq": "D U L R R R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "eagle-rearm",
+     "name": "Eagle Rearm",
+     "seq": "U U L U R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "call-in-super-destroyer",
+     "name": "Call In Super Destroyer",
+     "seq": "U U D D L R L R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "sos-beacon",
+     "name": "SoS Beacon",
+     "seq": "U D R U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "resupply",
+     "name": "Resupply",
+     "seq": "D D U R",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "reinforce",
+     "name": "Reinforce",
+     "seq": "U D R L U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "cargo-container",
+     "name": "Cargo Container",
+     "seq": "U U D D R D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "nux-223-hellbomb",
+     "name": "NUX-223 Hellbomb",
+     "seq": "D U L D U R D U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "seismic-probe",
+     "name": "Seismic Probe",
+     "seq": "U U L R D D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "sssd-delivery",
+     "name": "SSSD Delivery",
+     "seq": "D D D D D U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "tectonic-drill",
+     "name": "Tectonic Drill",
+     "seq": "U D U D U D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "upload-data",
+     "name": "Upload Data",
+     "seq": "L R U U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "reinforcement-pods",
+     "name": "Reinforcement Pods",
+     "seq": "L R U U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "aquifer-drill",
+     "name": "Aquifer Drill",
+     "seq": "L L L U D R D D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "A"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "portable-comms-relay",
+     "name": "Portable Comms Relay",
+     "seq": "U U D D L L D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "prospecting-drill",
+     "name": "Prospecting Drill",
+     "seq": "D D L R D D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "hive-breaker-drill",
+     "name": "Hive Breaker Drill",
+     "seq": "L U D R D D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "activate-e-711-extraction-drill",
+     "name": "Activate E-711 Extraction Drill",
+     "seq": "D D L L D D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "dark-fluid-vessel",
+     "name": "Dark Fluid Vessel",
+     "seq": "U L R D U U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "super-earth-flag",
+     "name": "Super Earth Flag",
+     "seq": "D U D U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "seaf-artillery",
+     "name": "SEAF Artillery",
+     "seq": "R U U D",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    },
+    {
+     "id": "tactical-video-camera",
+     "name": "Tactical Video Camera",
+     "seq": "R D D U L L U",
+     "enabled": true,
+     "steps": [
+      {
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "click": "left"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

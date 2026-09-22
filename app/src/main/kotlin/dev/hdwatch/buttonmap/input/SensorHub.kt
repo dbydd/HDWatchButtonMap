@@ -8,6 +8,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Build
 import dev.hdwatch.buttonmap.config.ConfigRepository
+import dev.hdwatch.buttonmap.engine.InputSource
 import dev.hdwatch.buttonmap.engine.SequenceEngine
 import dev.hdwatch.buttonmap.hid.ReportRing
 import java.lang.reflect.Modifier
@@ -242,7 +243,8 @@ class SensorHub(
     private fun fire(capabilityId: String, symbol: Symbol) {
         val label = entries.firstOrNull { it.id == capabilityId }?.label ?: capabilityId
         ring.log("SNS  $label -> ${symbol.code}")
-        engine.feed(symbol)
+        // Tag the origin: a KeyDown bound to a sensor latches instead of tapping.
+        engine.feed(symbol, InputSource.SENSOR)
     }
 
     private val gateEnabled: Boolean

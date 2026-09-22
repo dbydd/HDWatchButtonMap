@@ -4,13 +4,18 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,6 +47,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -75,6 +82,7 @@ fun PadScreen() {
 
     val config by app.configRepo.config.collectAsState()
     val buffer by app.engine.bufferState.collectAsState()
+    val hint by app.engine.hintState.collectAsState()
     val event by app.engine.event.collectAsState()
     val transport = remember(config.settings.forceLoggingTransport) {
         app.transports.forSettings(config.settings)
@@ -95,12 +103,10 @@ fun PadScreen() {
     var hot by remember { mutableStateOf(false) }
     LaunchedEffect(pulse) {
         if (pulse == 0) return@LaunchedEffect
-        repeat(2) {
-            hot = true
-            delay(110)
-            hot = false
-            delay(110)
-        }
+        // One soft pulse per action — no strobing.
+        hot = true
+        delay(150)
+        hot = false
     }
     val flare by animateFloatAsState(
         targetValue = if (hot) 1f else 0f,
@@ -120,131 +126,34 @@ fun PadScreen() {
             profile.macros.filter { it.enabled }.forEach { m -> m.sequence.firstOrNull()?.let { add(it) } }
         }
     }
-    // Which keycap is under the finger (drives the gold flood in the Canvas).
-    var pressedDir by remember { mutableStateOf<ArcDir?>(null) }
+    // Which keycap is under the finger. Held in a state holder that is read
+    // only inside the draw lambda: a press repaints the dial without
+    // recomposing the screen (worth ~10ms a tap on this SoC).
+    val pressedDir = remember { mutableStateOf<ArcDir?>(null) }
 
-    Box(
+    // Keys mode: the confirmation line clears itself 0.8s after the press.
+    var showEvent by remember { mutableStateOf(false) }
+    LaunchedEffect(event) {
+        showEvent = event != EngineEvent.Idle
+        if (showEvent) {
+            delay(800)
+            showEvent = false
+        }
+    }
+
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(palette.edge),
     ) {
-        // ---- dial face: pure decoration ----
-        Canvas(Modifier.fillMaxSize()) {
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            val R = size.minDimension / 2f
-            // Dial bearing: 0° = up, clockwise, degrees in — radians inside.
-            fun at(angleDeg: Double, radius: Float): Offset {
-                val rad = Math.toRadians(angleDeg)
-                return Offset(
-                    cx + (radius * sin(rad)).toFloat(),
-                    cy - (radius * cos(rad)).toFloat(),
-                )
-            }
-
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(palette.surface, palette.background, palette.edge),
-                    center = Offset(cx, cy),
-                    radius = R,
-                ),
-                radius = R,
-                center = Offset(cx, cy),
-            )
-            // Sunburst rays.
-            var i = 0
-            while (i < 72) {
-                val a = i * 5.0
-                val major = i % 3 == 0
-                drawLine(
-                    color = palette.primary.copy(alpha = if (major) 0.17f else 0.07f),
-                    start = at(a, R * if (major) 0.53f else 0.56f),
-                    end = at(a, R * if (major) 0.99f else 0.94f),
-                    strokeWidth = if (major) 1.4f else 1f,
-                )
-                i++
-            }
-            // Structural rings.
-            drawCircle(
-                color = palette.primary.copy(alpha = 0.24f + 0.25f * flare),
-                radius = R * 0.965f,
-                center = Offset(cx, cy),
-                style = Stroke(1.5f),
-            )
-            drawCircle(
-                color = palette.primary.copy(alpha = 0.10f),
-                radius = R * 0.885f,
-                center = Offset(cx, cy),
-                style = Stroke(1f),
-            )
-            // Outer minute ticks, skipping the four keycap axes.
-            i = 0
-            while (i < 24) {
-                val a = i * 15.0
-                if (i % 6 != 0) {
-                    drawLine(
-                        palette.primary.copy(alpha = 0.60f),
-                        at(a, R * 0.915f),
-                        at(a, R * 0.955f),
-                        2f,
-                    )
-                }
-                i++
-            }
-            // Dashed gold ring threading through the eight text inputs.
-            i = 0
-            while (i < 48) {
-                val a = i * 7.5
-                drawLine(
-                    color = palette.primary.copy(alpha = 0.38f),
-                    start = at(a, R * 0.7345f),
-                    end = at(a + 4.2, R * 0.7345f),
-                    strokeWidth = 1.6f,
-                )
-                i++
-            }
-            // ---- keycap sectors: true annular fans at real radii, so the
-            // painted band always spans inner 62dp → outer 104dp exactly
-            // (8dp clear of the hub edge) ----
-            val rIn = R * 0.5487f
-            val rOut = R * 0.9204f
-            val half = 24f
-            ArcDir.entries.forEach { dir ->
-                val start = dir.dialAngle - 90f - half
-                val outerRect = Rect(cx - rOut, cy - rOut, cx + rOut, cy + rOut)
-                val innerRect = Rect(cx - rIn, cy - rIn, cx + rIn, cy + rIn)
-                val fan = Path().apply {
-                    arcTo(outerRect, start, half * 2f, true)
-                    arcTo(innerRect, start + half * 2f, -half * 2f, false)
-                    close()
-                }
-                if (pressedDir == dir) {
-                    drawPath(
-                        fan,
-                        brush = Brush.linearGradient(
-                            listOf(
-                                androidx.compose.ui.graphics.lerp(palette.primary, Color.White, 0.35f),
-                                palette.primary,
-                                palette.goldDeep,
-                            ),
-                        ),
-                    )
-                } else {
-                    drawPath(
-                        fan,
-                        brush = Brush.verticalGradient(listOf(palette.panelTop, palette.panelBottom)),
-                        alpha = 0.97f,
-                    )
-                }
-                drawPath(
-                    fan,
-                    brush = Brush.linearGradient(
-                        listOf(Color.White.copy(alpha = 0.26f), palette.primary.copy(alpha = 0.38f)),
-                    ),
-                    style = Stroke(2f),
-                )
-            }
-        }
+        // ---- dial face: the static geometry is one path per ink group and is
+        // remembered per size; the per-frame work is a dozen draw calls, not
+        // the ~200 the first version issued (48ms frames on the watch) ----
+        val density = LocalDensity.current
+        val wPx = with(density) { maxWidth.toPx() }
+        val hPx = with(density) { maxHeight.toPx() }
+        val dial = remember(wPx, hPx, palette) { buildDial(wPx, hPx, palette) }
+        Canvas(Modifier.fillMaxSize()) { drawDial(dial, palette, { flare }, pressedDir.value) }
 
         // ---- live symbol ring: bare text pairs in the diagonal gaps ----
         val ringPairs = listOf(
@@ -256,13 +165,16 @@ fun PadScreen() {
         ringPairs.forEach { (center, pair) ->
             // Keep clear of the keycap angular footprint: hug the diagonal.
             listOf(pair.first to -7.0, pair.second to 7.0).forEach { (sym, off) ->
+                val hold = profile.ringSteps[sym.code]
                 RingSymbol(
                     symbol = sym,
-                    active = sym in liveSymbols,
+                    active = hold != null || sym in liveSymbols,
                     angleDeg = center + off,
                     radiusDp = 83f,
                     modifier = Modifier.align(Alignment.Center),
-                ) { feed(sym) }
+                    onPress = { if (hold != null) app.runner.holdStep(hold) else feed(sym) },
+                    onRelease = { hold?.let { app.runner.releaseHold(it) } },
+                )
             }
         }
 
@@ -273,7 +185,7 @@ fun PadScreen() {
                 .align(Alignment.Center)
                 .offset(y = (-83).dp)
                 .size(width = 68.dp, height = 42.dp),
-            onPressedChange = { pressedDir = if (it) ArcDir.UP else null },
+            onPressedChange = { pressedDir.value = if (it) ArcDir.UP else null },
         ) { feed(Symbol.UP) }
         ArrowCap(
             symbol = Symbol.DOWN,
@@ -281,7 +193,7 @@ fun PadScreen() {
                 .align(Alignment.Center)
                 .offset(y = 83.dp)
                 .size(width = 68.dp, height = 42.dp),
-            onPressedChange = { pressedDir = if (it) ArcDir.DOWN else null },
+            onPressedChange = { pressedDir.value = if (it) ArcDir.DOWN else null },
         ) { feed(Symbol.DOWN) }
         ArrowCap(
             symbol = Symbol.LEFT,
@@ -289,7 +201,7 @@ fun PadScreen() {
                 .align(Alignment.Center)
                 .offset(x = (-83).dp)
                 .size(width = 42.dp, height = 68.dp),
-            onPressedChange = { pressedDir = if (it) ArcDir.LEFT else null },
+            onPressedChange = { pressedDir.value = if (it) ArcDir.LEFT else null },
         ) { feed(Symbol.LEFT) }
         ArrowCap(
             symbol = Symbol.RIGHT,
@@ -297,16 +209,18 @@ fun PadScreen() {
                 .align(Alignment.Center)
                 .offset(x = 83.dp)
                 .size(width = 42.dp, height = 68.dp),
-            onPressedChange = { pressedDir = if (it) ArcDir.RIGHT else null },
+            onPressedChange = { pressedDir.value = if (it) ArcDir.RIGHT else null },
         ) { feed(Symbol.RIGHT) }
 
         // ---- hub plaque ----
         HubCard(
             profile = profile,
             buffer = buffer,
+            hint = hint,
+            showEvent = showEvent,
             event = event,
             link = linkCode(transportStatus),
-            flare = flare,
+            flareProvider = { flare },
             modifier = Modifier
                 .align(Alignment.Center)
                 .size(108.dp),
@@ -327,7 +241,8 @@ private fun RingSymbol(
     angleDeg: Double,
     radiusDp: Float,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit,
+    onPress: () -> Unit,
+    onRelease: () -> Unit,
 ) {
     val palette = LocalHdPalette.current
     val dx = sin(Math.toRadians(angleDeg)).toFloat()
@@ -345,11 +260,15 @@ private fun RingSymbol(
             .graphicsLayer {
                 rotationZ = if (angleDeg <= 180) (angleDeg + 90).toFloat() else (angleDeg - 90).toFloat()
             }
-            .clickable(
-                interactionSource = null,
-                indication = null,
-                onClick = onClick,
-            )
+            // Fire on touch-down; hold slots lift their key on release.
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false)
+                    onPress()
+                    waitForUpOrCancellation()
+                    onRelease()
+                }
+            }
             .padding(horizontal = 5.dp, vertical = 4.dp),
     )
 }
@@ -368,23 +287,32 @@ private fun ArrowCap(
     symbol: Symbol,
     onPressedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit,
+    onPress: () -> Unit,
 ) {
     val palette = LocalHdPalette.current
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    LaunchedEffect(pressed) { onPressedChange(pressed) }
+    var held by remember { mutableStateOf(false) }
     Box(
-        modifier = modifier.combinedClickable(
-            interactionSource = interaction,
-            indication = null,
-            onClick = onClick,
-        ),
+        modifier = modifier.pointerInput(Unit) {
+            awaitEachGesture {
+                // Down = action: no tap timeout, no up-wait. The host gets the
+                // report while the finger is still on the glass.
+                val down = awaitFirstDown(requireUnconsumed = false)
+                HdApp.instance.ring.log(
+                    "UI  touch->fire ${android.os.SystemClock.uptimeMillis() - down.uptimeMillis}ms",
+                )
+                held = true
+                onPressedChange(true)
+                onPress()
+                waitForUpOrCancellation()
+                held = false
+                onPressedChange(false)
+            }
+        },
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = symbol.display,
-            color = if (pressed) palette.onPrimary else palette.text,
+            color = if (held) palette.onPrimary else palette.text,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
@@ -400,14 +328,19 @@ private fun ArrowCap(
 private fun HubCard(
     profile: dev.hdwatch.buttonmap.config.Profile,
     buffer: List<Symbol>,
+    hint: List<Symbol>,
+    showEvent: Boolean,
     event: EngineEvent,
     link: String,
-    flare: Float,
+    flareProvider: () -> Float,
     onCycle: () -> Unit,
     onMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalHdPalette.current
+    // Read here on purpose: the medallion halo follows the flash, and this
+    // small subtree recomposing beats the whole screen doing it.
+    val flare = flareProvider()
     val outerShape = remember(modifier) { OctagonShape(7.dp) }
     val innerShape = remember(modifier) { OctagonShape(5.dp) }
     Box(modifier) {
@@ -415,7 +348,7 @@ private fun HubCard(
         Box(
             Modifier
                 .fillMaxSize()
-                .border(1.dp, palette.primary.copy(alpha = 0.30f + 0.3f * flare), outerShape),
+                .border(1.dp, palette.primary.copy(alpha = 0.28f + 0.15f * flare), outerShape),
         )
         // Panel.
         Box(
@@ -426,7 +359,7 @@ private fun HubCard(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            androidx.compose.ui.graphics.lerp(palette.panelTop, palette.primary, 0.05f + 0.18f * flare),
+                            androidx.compose.ui.graphics.lerp(palette.panelTop, palette.primary, 0.04f + 0.10f * flare),
                             palette.panelBottom,
                         ),
                     ),
@@ -438,7 +371,7 @@ private fun HubCard(
                         listOf(
                             Color.White.copy(alpha = 0.22f),
                             palette.hairline,
-                            palette.primary.copy(alpha = 0.35f + 0.4f * flare),
+                            palette.primary.copy(alpha = 0.32f + 0.20f * flare),
                         ),
                     ),
                     innerShape,
@@ -470,50 +403,55 @@ private fun HubCard(
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                if (buffer.isNotEmpty()) {
-                    // Live sequence takes the stage.
-                    Text(
-                        text = buffer.joinToString(" ") { it.display },
-                        fontFamily = FontFamily.Monospace,
-                        color = palette.primary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                    )
-                } else if (profile.kind == ProfileKind.MACRO) {
-                    // Macro mode: the usable sequences, nothing else.
-                    val macros = profile.macros.filter { it.enabled }
-                    if (macros.isEmpty()) {
-                        Text("无启用宏", color = palette.muted, fontSize = 9.sp, maxLines = 1)
-                    } else {
-                        macros.take(4).forEach { m ->
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (profile.kind == ProfileKind.MACRO) {
+                    // Macro mode: the typed prefix (touch only) on top, then
+                    // whatever matches it. Nothing typed = nothing suggested.
+                    if (buffer.isNotEmpty()) {
+                        Text(
+                            text = buffer.joinToString(" ") { it.display ?: it.code },
+                            fontFamily = FontFamily.Monospace,
+                            color = palette.primary,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                        )
+                        Spacer(Modifier.height(3.dp))
+                        val shown = if (hint.isEmpty()) {
+                            emptyList()
+                        } else {
+                            profile.macros.filter {
+                                it.enabled && it.sequence.size >= hint.size &&
+                                    it.sequence.subList(0, hint.size) == hint
+                            }
+                        }
+                        shown.take(3).forEach { m ->
+                            Row(
+                                modifier = Modifier.basicMarquee(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
                                 Text(
                                     text = m.name,
-                                    fontSize = 8.5.sp,
+                                    fontSize = 6.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = if (m == macros.first()) palette.primary else palette.primary.copy(alpha = 0.7f),
+                                    color = if (m == shown.first()) palette.primary else palette.primary.copy(alpha = 0.7f),
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f, fill = false),
                                 )
                                 Text(
                                     text = m.sequence.joinToString("") { it.display ?: it.code },
                                     fontFamily = FontFamily.Monospace,
-                                    fontSize = 7.5.sp,
+                                    fontSize = 6.sp,
                                     color = palette.secondary.copy(alpha = 0.75f),
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
                         }
                     }
                 } else {
-                    // Silence when idle: the dial needs no "standby" caption.
-                    if (event != EngineEvent.Idle) {
+                    // Keys mode: confirmation line, self-clearing after 0.8s.
+                    if (event != EngineEvent.Idle && showEvent) {
                         Text(
                             text = eventLine(event),
                             color = when (event) {
@@ -560,5 +498,144 @@ private fun eventLine(event: EngineEvent): String = when (event) {
     is EngineEvent.Pending -> "序列中 ${event.buffer.joinToString(" ") { it.display }}"
     EngineEvent.SequenceTimeout -> "序列超时清空"
     EngineEvent.Idle -> "待命"
+}
+
+/** Static dial geometry: one path per ink group, built once per size. */
+private class DialGeometry(
+    val cx: Float,
+    val cy: Float,
+    val radius: Float,
+    val dome: Brush,
+    val majorRays: Path,
+    val minorRays: Path,
+    val ticks: Path,
+    val dashes: Path,
+    val fans: Map<ArcDir, Path>,
+    val panelBrush: Brush,
+    val rimBrush: Brush,
+    val goldBrush: Brush,
+) {
+    val dashRingRadius = radius * 0.7345f
+}
+
+private fun buildDial(width: Float, height: Float, palette: HdPalette): DialGeometry {
+    val cx = width / 2f
+    val cy = height / 2f
+    val r = minOf(width, height) / 2f
+    // Dial bearing: 0° = up, clockwise, degrees in — radians inside.
+    fun at(angleDeg: Double, radius: Float): Offset {
+        val rad = Math.toRadians(angleDeg)
+        return Offset(cx + (radius * sin(rad)).toFloat(), cy - (radius * cos(rad)).toFloat())
+    }
+    fun Path.segment(from: Offset, to: Offset) {
+        moveTo(from.x, from.y)
+        lineTo(to.x, to.y)
+    }
+
+    val majorRays = Path()
+    val minorRays = Path()
+    var i = 0
+    while (i < 72) {
+        val a = i * 5.0
+        if (i % 3 == 0) majorRays.segment(at(a, r * 0.53f), at(a, r * 0.99f))
+        else minorRays.segment(at(a, r * 0.56f), at(a, r * 0.94f))
+        i++
+    }
+    val ticks = Path()
+    i = 0
+    while (i < 24) {
+        if (i % 6 != 0) {
+            val a = i * 15.0
+            ticks.segment(at(a, r * 0.915f), at(a, r * 0.955f))
+        }
+        i++
+    }
+    val dashes = Path()
+    i = 0
+    while (i < 48) {
+        val a = i * 7.5
+        dashes.segment(at(a, r * 0.7345f), at(a + 4.2, r * 0.7345f))
+        i++
+    }
+    // Keycap sectors: true annular fans at real radii (inner 62dp → outer
+    // 104dp on a 113dp dial), drawn once per size.
+    val rIn = r * 0.5487f
+    val rOut = r * 0.9204f
+    val half = 24f
+    val fans = ArcDir.entries.associateWith { dir ->
+        val start = dir.dialAngle - 90f - half
+        Path().apply {
+            arcTo(Rect(cx - rOut, cy - rOut, cx + rOut, cy + rOut), start, half * 2f, true)
+            arcTo(Rect(cx - rIn, cy - rIn, cx + rIn, cy + rIn), start + half * 2f, -half * 2f, false)
+            close()
+        }
+    }
+    return DialGeometry(
+        cx = cx,
+        cy = cy,
+        radius = r,
+        dome = Brush.radialGradient(
+            listOf(palette.surface, palette.background, palette.edge),
+            Offset(cx, cy),
+            r,
+        ),
+        majorRays = majorRays,
+        minorRays = minorRays,
+        ticks = ticks,
+        dashes = dashes,
+        fans = fans,
+        panelBrush = Brush.verticalGradient(listOf(palette.panelTop, palette.panelBottom)),
+        rimBrush = Brush.linearGradient(
+            listOf(Color.White.copy(alpha = 0.26f), palette.primary.copy(alpha = 0.38f)),
+        ),
+        goldBrush = Brush.linearGradient(
+            listOf(
+                androidx.compose.ui.graphics.lerp(palette.primary, Color.White, 0.35f),
+                palette.primary,
+                palette.goldDeep,
+            ),
+        ),
+    )
+}
+
+/** Per-frame dial paint: a dozen draw calls, however dense the face is. */
+private fun DrawScope.drawDial(
+    g: DialGeometry,
+    palette: HdPalette,
+    flareProvider: () -> Float,
+    pressed: ArcDir?,
+) {
+    val flare = flareProvider()
+    drawCircle(g.dome, g.radius, Offset(g.cx, g.cy))
+    drawPath(g.majorRays, palette.primary.copy(alpha = 0.17f), style = Stroke(1.4f))
+    drawPath(g.minorRays, palette.primary.copy(alpha = 0.07f), style = Stroke(1f))
+    drawCircle(
+        color = palette.primary.copy(alpha = 0.24f + 0.12f * flare),
+        radius = g.radius * 0.965f,
+        center = Offset(g.cx, g.cy),
+        style = Stroke(1.5f),
+    )
+    drawCircle(
+        color = palette.primary.copy(alpha = 0.10f),
+        radius = g.radius * 0.885f,
+        center = Offset(g.cx, g.cy),
+        style = Stroke(1f),
+    )
+    drawPath(g.ticks, palette.primary.copy(alpha = 0.60f), style = Stroke(2f))
+    drawPath(g.dashes, palette.primary.copy(alpha = 0.38f), style = Stroke(1.6f))
+    if (flare > 0.01f) {
+        // Ignition: the dashed ring turns solid and thickens.
+        drawCircle(
+            color = palette.primary.copy(alpha = 0.30f + 0.55f * flare),
+            radius = g.dashRingRadius,
+            center = Offset(g.cx, g.cy),
+            style = Stroke(1.6f + (2.dp.toPx() - 1.6f) * flare),
+        )
+    }
+    ArcDir.entries.forEach { dir ->
+        val fan = g.fans.getValue(dir)
+        if (pressed == dir) drawPath(fan, g.goldBrush) else drawPath(fan, g.panelBrush, alpha = 0.97f)
+        drawPath(fan, g.rimBrush, style = Stroke(2f))
+    }
 }
 

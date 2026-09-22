@@ -145,6 +145,35 @@ class ConfigRepository(
         cfg.copy(profiles = cfg.profiles.map { if (it.id == id) transform(it) else it })
     }
 
+    /**
+     * Install a bundled profile pack (the five-tap easter egg): a profile with
+     * the same id is replaced, and the pack becomes the active surface.
+     */
+    fun installBundledPack(assetName: String): Boolean = try {
+        val text = app.assets.open(assetName).bufferedReader().use { it.readText() }
+        val profile = ConfigJson.decode(text).profiles.firstOrNull()
+            ?: throw IllegalStateException("pack has no profile")
+        val packCfg = ConfigJson.decode(text)
+        update { cfg ->
+            cfg.copy(
+                profiles = cfg.profiles.filterNot { it.id == profile.id } + profile,
+                activeProfileId = profile.id,
+                // Take the pack's gesture wiring, keep the user's own calibration.
+                settings = cfg.settings.copy(
+                    gestureSensorsEnabled = packCfg.settings.gestureSensorsEnabled ||
+                        cfg.settings.gestureSensorsEnabled,
+                    sensorToSymbol = cfg.settings.sensorToSymbol + packCfg.settings.sensorToSymbol,
+                ),
+            )
+        }
+        _status.value = "已解锁 ${profile.name}：${profile.macros.size} 条呼叫"
+        ring.log("CFG  pack $assetName installed (${profile.macros.size} macros)")
+        true
+    } catch (e: Exception) {
+        _status.value = "解锁失败：${e.message}"
+        false
+    }
+
     // -------------------------------------------------------------- internals
     private fun seedFromAssets() {
         val text = runCatching {

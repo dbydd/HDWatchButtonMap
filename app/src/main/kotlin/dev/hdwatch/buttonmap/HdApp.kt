@@ -5,6 +5,7 @@ import android.os.VibratorManager
 import dev.hdwatch.buttonmap.config.ConfigRepository
 import dev.hdwatch.buttonmap.engine.MacroRunner
 import dev.hdwatch.buttonmap.engine.SequenceEngine
+import dev.hdwatch.buttonmap.engine.InputSource
 import dev.hdwatch.buttonmap.hid.ReportRing
 import dev.hdwatch.buttonmap.hid.TransportManager
 import dev.hdwatch.buttonmap.input.SensorHub
@@ -43,7 +44,10 @@ class HdApp : Application() {
         configRepo = ConfigRepository(this, ring)
         transports = TransportManager(this, ring)
         runner = MacroRunner(scope, transports, { configRepo.config.value.settings }, ring)
-        engine = SequenceEngine(configRepo, runner, scope, ring, onEvent = { haptics.onEvent(it) })
+        // Rotary buzzes once per notch — far too dense for a wrist; it stays silent.
+        engine = SequenceEngine(configRepo, runner, scope, ring) { e, src ->
+            if (src != InputSource.ROTARY) haptics.onEvent(e)
+        }
         gestures = SensorHub(this, configRepo, engine, ring)
         // Watch profile/settings changes to move the keep-alive service.
         scope.launch {

@@ -98,6 +98,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         app.gestures.stop()
+        // A hold slot (CTRL) must never survive the pad going away.
+        app.runner.emergencyRelease()
         app.engine.reset()
         nav.popToPad()
         super.onStop()
@@ -187,7 +189,7 @@ class MainActivity : ComponentActivity() {
                 val cfg = app.configRepo.config.value
                 rotary.feed(event, cfg.effectiveRotateThreshold(), s.invertRotation).forEach { sym ->
                     app.ring.log("ROT  ${sym.code}")
-                    app.engine.feed(sym)
+                    app.engine.feed(sym, dev.hdwatch.buttonmap.engine.InputSource.ROTARY)
                 }
                 return true
             }

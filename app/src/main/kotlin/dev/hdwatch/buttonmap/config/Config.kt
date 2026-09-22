@@ -82,6 +82,13 @@ data class Profile(
     val macros: List<Macro> = emptyList(),
     /** Overrides Settings.rotateThreshold when set (per-profile feel). */
     val rotateThreshold: Int? = null,
+    /**
+     * Dial slots (keyed by symbol code: "CW","CCW","S","SL","G1".."G4") that
+     * execute a step directly instead of feeding the sequence engine. A
+     * KeyDown step turns the slot into a hold button — how CTRL is held while
+     * the arrow code is typed.
+     */
+    val ringSteps: Map<String, Step> = emptyMap(),
 )
 
 data class Settings(
