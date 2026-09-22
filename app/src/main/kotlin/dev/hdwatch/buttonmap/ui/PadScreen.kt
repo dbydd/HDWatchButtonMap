@@ -151,7 +151,7 @@ fun PadScreen() {
                 val major = i % 3 == 0
                 drawLine(
                     color = palette.primary.copy(alpha = if (major) 0.17f else 0.07f),
-                    start = at(a, R * if (major) 0.44f else 0.50f),
+                    start = at(a, R * if (major) 0.53f else 0.56f),
                     end = at(a, R * if (major) 0.99f else 0.94f),
                     strokeWidth = if (major) 1.4f else 1f,
                 )
@@ -222,28 +222,28 @@ fun PadScreen() {
             direction = ArcDir.UP,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = (-84).dp),
+                .offset(y = (-82).dp),
         ) { feed(Symbol.UP) }
         ArcCapCell(
             symbol = Symbol.DOWN,
             direction = ArcDir.DOWN,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = 84.dp),
+                .offset(y = 82.dp),
         ) { feed(Symbol.DOWN) }
         ArcCapCell(
             symbol = Symbol.LEFT,
             direction = ArcDir.LEFT,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(x = (-84).dp),
+                .offset(x = (-82).dp),
         ) { feed(Symbol.LEFT) }
         ArcCapCell(
             symbol = Symbol.RIGHT,
             direction = ArcDir.RIGHT,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(x = 84.dp),
+                .offset(x = 82.dp),
         ) { feed(Symbol.RIGHT) }
 
         // ---- hub plaque ----
@@ -317,8 +317,8 @@ private fun ArcCapCell(
     val palette = LocalHdPalette.current
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val wide = if (direction == ArcDir.UP || direction == ArcDir.DOWN) 76.dp else 49.dp
-    val tall = if (direction == ArcDir.UP || direction == ArcDir.DOWN) 49.dp else 76.dp
+    val wide = if (direction == ArcDir.UP || direction == ArcDir.DOWN) 76.dp else 53.dp
+    val tall = if (direction == ArcDir.UP || direction == ArcDir.DOWN) 53.dp else 76.dp
 
     Box(modifier.size(width = wide, height = tall)) {
         Canvas(Modifier.fillMaxSize()) {
@@ -468,13 +468,13 @@ private fun HubCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(Modifier.height(6.dp))
-                // Keys mode whispers its name at the rim; macro mode shows
-                // no title at all — the list speaks for itself.
+                // Keys mode prints its name at the smallest size on the rim;
+                // macro mode shows no title at all — the list speaks itself.
                 if (profile.kind != ProfileKind.MACRO) {
                     Text(
                         text = profile.name,
-                        fontSize = 7.sp,
-                        letterSpacing = 2.sp,
+                        fontSize = 4.sp,
+                        letterSpacing = 1.5.sp,
                         color = palette.muted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -523,25 +523,32 @@ private fun HubCard(
                         }
                     }
                 } else {
-                    Text(
-                        text = eventLine(event),
-                        color = when (event) {
-                            is EngineEvent.FiredMacro -> palette.primary
-                            is EngineEvent.FiredSingle -> palette.secondary
-                            is EngineEvent.Unmapped -> palette.danger
-                            else -> palette.secondary.copy(alpha = 0.75f)
-                        },
-                        fontSize = 9.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                    )
+                    // Silence when idle: the dial needs no "standby" caption.
+                    if (event != EngineEvent.Idle) {
+                        Text(
+                            text = eventLine(event),
+                            color = when (event) {
+                                is EngineEvent.FiredMacro -> palette.primary
+                                is EngineEvent.FiredSingle -> palette.secondary
+                                is EngineEvent.Unmapped -> palette.danger
+                                else -> palette.secondary.copy(alpha = 0.75f)
+                            },
+                            fontSize = 9.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
                 Spacer(Modifier.weight(1f))
-                MicroLabel(
+                Text(
                     text = link,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 4.sp,
+                    letterSpacing = 1.5.sp,
                     color = palette.muted,
-                    modifier = Modifier.padding(bottom = 9.dp),
+                    maxLines = 1,
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
             }
         }
