@@ -34,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -119,6 +120,8 @@ fun PadScreen() {
             profile.macros.filter { it.enabled }.forEach { m -> m.sequence.firstOrNull()?.let { add(it) } }
         }
     }
+    // Which keycap is under the finger (drives the gold flood in the Canvas).
+    var pressedDir by remember { mutableStateOf<ArcDir?>(null) }
 
     Box(
         modifier = Modifier
@@ -195,6 +198,46 @@ fun PadScreen() {
                 )
                 i++
             }
+            // ---- keycap sectors: true annular fans at real radii, so the
+            // painted band always spans inner 56dp → outer 104dp exactly ----
+            val rIn = R * 0.4956f
+            val rOut = R * 0.9204f
+            val half = 24f
+            ArcDir.entries.forEach { dir ->
+                val start = dir.dialAngle - 90f - half
+                val outerRect = Rect(cx - rOut, cy - rOut, cx + rOut, cy + rOut)
+                val innerRect = Rect(cx - rIn, cy - rIn, cx + rIn, cy + rIn)
+                val fan = Path().apply {
+                    arcTo(outerRect, start, half * 2f, true)
+                    arcTo(innerRect, start + half * 2f, -half * 2f, false)
+                    close()
+                }
+                if (pressedDir == dir) {
+                    drawPath(
+                        fan,
+                        brush = Brush.linearGradient(
+                            listOf(
+                                androidx.compose.ui.graphics.lerp(palette.primary, Color.White, 0.35f),
+                                palette.primary,
+                                palette.goldDeep,
+                            ),
+                        ),
+                    )
+                } else {
+                    drawPath(
+                        fan,
+                        brush = Brush.verticalGradient(listOf(palette.panelTop, palette.panelBottom)),
+                        alpha = 0.97f,
+                    )
+                }
+                drawPath(
+                    fan,
+                    brush = Brush.linearGradient(
+                        listOf(Color.White.copy(alpha = 0.26f), palette.primary.copy(alpha = 0.38f)),
+                    ),
+                    style = Stroke(2f),
+                )
+            }
         }
 
         // ---- live symbol ring: bare text pairs in the diagonal gaps ----
@@ -217,34 +260,38 @@ fun PadScreen() {
             }
         }
 
-        // ---- four arc keycaps riding the rim ----
-        ArcCapCell(
+        // ---- four keycap touch pads (the caps themselves are painted) ----
+        ArrowCap(
             symbol = Symbol.UP,
-            direction = ArcDir.UP,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = (-82).dp),
+                .offset(y = (-80).dp)
+                .size(width = 66.dp, height = 48.dp),
+            onPressedChange = { pressedDir = if (it) ArcDir.UP else null },
         ) { feed(Symbol.UP) }
-        ArcCapCell(
+        ArrowCap(
             symbol = Symbol.DOWN,
-            direction = ArcDir.DOWN,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = 82.dp),
+                .offset(y = 80.dp)
+                .size(width = 66.dp, height = 48.dp),
+            onPressedChange = { pressedDir = if (it) ArcDir.DOWN else null },
         ) { feed(Symbol.DOWN) }
-        ArcCapCell(
+        ArrowCap(
             symbol = Symbol.LEFT,
-            direction = ArcDir.LEFT,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(x = (-82).dp),
+                .offset(x = (-80).dp)
+                .size(width = 48.dp, height = 66.dp),
+            onPressedChange = { pressedDir = if (it) ArcDir.LEFT else null },
         ) { feed(Symbol.LEFT) }
-        ArcCapCell(
+        ArrowCap(
             symbol = Symbol.RIGHT,
-            direction = ArcDir.RIGHT,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(x = 82.dp),
+                .offset(x = 80.dp)
+                .size(width = 48.dp, height = 66.dp),
+            onPressedChange = { pressedDir = if (it) ArcDir.RIGHT else null },
         ) { feed(Symbol.RIGHT) }
 
         // ---- hub plaque ----
@@ -301,107 +348,42 @@ private fun RingSymbol(
     )
 }
 
-private enum class ArcDir { UP, DOWN, LEFT, RIGHT }
+/** Dial bearing of each keycap, 0° = up, clockwise. */
+private enum class ArcDir(val dialAngle: Float) {
+    UP(0f), RIGHT(90f), DOWN(180f), LEFT(270f),
+}
 
 /**
- * Rim keycap: a concentric arc band (outer and inner edges both curve with
- * the dial) stretched tangentially and flattened radially. The path is drawn
- * in Canvas so the shape stays crisp; label text remains upright components.
+ * Transparent touch pad laid over one painted keycap sector: it forwards the
+ * press state to the dial Canvas (gold flood) and hosts the arrow glyph.
  */
 @Composable
-private fun ArcCapCell(
+private fun ArrowCap(
     symbol: Symbol,
-    direction: ArcDir,
+    onPressedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val palette = LocalHdPalette.current
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val wide = if (direction == ArcDir.UP || direction == ArcDir.DOWN) 76.dp else 53.dp
-    val tall = if (direction == ArcDir.UP || direction == ArcDir.DOWN) 53.dp else 76.dp
-
-    Box(modifier.size(width = wide, height = tall)) {
-        Canvas(Modifier.fillMaxSize()) {
-            val path = arcCapPath(size.width, size.height, direction)
-            val fill = if (pressed) {
-                Brush.linearGradient(
-                    listOf(
-                        androidx.compose.ui.graphics.lerp(palette.primary, Color.White, 0.35f),
-                        palette.primary,
-                        palette.goldDeep,
-                    ),
-                )
-            } else {
-                if (direction == ArcDir.DOWN || direction == ArcDir.UP) {
-                    Brush.verticalGradient(listOf(palette.panelTop, palette.panelBottom))
-                } else {
-                    Brush.horizontalGradient(listOf(palette.panelTop, palette.panelBottom))
-                }
-            }
-            val rim = if (pressed) {
-                listOf(palette.goldDeep, palette.goldDeep)
-            } else {
-                listOf(
-                    Color.White.copy(alpha = 0.24f),
-                    palette.primary.copy(alpha = 0.30f + 0.25f * if (pressed) 1f else 0f),
-                )
-            }
-            drawPath(path, brush = fill, alpha = 0.96f)
-            drawPath(path, brush = Brush.linearGradient(rim), style = Stroke(2f))
-        }
-        Box(
-            Modifier
-                .fillMaxSize()
-                .combinedClickable(
-                    interactionSource = interaction,
-                    indication = null,
-                    onClick = onClick,
-                ),
-        )
-        // Arrow only: the binding lives in the mapping screens, not here.
+    LaunchedEffect(pressed) { onPressedChange(pressed) }
+    Box(
+        modifier = modifier.combinedClickable(
+            interactionSource = interaction,
+            indication = null,
+            onClick = onClick,
+        ),
+        contentAlignment = Alignment.Center,
+    ) {
         Text(
             text = symbol.display,
-            modifier = Modifier.align(Alignment.Center),
             color = if (pressed) palette.onPrimary else palette.text,
-            fontSize = 15.sp,
+            fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
         )
     }
-}
-
-/** Concentric arc band: outer edge bows away from the dial, inner edge too. */
-private fun arcCapPath(w: Float, h: Float, dir: ArcDir): Path {
-    val path = Path()
-    when (dir) {
-        ArcDir.UP -> {
-            path.moveTo(0f, h * 0.30f)
-            path.quadraticBezierTo(w / 2f, 0f, w, h * 0.30f)
-            path.lineTo(w, h * 0.78f)
-            path.quadraticBezierTo(w / 2f, h * 0.52f, 0f, h * 0.78f)
-        }
-        ArcDir.DOWN -> {
-            path.moveTo(0f, h * 0.22f)
-            path.quadraticBezierTo(w / 2f, h * 0.48f, w, h * 0.22f)
-            path.lineTo(w, h * 0.70f)
-            path.quadraticBezierTo(w / 2f, h, 0f, h * 0.70f)
-        }
-        ArcDir.LEFT -> {
-            path.moveTo(w * 0.30f, 0f)
-            path.quadraticBezierTo(0f, h / 2f, w * 0.30f, h)
-            path.lineTo(w * 0.78f, h)
-            path.quadraticBezierTo(w * 0.52f, h / 2f, w * 0.78f, 0f)
-        }
-        ArcDir.RIGHT -> {
-            path.moveTo(w * 0.22f, 0f)
-            path.quadraticBezierTo(w * 0.48f, h / 2f, w * 0.22f, h)
-            path.lineTo(w * 0.70f, h)
-            path.quadraticBezierTo(w, h / 2f, w * 0.70f, 0f)
-        }
-    }
-    path.close()
-    return path
 }
 
 /**
