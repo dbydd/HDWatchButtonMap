@@ -122,6 +122,8 @@ data class Settings(
     val gestureSensorsEnabled: Boolean = false,
     /** Keep HID registered through a foreground service while app is backgrounded. */
     val keepAliveService: Boolean = true,
+    /** Master switch for every haptic pattern the app emits. */
+    val vibrationEnabled: Boolean = true,
     val sensorToSymbol: Map<String, String> = emptyMap(),
 )
 

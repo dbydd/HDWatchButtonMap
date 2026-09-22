@@ -13,39 +13,42 @@ data class HidKey(val name: String, val usage: Int, val page: HidPage = HidPage.
  * KEYBOARD page entries, or a Consumer Page usage (0x00B5..0x03FF) for
  * CONSUMER page entries.
  */
+/** Picker grouping. The id is stable; the label is a resource. */
+enum class KeyCategory { LETTERS, DIGITS, EDITING, ARROWS, PUNCTUATION, FUNCTION, NUMPAD, MODIFIERS, MEDIA }
+
 object KeyTable {
 
     private val byName = LinkedHashMap<String, HidKey>()
 
-    val categories: List<Pair<String, List<HidKey>>> = buildList {
-        add("字母" to register(listOf(
+    val categories: List<Pair<KeyCategory, List<HidKey>>> = buildList {
+        add(KeyCategory.LETTERS to register(listOf(
             "A" to 0x04, "B" to 0x05, "C" to 0x06, "D" to 0x07, "E" to 0x08, "F" to 0x09,
             "G" to 0x0A, "H" to 0x0B, "I" to 0x0C, "J" to 0x0D, "K" to 0x0E, "L" to 0x0F,
             "M" to 0x10, "N" to 0x11, "O" to 0x12, "P" to 0x13, "Q" to 0x14, "R" to 0x15,
             "S" to 0x16, "T" to 0x17, "U" to 0x18, "V" to 0x19, "W" to 0x1A, "X" to 0x1B,
             "Y" to 0x1C, "Z" to 0x1D,
         )))
-        add("数字" to register(listOf(
+        add(KeyCategory.DIGITS to register(listOf(
             "1" to 0x1E, "2" to 0x1F, "3" to 0x20, "4" to 0x21, "5" to 0x22,
             "6" to 0x23, "7" to 0x24, "8" to 0x25, "9" to 0x26, "0" to 0x27,
         )))
-        add("编辑键" to register(listOf(
+        add(KeyCategory.EDITING to register(listOf(
             "ENTER" to 0x28, "ESC" to 0x29, "BACKSPACE" to 0x2A, "TAB" to 0x2B,
             "SPACE" to 0x2C, "CAPS_LOCK" to 0x39,
             "PRINTSCREEN" to 0x46, "SCROLL_LOCK" to 0x47, "PAUSE" to 0x48,
             "INSERT" to 0x49, "HOME" to 0x4A, "PAGE_UP" to 0x4B,
             "DELETE" to 0x4C, "END" to 0x4D, "PAGE_DOWN" to 0x4E,
         )))
-        add("方向键" to register(listOf(
+        add(KeyCategory.ARROWS to register(listOf(
             "RIGHT" to 0x4F, "LEFT" to 0x50, "DOWN" to 0x51, "UP" to 0x52,
         )))
-        add("标点" to register(listOf(
+        add(KeyCategory.PUNCTUATION to register(listOf(
             "BRACE_L" to 0x2F, "BRACE_R" to 0x30, "MINUS" to 0x2D, "EQUAL" to 0x2E,
             "SEMICOLON" to 0x33, "APOSTROPHE" to 0x34, "GRAVE" to 0x35,
             "BACKSLASH" to 0x31, "COMMA" to 0x36, "PERIOD" to 0x37,
             "SLASH" to 0x38, "BACKSLASH_BS" to 0x64,
         )))
-        add("功能键" to register(buildList {
+        add(KeyCategory.FUNCTION to register(buildList {
             add("F1" to 0x3A); add("F2" to 0x3B); add("F3" to 0x3C); add("F4" to 0x3D)
             add("F5" to 0x3E); add("F6" to 0x3F); add("F7" to 0x40); add("F8" to 0x41)
             add("F9" to 0x42); add("F10" to 0x43); add("F11" to 0x44); add("F12" to 0x45)
@@ -53,7 +56,7 @@ object KeyTable {
             add("F17" to 0x6C); add("F18" to 0x6D); add("F19" to 0x6E); add("F20" to 0x6F)
             add("F21" to 0x70); add("F22" to 0x71); add("F23" to 0x72); add("F24" to 0x73)
         }))
-        add("小键盘" to register(buildList {
+        add(KeyCategory.NUMPAD to register(buildList {
             add("NUM_LOCK" to 0x53)
             add("KP_DIVIDE" to 0x54); add("KP_MULTIPLY" to 0x55); add("KP_MINUS" to 0x56)
             add("KP_PLUS" to 0x57); add("KP_ENTER" to 0x58)
@@ -61,11 +64,11 @@ object KeyTable {
             add("KP_5" to 0x5D); add("KP_6" to 0x5E); add("KP_7" to 0x5F); add("KP_8" to 0x60)
             add("KP_9" to 0x61); add("KP_0" to 0x62); add("KP_DOT" to 0x63)
         }))
-        add("修饰键" to register(listOf(
+        add(KeyCategory.MODIFIERS to register(listOf(
             "CTRL_L" to 0xE0, "SHIFT_L" to 0xE1, "ALT_L" to 0xE2, "GUI_L" to 0xE3,
             "CTRL_R" to 0xE4, "SHIFT_R" to 0xE5, "ALT_R" to 0xE6, "GUI_R" to 0xE7,
         )))
-        add("媒体键" to register(listOf(
+        add(KeyCategory.MEDIA to register(listOf(
             "PLAY_PAUSE" to 0x00CD, "MUTE" to 0x00E2,
             "VOL_UP" to 0x00E9, "VOL_DOWN" to 0x00EA,
             "NEXT_TRACK" to 0x00B5, "PREV_TRACK" to 0x00B6,

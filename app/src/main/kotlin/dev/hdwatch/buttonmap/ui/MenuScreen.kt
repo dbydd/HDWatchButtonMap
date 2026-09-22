@@ -3,6 +3,9 @@ package dev.hdwatch.buttonmap.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
@@ -28,11 +32,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
+import dev.hdwatch.buttonmap.R
 import dev.hdwatch.buttonmap.config.ProfileKind
 
 /** Shared row look for every menu-style screen (title + menu rows, v2 look). */
@@ -42,6 +49,7 @@ fun ScreenScaffold(
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
 ) {
     val palette = LocalHdPalette.current
+    val nav = LocalAppNav.current
     Box(
         Modifier
             .fillMaxSize()
@@ -51,10 +59,31 @@ fun ScreenScaffold(
                 ),
             ),
     ) {
+        // Edge-swipe back is not a thing on this watch (left-edge swipe exits
+        // the app), so every config screen carries its own way out.
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                // Inside the round mask: the first attempt sat outside the
+                // glass and was invisible.
+                .padding(start = 52.dp, top = 20.dp)
+                .size(34.dp)
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false)
+                        nav.pop()
+                        waitForUpOrCancellation()
+                    }
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("‹", color = palette.secondary.copy(alpha = 0.75f), fontSize = 20.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 14.dp, vertical = 10.dp)
+                // Top band kept clear for the back affordance.
+                .padding(start = 14.dp, end = 14.dp, top = 46.dp, bottom = 10.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -136,14 +165,20 @@ fun MenuScreen() {
 
     var showProfiles by remember { mutableStateOf(false) }
 
-    ScreenScaffold(title = "HD MAP") {
+    ScreenScaffold(title = stringResource(R.string.scr_menu_title)) {
         MenuRow(
-            label = "模式 ${config.activeProfile.name}",
-            hint = if (showProfiles) "点击收起" else "共 ${config.profiles.size} 个模式 · 点选切换",
+            label = stringResource(R.string.scr_menu_mode, config.activeProfile.name),
+            hint = if (showProfiles) {
+                stringResource(R.string.scr_menu_collapse)
+            } else {
+                stringResource(R.string.scr_menu_mode_hint, config.profiles.size)
+            },
         ) { showProfiles = !showProfiles }
         if (showProfiles) {
             config.profiles.forEach { profile ->
-                val kindLabel = if (profile.kind == ProfileKind.KEYS) "直控 · 按啥发啥" else "宏 · 序列触发"
+                val kindLabel = stringResource(
+                    if (profile.kind == ProfileKind.KEYS) R.string.scr_menu_kind_keys else R.string.scr_menu_kind_macro,
+                )
                 MenuRow(
                     label = if (profile.id == config.activeProfileId) "✓ ${profile.name}" else profile.name,
                     hint = kindLabel,
@@ -151,12 +186,22 @@ fun MenuScreen() {
                 ) { app.configRepo.setActiveProfile(profile.id) }
             }
         }
-        MenuRow("单键映射", "点按/按键/表冠/手势 → HID") { nav.push(Route.MappingList) }
-        MenuRow("宏命令", "${config.activeProfile.macros.count { it.enabled }}/${config.activeProfile.macros.size} 启用") { nav.push(Route.MacroList) }
-        MenuRow("蓝牙 HID", status.label + " · " + status.detail) { nav.push(Route.Hid) }
-        MenuRow("设置 · 传感器 · 调试") { nav.push(Route.Settings) }
-        MenuRow("输入日志") { nav.push(Route.Log) }
-        MenuRow("重载配置", repoStatus) { app.configRepo.reload() }
-        MenuRow("从文件导入 JSON") { actions.importFile() }
+        MenuRow(
+            stringResource(R.string.scr_menu_single),
+            stringResource(R.string.scr_menu_single_hint),
+        ) { nav.push(Route.MappingList) }
+        MenuRow(
+            stringResource(R.string.scr_menu_macros),
+            stringResource(
+                R.string.scr_menu_macro_count,
+                config.activeProfile.macros.count { it.enabled },
+                config.activeProfile.macros.size,
+            ),
+        ) { nav.push(Route.MacroList) }
+        MenuRow(stringResource(R.string.scr_menu_bluetooth), status.label + " · " + status.detail) { nav.push(Route.Hid) }
+        MenuRow(stringResource(R.string.scr_menu_settings)) { nav.push(Route.Settings) }
+        MenuRow(stringResource(R.string.scr_menu_log)) { nav.push(Route.Log) }
+        MenuRow(stringResource(R.string.scr_menu_reload), repoStatus) { app.configRepo.reload() }
+        MenuRow(stringResource(R.string.scr_menu_import)) { actions.importFile() }
     }
 }

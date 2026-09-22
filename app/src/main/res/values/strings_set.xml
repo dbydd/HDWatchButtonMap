@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- shared micro labels -->
+    <string name="set_label_keep_alive">KEEP-ALIVE</string>
+
+    <!-- HidScreen -->
+    <string name="set_hid_title">Bluetooth HID</string>
+    <string name="set_hid_link_status">LINK STATUS</string>
+    <string name="set_hid_keep_alive_running">Foreground service running</string>
+    <string name="set_hid_keep_alive_off">Off</string>
+    <string name="set_hid_no_bluetooth">No Bluetooth HID path on this device</string>
+    <string name="set_hid_permission_granted">Bluetooth connect permission granted</string>
+    <string name="set_hid_permission_missing">Bluetooth permission missing; grant it first</string>
+    <string name="set_hid_disconnect_hint">Disconnects are usually background unregistration; leave keep-alive on</string>
+    <string name="set_hid_discoverable">Discoverable</string>
+    <string name="set_hid_permission">Permissions</string>
+    <string name="set_hid_reconnect">Reconnect</string>
+    <string name="set_hid_disconnect">Disconnect</string>
+    <string name="set_hid_reregister">Re-register</string>
+    <string name="set_hid_hosts">PAIRED HOSTS</string>
+    <string name="set_hid_host">HOST %1$s</string>
+    <string name="set_hid_no_hosts">No host available: pair your computer in system settings, or grant Bluetooth permission</string>
+    <string name="set_hid_tap_reconnect">Tap to reconnect</string>
+    <string name="set_hid_transport_mode">TRANSPORT MODE</string>
+    <string name="set_hid_log_transport">Log-only transport</string>
+    <string name="set_hid_log_transport_on">Reports go to the log only, never over Bluetooth</string>
+    <string name="set_hid_log_transport_off">Sent to the host over Bluetooth HID</string>
+    <string name="set_hid_log_transport_note">The emulator has no Bluetooth stack, so keep log-only there; turn it off on real hardware to connect to a computer.</string>
+    <string name="set_hid_external_config">EXTERNAL CONFIG</string>
+    <string name="set_hid_adb_push">adb push hdmap.json %1$s</string>
+    <string name="set_hid_no_external_dir">(no external dir)</string>
+    <string name="set_hid_external_note">Push a config into the watch\'s external files dir to auto-import it at launch, or reload it manually in Settings.</string>
+
+    <!-- LogScreen -->
+    <string name="set_log_title">Input Log</string>
+    <string name="set_log_stream">REPORTS / EVENTS</string>
+    <string name="set_log_virtual_input">VIRTUAL INPUT</string>
+    <string name="set_log_empty">No entries yet</string>
+    <string name="set_log_clear">Clear log</string>
+    <string name="set_log_release">Release all</string>
+
+    <!-- SettingsScreen -->
+    <string name="set_title">Settings</string>
+    <string name="set_section_rotation">CROWN ROTATION</string>
+    <string name="set_section_sequence">SEQUENCE</string>
+    <string name="set_section_typing">TYPING</string>
+    <string name="set_section_gestures">GESTURE SENSORS</string>
+    <string name="set_section_feedback">FEEDBACK</string>
+    <string name="set_section_config">CONFIG FILE</string>
+    <string name="set_step_rotate_threshold">Crown threshold</string>
+    <string name="set_step_profile_threshold">Profile threshold</string>
+    <string name="set_step_sequence_timeout">Sequence timeout</string>
+    <string name="set_step_text_delay">Char delay</string>
+    <plurals name="set_step_value_clicks">
+        <item quantity="one">%1$d click</item>
+        <item quantity="other">%1$d clicks</item>
+    </plurals>
+    <string name="set_step_value_ms">%1$d ms</string>
+    <string name="set_action_follow_global">Follow global</string>
+    <string name="set_rotate_follow_global">This profile follows global (global: %1$d clicks)</string>
+    <string name="set_rotate_override_global">This profile overrides global (global: %1$d clicks)</string>
+    <string name="set_switch_invert">Invert rotation</string>
+    <string name="set_switch_invert_on">Clockwise and counter-clockwise swap</string>
+    <string name="set_switch_invert_off">Crown direction follows the system default</string>
+    <string name="set_switch_capture_unknown">Capture unknown input</string>
+    <string name="set_switch_capture_unknown_hint">Show raw keys and events in the log</string>
+    <string name="set_switch_gestures">Enable gesture sensors</string>
+    <string name="set_switch_gestures_hint">On to register listeners; the emulator HAL crashes</string>
+    <string name="set_gestures_none">No gesture capability on this device</string>
+    <string name="set_gesture_available">Available</string>
+    <string name="set_gesture_gated">Not listening</string>
+    <string name="set_gesture_needs_permission">No permission</string>
+    <string name="set_gesture_broken">Unavailable</string>
+    <string name="set_gesture_row">%1$s · bound %2$s</string>
+    <string name="set_gesture_unbound">none</string>
+    <string name="set_switch_vibration">Vibration</string>
+    <string name="set_switch_vibration_hint">All haptics go silent when off</string>
+    <string name="set_switch_keep_alive">Keep-alive service</string>
+    <string name="set_switch_keep_alive_hint">Prevents background drops + keeps a notification</string>
+    <string name="set_action_reload">Reload</string>
+    <string name="set_action_import">Import JSON</string>
+    <string name="set_action_export">Export JSON</string>
+    <string name="set_action_write_external">Write external</string>
+    <string name="set_version_line">HD MAP %1$s</string>
+
+    <!-- ConfigRepository status -->
+    <string name="set_status_not_loaded">Not loaded</string>
+    <string name="set_status_loaded">Loaded (%1$s)</string>
+    <string name="set_status_config_missing">Config file missing — using built-in defaults</string>
+    <string name="set_status_config_error">Config error: %1$s</string>
+    <string name="set_status_imported">Imported: %1$s</string>
+    <string name="set_status_import_rejected">Import rejected: %1$s</string>
+    <string name="set_status_import_read_failed">Import failed: cannot read %1$s</string>
+    <string name="set_status_exported_to">Exported to %1$s</string>
+    <string name="set_status_export_failed">Export failed: %1$s</string>
+    <string name="set_status_saved">Saved %1$s</string>
+    <string name="set_status_pack_unlocked">Unlocked %1$s: %2$d macros</string>
+    <string name="set_status_unlock_failed">Unlock failed: %1$s</string>
+    <string name="set_status_external_file">external file %1$s</string>
+</resources>

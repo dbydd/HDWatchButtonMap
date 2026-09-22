@@ -11,7 +11,11 @@ import java.util.concurrent.Executors
  * a private worker: vibrate() is a binder call and must never sit between the
  * finger and the HID report.
  */
-class Haptics(private val vibrator: Vibrator?, private val onError: (String) -> Unit = {}) {
+class Haptics(
+    private val vibrator: Vibrator?,
+    private val onError: (String) -> Unit = {},
+    private val vibrationEnabled: () -> Boolean = { true },
+) {
 
     private val worker = Executors.newSingleThreadExecutor { r ->
         Thread(r, "haptics").apply { isDaemon = true }
@@ -41,6 +45,7 @@ class Haptics(private val vibrator: Vibrator?, private val onError: (String) -> 
     private fun wave(effect: VibrationEffect?) {
         val v = vibrator ?: return
         if (!usable) return
+        if (!vibrationEnabled()) return
         worker.execute {
             runCatching { v.vibrate(effect) }
                 .onFailure { onError("vibrate failed: ${it.message}") }

@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,11 +36,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
+import dev.hdwatch.buttonmap.R
 import dev.hdwatch.buttonmap.config.KeyMod
 import dev.hdwatch.buttonmap.config.ProfileKind
 import dev.hdwatch.buttonmap.config.Step
 import dev.hdwatch.buttonmap.hid.HidKey
 import dev.hdwatch.buttonmap.hid.HidPage
+import dev.hdwatch.buttonmap.hid.KeyCategory
 import dev.hdwatch.buttonmap.hid.KeyTable
 import dev.hdwatch.buttonmap.input.Symbol
 
@@ -55,7 +58,7 @@ fun MappingListScreen() {
     val config by app.configRepo.config.collectAsState()
     val palette = LocalHdPalette.current
 
-    ScreenScaffold(title = "单键映射 · 模式 ${config.activeProfile.name}") {
+    ScreenScaffold(title = stringResource(R.string.scr_map_list_title, config.activeProfile.name)) {
         Symbol.mappable.forEach { sym ->
             val step = config.activeProfile.single[sym]
             // A symbol that starts an enabled multi-symbol sequence never fires
@@ -76,7 +79,7 @@ fun MappingListScreen() {
             ) { nav.push(Route.MappingEdit(sym)) }
         }
         Text(
-            "未启用序列前缀的按键立即触发；完整编辑请用外部 hdmap.json",
+            stringResource(R.string.scr_map_list_footer),
             color = palette.muted,
             fontSize = 9.sp,
             maxLines = 2,
@@ -96,7 +99,7 @@ fun MappingEditScreen(symbol: Symbol) {
     var mods by remember(symbol) {
         mutableStateOf((config.activeProfile.single[symbol] as? Step.TapKey)?.mods ?: emptySet())
     }
-    var openCategory by remember(symbol) { mutableStateOf<String?>(null) }
+    var openCategory by remember(symbol) { mutableStateOf<KeyCategory?>(null) }
 
     fun pickKey(key: HidKey) {
         pending = if (key.page == HidPage.CONSUMER) {
@@ -132,7 +135,14 @@ fun MappingEditScreen(symbol: Symbol) {
     val category = openCategory
     val categoryKeys = KeyTable.categories.firstOrNull { it.first == category }?.second.orEmpty()
 
-    ScreenScaffold(title = "映射：${symbol.display} ${symbol.label} · 模式 ${config.activeProfile.name}") {
+    ScreenScaffold(
+        title = stringResource(
+            R.string.scr_map_edit_title,
+            symbol.display,
+            stringResource(symbol.labelRes),
+            config.activeProfile.name,
+        ),
+    ) {
         HdPanel(
             modifier = Modifier
                 .widthIn(min = 140.dp, max = 176.dp)
@@ -152,10 +162,10 @@ fun MappingEditScreen(symbol: Symbol) {
                     .padding(horizontal = 12.dp, vertical = 9.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                MicroLabel("当前动作", palette.primary.copy(alpha = 0.6f))
+                MicroLabel(stringResource(R.string.scr_map_current_action), palette.primary.copy(alpha = 0.6f))
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = if (pending == null) "未选择" else summarize(pending),
+                    text = if (pending == null) stringResource(R.string.scr_map_none_selected) else summarize(pending),
                     fontFamily = FontFamily.Monospace,
                     color = if (pending == null) palette.muted else palette.primary,
                     fontSize = 12.sp,
@@ -173,44 +183,44 @@ fun MappingEditScreen(symbol: Symbol) {
             modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(7.dp),
         ) {
-            Chip("保存", active = true) { save() }
-            Chip("清除", danger = true) { clear() }
+            Chip(stringResource(R.string.scr_map_save), active = true) { save() }
+            Chip(stringResource(R.string.scr_map_clear), danger = true) { clear() }
         }
 
-        SectionLabel("快捷键")
+        SectionLabel(stringResource(R.string.scr_map_section_shortcuts))
         Row(
             modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Chip("左键", active = pendingMatches { it is Step.MouseClick && it.button == "left" }) { pending = Step.MouseClick("left") }
-            Chip("右键", active = pendingMatches { it is Step.MouseClick && it.button == "right" }) { pending = Step.MouseClick("right") }
-            Chip("中键", active = pendingMatches { it is Step.MouseClick && it.button == "middle" }) { pending = Step.MouseClick("middle") }
+            Chip(stringResource(R.string.scr_map_mouse_left), active = pendingMatches { it is Step.MouseClick && it.button == "left" }) { pending = Step.MouseClick("left") }
+            Chip(stringResource(R.string.scr_map_mouse_right), active = pendingMatches { it is Step.MouseClick && it.button == "right" }) { pending = Step.MouseClick("right") }
+            Chip(stringResource(R.string.scr_map_mouse_middle), active = pendingMatches { it is Step.MouseClick && it.button == "middle" }) { pending = Step.MouseClick("middle") }
         }
         Row(
             modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Chip("滚轮↑", active = pendingMatches { it is Step.Mouse && it.wheel > 0 }) { pending = Step.Mouse(wheel = 1) }
-            Chip("滚轮↓", active = pendingMatches { it is Step.Mouse && it.wheel < 0 }) { pending = Step.Mouse(wheel = -1) }
+            Chip(stringResource(R.string.scr_map_wheel_up), active = pendingMatches { it is Step.Mouse && it.wheel > 0 }) { pending = Step.Mouse(wheel = 1) }
+            Chip(stringResource(R.string.scr_map_wheel_down), active = pendingMatches { it is Step.Mouse && it.wheel < 0 }) { pending = Step.Mouse(wheel = -1) }
         }
         Row(
             modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Chip("播放", active = pendingMatches { it is Step.ConsumerKey && it.usage == "PLAY_PAUSE" }) { pending = Step.ConsumerKey("PLAY_PAUSE") }
-            Chip("音量+", active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_UP" }) { pending = Step.ConsumerKey("VOL_UP") }
-            Chip("音量-", active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_DOWN" }) { pending = Step.ConsumerKey("VOL_DOWN") }
+            Chip(stringResource(R.string.scr_map_media_play), active = pendingMatches { it is Step.ConsumerKey && it.usage == "PLAY_PAUSE" }) { pending = Step.ConsumerKey("PLAY_PAUSE") }
+            Chip(stringResource(R.string.scr_map_media_vol_up), active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_UP" }) { pending = Step.ConsumerKey("VOL_UP") }
+            Chip(stringResource(R.string.scr_map_media_vol_down), active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_DOWN" }) { pending = Step.ConsumerKey("VOL_DOWN") }
         }
         Row(
             modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Chip("静音", active = pendingMatches { it is Step.ConsumerKey && it.usage == "MUTE" }) { pending = Step.ConsumerKey("MUTE") }
-            Chip("下一曲", active = pendingMatches { it is Step.ConsumerKey && it.usage == "NEXT_TRACK" }) { pending = Step.ConsumerKey("NEXT_TRACK") }
-            Chip("上一曲", active = pendingMatches { it is Step.ConsumerKey && it.usage == "PREV_TRACK" }) { pending = Step.ConsumerKey("PREV_TRACK") }
+            Chip(stringResource(R.string.scr_map_media_mute), active = pendingMatches { it is Step.ConsumerKey && it.usage == "MUTE" }) { pending = Step.ConsumerKey("MUTE") }
+            Chip(stringResource(R.string.scr_map_media_next), active = pendingMatches { it is Step.ConsumerKey && it.usage == "NEXT_TRACK" }) { pending = Step.ConsumerKey("NEXT_TRACK") }
+            Chip(stringResource(R.string.scr_map_media_prev), active = pendingMatches { it is Step.ConsumerKey && it.usage == "PREV_TRACK" }) { pending = Step.ConsumerKey("PREV_TRACK") }
         }
 
-        SectionLabel("修饰键")
+        SectionLabel(stringResource(R.string.scr_map_section_modifiers))
         Row(
             modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -223,24 +233,30 @@ fun MappingEditScreen(symbol: Symbol) {
             }
         }
 
-        SectionLabel(if (category == null) "选择键 · 先选类别" else "选择键 · $category")
+        SectionLabel(
+            if (category == null) {
+                stringResource(R.string.scr_map_section_pick_key)
+            } else {
+                stringResource(R.string.scr_map_section_pick_key_in, categoryLabel(category))
+            },
+        )
         if (category == null) {
-            KeyTable.categories.forEach { (name, keys) ->
-                HudRow(name, "${keys.size} 个键") { openCategory = name }
+            KeyTable.categories.forEach { (cat, keys) ->
+                HudRow(categoryLabel(cat), stringResource(R.string.scr_map_key_count, keys.size)) { openCategory = cat }
             }
         } else {
-            HudRow("← 返回类别") { openCategory = null }
+            HudRow(stringResource(R.string.scr_map_back_categories)) { openCategory = null }
             categoryKeys.forEach { key ->
                 HudRow(
                     label = if (key.name == activeKey) "✓ ${key.name}" else key.name,
-                    hint = if (key.page == HidPage.CONSUMER) "媒体页" else "",
+                    hint = if (key.page == HidPage.CONSUMER) stringResource(R.string.scr_map_hint_media_page) else "",
                     selected = key.name == activeKey,
                 ) { pickKey(key) }
             }
         }
 
         Spacer(Modifier.height(6.dp))
-        HudRow("← 返回（不保存）") { nav.pop() }
+        HudRow(stringResource(R.string.scr_map_back_no_save)) { nav.pop() }
     }
 }
 
@@ -293,7 +309,7 @@ private fun SymbolRow(
             }
             Column(Modifier.padding(start = 8.dp)) {
                 Text(
-                    text = "${symbol.code} ${symbol.label}",
+                    text = "${symbol.code} " + stringResource(symbol.labelRes),
                     fontFamily = FontFamily.Monospace,
                     color = if (pressed) palette.onPrimary else palette.text,
                     fontSize = 11.sp,
@@ -303,7 +319,7 @@ private fun SymbolRow(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = if (seqCount > 0) "$action · 序列中×$seqCount" else action,
+                    text = if (seqCount > 0) stringResource(R.string.scr_map_seq_conflict, action, seqCount) else action,
                     fontFamily = FontFamily.Monospace,
                     color = when {
                         pressed -> palette.onPrimary.copy(alpha = 0.7f)
@@ -440,3 +456,19 @@ private fun Chip(
         )
     }
 }
+
+/** Picker category label: stable enum id in, localized text out. */
+@Composable
+private fun categoryLabel(category: KeyCategory): String = stringResource(
+    when (category) {
+        KeyCategory.LETTERS -> R.string.hid_cat_letters
+        KeyCategory.DIGITS -> R.string.hid_cat_digits
+        KeyCategory.EDITING -> R.string.hid_cat_editing
+        KeyCategory.ARROWS -> R.string.hid_cat_arrows
+        KeyCategory.PUNCTUATION -> R.string.hid_cat_punctuation
+        KeyCategory.FUNCTION -> R.string.hid_cat_function
+        KeyCategory.NUMPAD -> R.string.hid_cat_numpad
+        KeyCategory.MODIFIERS -> R.string.hid_cat_modifiers
+        KeyCategory.MEDIA -> R.string.hid_cat_media
+    },
+)

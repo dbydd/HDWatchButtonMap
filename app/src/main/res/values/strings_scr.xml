@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- MenuScreen -->
+    <string name="scr_menu_title">HD MAP</string>
+    <string name="scr_menu_mode">Mode %1$s</string>
+    <string name="scr_menu_collapse">Tap to collapse</string>
+    <string name="scr_menu_mode_hint">%1$d modes · tap to switch</string>
+    <string name="scr_menu_kind_keys">Direct · press sends key</string>
+    <string name="scr_menu_kind_macro">Macro · sequence trigger</string>
+    <string name="scr_menu_single">Key map</string>
+    <string name="scr_menu_single_hint">Tap / button / crown / gesture → HID</string>
+    <string name="scr_menu_macros">Macros</string>
+    <string name="scr_menu_macro_count">%1$d/%2$d enabled</string>
+    <string name="scr_menu_bluetooth">Bluetooth HID</string>
+    <string name="scr_menu_settings">Settings · Sensors · Debug</string>
+    <string name="scr_menu_log">Input log</string>
+    <string name="scr_menu_reload">Reload config</string>
+    <string name="scr_menu_import">Import JSON from file</string>
+
+    <!-- MappingScreens: list -->
+    <string name="scr_map_list_title">Key map · mode %1$s</string>
+    <string name="scr_map_list_footer">Keys without a sequence prefix fire at once; edit hdmap.json externally for the full set</string>
+    <string name="scr_map_seq_conflict">%1$s · in sequence ×%2$d</string>
+
+    <!-- MappingScreens: edit -->
+    <string name="scr_map_edit_title">Map: %1$s %2$s · mode %3$s</string>
+    <string name="scr_map_current_action">Current action</string>
+    <string name="scr_map_none_selected">None</string>
+    <string name="scr_map_save">Save</string>
+    <string name="scr_map_clear">Clear</string>
+    <string name="scr_map_section_shortcuts">Shortcuts</string>
+    <string name="scr_map_mouse_left">Left</string>
+    <string name="scr_map_mouse_right">Right</string>
+    <string name="scr_map_mouse_middle">Middle</string>
+    <string name="scr_map_wheel_up">Wheel ↑</string>
+    <string name="scr_map_wheel_down">Wheel ↓</string>
+    <string name="scr_map_media_play">Play</string>
+    <string name="scr_map_media_vol_up">Vol +</string>
+    <string name="scr_map_media_vol_down">Vol -</string>
+    <string name="scr_map_media_mute">Mute</string>
+    <string name="scr_map_media_next">Next</string>
+    <string name="scr_map_media_prev">Prev</string>
+    <string name="scr_map_section_modifiers">Modifiers</string>
+    <string name="scr_map_section_pick_key">Keys · pick a category</string>
+    <string name="scr_map_section_pick_key_in">Keys · %1$s</string>
+    <string name="scr_map_key_count">%1$d keys</string>
+    <string name="scr_map_back_categories">← Categories</string>
+    <string name="scr_map_hint_media_page">Media page</string>
+    <string name="scr_map_back_no_save">← Back (no save)</string>
+
+    <!-- MacroScreen -->
+    <string name="scr_macro_title">Macros</string>
+    <string name="scr_macro_not_macro_mode">Direct mode: macros are stored but never fire — switch modes in the menu</string>
+    <string name="scr_macro_empty">No macros yet; add them in hdmap.json or import a file</string>
+    <string name="scr_macro_state_on">Enabled</string>
+    <string name="scr_macro_state_off">Disabled</string>
+    <string name="scr_macro_enable">Enable</string>
+    <string name="scr_macro_disable">Disable</string>
+    <string name="scr_macro_steps">%1$d steps</string>
+    <string name="scr_macro_run">Run</string>
+    <string name="scr_macro_delete">Delete</string>
+    <string name="scr_macro_confirm_delete">Confirm delete</string>
+</resources>

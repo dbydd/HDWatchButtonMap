@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- PadScreen: hub footer link codes. The transport layer reports its state
+         as a Chinese label and carries no state enum, so linkCode picks the code
+         by matching that label; keep these in sync with hid/BluetoothHidTransport.
+         The codes are console glyphs and read the same in every locale. -->
+    <string name="pad_link_sim">LINK · SIM</string>
+    <string name="pad_link_host">LINK · HOST</string>
+    <string name="pad_link_auth">LINK · AUTH</string>
+    <string name="pad_link_down">LINK · DOWN</string>
+    <string name="pad_link_idle">LINK · IDLE</string>
+
+    <!-- PadScreen: confirmation line under the hub, keys mode only -->
+    <string name="pad_event_fired_macro">Macro &quot;%1$s&quot;</string>
+    <string name="pad_event_unmapped">Unmapped %1$s</string>
+    <string name="pad_event_pending">Sequence %1$s</string>
+    <string name="pad_event_seq_timeout">Sequence timeout</string>
+    <string name="pad_event_idle">Idle</string>
+
+    <!-- StepDisplay.summarize: one-line summary of a step -->
+    <string name="pad_step_hold_key">Hold %1$s</string>
+    <string name="pad_step_release_key">Release %1$s</string>
+    <string name="pad_step_latch_key">Latch %1$s</string>
+    <string name="pad_step_latch_combo">Latch %1$s+%2$s</string>
+    <string name="pad_step_type_text">Type &quot;%1$s&quot;</string>
+    <string name="pad_step_wait">Wait %1$dms</string>
+    <string name="pad_step_mouse">Mouse</string>
+    <string name="pad_step_mouse_move">move(%1$d,%2$d)</string>
+    <string name="pad_step_wheel_up">wheel ↑</string>
+    <string name="pad_step_wheel_down">wheel ↓</string>
+    <string name="pad_step_click">%1$s x%2$d</string>
+    <string name="pad_step_mouse_release">Release mouse</string>
+    <string name="pad_step_media">Media %1$s</string>
+
+    <!-- Mouse button names used inside step summaries -->
+    <string name="pad_mouse_left">Left</string>
+    <string name="pad_mouse_right">Right</string>
+    <string name="pad_mouse_middle">Middle</string>
+    <string name="pad_mouse_back">Back</string>
+    <string name="pad_mouse_forward">Forward</string>
+</resources>

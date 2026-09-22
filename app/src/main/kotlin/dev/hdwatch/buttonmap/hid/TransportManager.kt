@@ -15,7 +15,7 @@ class TransportManager(
     val ring: ReportRing,
 ) {
     private var bluetooth: BluetoothHidTransport? = null
-    private val logging = LoggingTransport(ring)
+    private val logging = LoggingTransport(app, ring)
 
     private val _active = MutableStateFlow<HidTransport>(logging)
     val active: StateFlow<HidTransport> = _active.asStateFlow()
@@ -35,7 +35,7 @@ class TransportManager(
         val created = BluetoothHidTransport(app, ring)
         // Keep the instance only when the adapter/profile route is plausible;
         // a dead adapter would otherwise spam registration attempts.
-        return if (created.status.value.detail.contains("无蓝牙适配器")) {
+        return if (created.status.value.state == TransportState.NO_ADAPTER) {
             created.close()
             null
         } else {

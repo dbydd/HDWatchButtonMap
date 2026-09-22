@@ -18,6 +18,15 @@ android {
     buildFeatures {
         compose = true
     }
+
+    buildTypes {
+        // Debug builds are interpreted on Wear (JIT only) and frame times
+        // suffer; a debug-signed release build is what we deploy to the watch.
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
 }
 
 dependencies {

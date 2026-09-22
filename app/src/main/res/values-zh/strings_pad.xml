@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- PadScreen: hub footer link codes — console glyphs, identical in both locales -->
+    <string name="pad_link_sim">LINK · SIM</string>
+    <string name="pad_link_host">LINK · HOST</string>
+    <string name="pad_link_auth">LINK · AUTH</string>
+    <string name="pad_link_down">LINK · DOWN</string>
+    <string name="pad_link_idle">LINK · IDLE</string>
+
+    <!-- PadScreen: confirmation line under the hub, keys mode only -->
+    <string name="pad_event_fired_macro">激活「%1$s」</string>
+    <string name="pad_event_unmapped">未映射 %1$s</string>
+    <string name="pad_event_pending">序列中 %1$s</string>
+    <string name="pad_event_seq_timeout">序列超时清空</string>
+    <string name="pad_event_idle">待命</string>
+
+    <!-- StepDisplay.summarize: one-line summary of a step -->
+    <string name="pad_step_hold_key">按住 %1$s</string>
+    <string name="pad_step_release_key">松开 %1$s</string>
+    <string name="pad_step_latch_key">锁存 %1$s</string>
+    <string name="pad_step_latch_combo">锁存 %1$s+%2$s</string>
+    <string name="pad_step_type_text">打字「%1$s」</string>
+    <string name="pad_step_wait">等 %1$dms</string>
+    <string name="pad_step_mouse">鼠标</string>
+    <string name="pad_step_mouse_move">移动(%1$d,%2$d)</string>
+    <string name="pad_step_wheel_up">轮↑</string>
+    <string name="pad_step_wheel_down">轮↓</string>
+    <string name="pad_step_click">%1$sx%2$d</string>
+    <string name="pad_step_mouse_release">鼠标松开</string>
+    <string name="pad_step_media">媒体 %1$s</string>
+
+    <!-- Mouse button names used inside step summaries -->
+    <string name="pad_mouse_left">左键</string>
+    <string name="pad_mouse_right">右键</string>
+    <string name="pad_mouse_middle">中键</string>
+    <string name="pad_mouse_back">后退</string>
+    <string name="pad_mouse_forward">前进</string>
+</resources>

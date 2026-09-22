@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothHidDeviceAppSdpSettings
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.pm.PackageManager
+import dev.hdwatch.buttonmap.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,7 +36,12 @@ class BluetoothHidTransport(
     override val kind = TransportKind.BLUETOOTH
 
     private val _status = MutableStateFlow(
-        TransportStatus(TransportKind.BLUETOOTH, "蓝牙HID", "正在连接协议栈")
+        TransportStatus(
+            TransportKind.BLUETOOTH,
+            TransportState.STARTING,
+            app.getString(R.string.hid_bt_label),
+            app.getString(R.string.hid_st_starting),
+        )
     )
     override val status: StateFlow<TransportStatus> = _status.asStateFlow()
 
@@ -74,7 +80,12 @@ class BluetoothHidTransport(
             hidDevice = null
             registered = false
             target = null
-            _status.value = TransportStatus(TransportKind.BLUETOOTH, "蓝牙HID", "协议栈断开")
+            _status.value = TransportStatus(
+                TransportKind.BLUETOOTH,
+                TransportState.DISCONNECTED,
+                app.getString(R.string.hid_bt_label),
+                app.getString(R.string.hid_st_proxy_down),
+            )
             ring.log("BT  profile proxy disconnected")
         }
     }
@@ -83,9 +94,19 @@ class BluetoothHidTransport(
         override fun onAppStatusChanged(plugState: BluetoothDevice?, available: Boolean) {
             registered = available
             _status.value = if (available) {
-                TransportStatus(TransportKind.BLUETOOTH, "蓝牙HID", "已注册，等待主机连接")
+                TransportStatus(
+                    TransportKind.BLUETOOTH,
+                    TransportState.DISCONNECTED,
+                    app.getString(R.string.hid_bt_label),
+                    app.getString(R.string.hid_st_registered),
+                )
             } else {
-                TransportStatus(TransportKind.BLUETOOTH, "蓝牙HID", "注册失败（app需在前台）")
+                TransportStatus(
+                    TransportKind.BLUETOOTH,
+                    TransportState.REGISTER_FAILED,
+                    app.getString(R.string.hid_bt_label),
+                    app.getString(R.string.hid_st_register_failed),
+                )
             }
             ring.log("BT  app registered=$available")
         }
@@ -96,12 +117,21 @@ class BluetoothHidTransport(
                 BluetoothProfile.STATE_CONNECTED -> {
                     target = device
                     _status.value = TransportStatus(
-                        TransportKind.BLUETOOTH, "已连接", "HID 主机在线", hostName(device),
+                        TransportKind.BLUETOOTH,
+                        TransportState.CONNECTED,
+                        app.getString(R.string.hid_st_connected_label),
+                        app.getString(R.string.hid_st_connected_detail),
+                        hostName(device),
                     )
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     if (target == device) target = firstConnectedDevice()
-                    _status.value = TransportStatus(TransportKind.BLUETOOTH, "蓝牙HID", "等待主机连接")
+                    _status.value = TransportStatus(
+                        TransportKind.BLUETOOTH,
+                        TransportState.DISCONNECTED,
+                        app.getString(R.string.hid_bt_label),
+                        app.getString(R.string.hid_st_waiting_host),
+                    )
                 }
                 else -> Unit
             }
@@ -124,16 +154,27 @@ class BluetoothHidTransport(
     init {
         val a = adapter
         when {
-            a == null -> _status.value =
-                TransportStatus(TransportKind.BLUETOOTH, "不可用", "本机无蓝牙适配器")
-            !hasConnectPermission() -> _status.value =
-                TransportStatus(TransportKind.BLUETOOTH, "缺少权限", "需要蓝牙连接权限")
+            a == null -> _status.value = TransportStatus(
+                TransportKind.BLUETOOTH,
+                TransportState.NO_ADAPTER,
+                app.getString(R.string.hid_st_unavailable_label),
+                app.getString(R.string.hid_st_no_adapter),
+            )
+            !hasConnectPermission() -> _status.value = TransportStatus(
+                TransportKind.BLUETOOTH,
+                TransportState.NEEDS_PERMISSION,
+                app.getString(R.string.hid_st_need_permission_label),
+                app.getString(R.string.hid_st_need_permission),
+            )
             else -> {
                 val ok = runCatching {
                     a.getProfileProxy(app, profileListener, BluetoothProfile.HID_DEVICE)
                 }.getOrDefault(false)
                 if (!ok) _status.value = TransportStatus(
-                    TransportKind.BLUETOOTH, "不可用", "HID Device profile 不支持（OEM 未开启）"
+                    TransportKind.BLUETOOTH,
+                    TransportState.UNAVAILABLE,
+                    app.getString(R.string.hid_st_unavailable_label),
+                    app.getString(R.string.hid_st_profile_missing),
                 )
             }
         }
@@ -142,7 +183,12 @@ class BluetoothHidTransport(
     private fun register() {
         val dev = hidDevice ?: return
         if (!hasConnectPermission()) {
-            _status.value = TransportStatus(TransportKind.BLUETOOTH, "缺少权限", "需要蓝牙连接权限")
+            _status.value = TransportStatus(
+                TransportKind.BLUETOOTH,
+                TransportState.NEEDS_PERMISSION,
+                app.getString(R.string.hid_st_need_permission_label),
+                app.getString(R.string.hid_st_need_permission),
+            )
             return
         }
         val ok = runCatching {
@@ -150,7 +196,10 @@ class BluetoothHidTransport(
         }.getOrDefault(false)
         ring.log("BT  registerApp=$ok")
         if (!ok) _status.value = TransportStatus(
-            TransportKind.BLUETOOTH, "注册失败", "registerApp 返回 false；保持前台后重试"
+            TransportKind.BLUETOOTH,
+            TransportState.REGISTER_FAILED,
+            app.getString(R.string.hid_st_register_failed_label),
+            app.getString(R.string.hid_st_register_false),
         )
     }
 

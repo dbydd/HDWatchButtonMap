@@ -22,12 +22,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
+import dev.hdwatch.buttonmap.R
 import dev.hdwatch.buttonmap.input.Symbol
 
 /**
@@ -37,6 +39,17 @@ import dev.hdwatch.buttonmap.input.Symbol
 
 private const val LOG_TAIL = 80
 private const val LOG_KEEP = 200
+
+/**
+ * Danger coloring for the log stream. ring.log() lines are English logcat-style text
+ * in every locale, so English markers decide; the localized keywords stay because a
+ * config decode problem string can still be spliced into a line.
+ */
+private fun isLogError(line: String): Boolean {
+    val lower = line.lowercase()
+    return lower.contains("fail") || lower.contains("rejected") || lower.contains("error") ||
+        lower.contains("失败") || lower.contains("拒绝") || lower.contains("错误") || lower.contains("缺失")
+}
 
 @Composable
 fun LogScreen() {
@@ -62,8 +75,8 @@ fun LogScreen() {
         }
     }
 
-    ScreenScaffold(title = "输入日志") {
-        SectionLabel("报告 / 事件")
+    ScreenScaffold(title = stringResource(R.string.set_log_title)) {
+        SectionLabel(stringResource(R.string.set_log_stream))
         HdPanel(
             modifier = Modifier
                 .widthIn(min = 140.dp, max = 200.dp)
@@ -79,13 +92,18 @@ fun LogScreen() {
                     .padding(horizontal = 9.dp, vertical = 7.dp),
             ) {
                 if (lines.isEmpty()) {
-                    Text("暂无日志", color = palette.muted, fontSize = 9.sp, maxLines = 1)
+                    Text(
+                        stringResource(R.string.set_log_empty),
+                        color = palette.muted,
+                        fontSize = 9.sp,
+                        maxLines = 1,
+                    )
                 }
                 lines.forEach { line ->
                     Text(
                         text = line,
                         fontFamily = FontFamily.Monospace,
-                        color = if (isStatusError(line)) palette.danger else palette.muted,
+                        color = if (isLogError(line)) palette.danger else palette.muted,
                         fontSize = 9.sp,
                         letterSpacing = 0.5.sp,
                         maxLines = 2,
@@ -95,7 +113,7 @@ fun LogScreen() {
             }
         }
 
-        SectionLabel("虚拟输入")
+        SectionLabel(stringResource(R.string.set_log_virtual_input))
         Symbol.mappable.chunked(4).forEach { rowSymbols ->
             Row(
                 modifier = Modifier
@@ -116,14 +134,14 @@ fun LogScreen() {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             ActionButton(
-                text = "清空日志",
+                text = stringResource(R.string.set_log_clear),
                 onClick = {
                     app.ring.clear()
                     lines.clear()
                 },
             )
             ActionButton(
-                text = "紧急释放",
+                text = stringResource(R.string.set_log_release),
                 onClick = { app.runner.emergencyRelease() },
                 tone = HdTone.Danger,
             )

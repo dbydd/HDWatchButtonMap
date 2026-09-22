@@ -7,6 +7,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Build
+import dev.hdwatch.buttonmap.R
 import dev.hdwatch.buttonmap.config.ConfigRepository
 import dev.hdwatch.buttonmap.engine.InputSource
 import dev.hdwatch.buttonmap.engine.SequenceEngine
@@ -94,7 +95,7 @@ class SensorHub(
                 shake = shake,
                 permission = permission,
                 hardwareOk = probe(manager, sensor),
-                detail = "类型 #$type · ${sensor.name}",
+                detail = app.getString(R.string.sns_detail_type, type, sensor.name),
             )
         }
 
@@ -118,14 +119,18 @@ class SensorHub(
             val native = out.any { it.sensorName.uppercase().contains("SHAKE") }
             out += Entry(
                 id = IMU_SHAKE_ID,
-                label = "抖动",
+                label = app.getString(R.string.sns_cap_shake),
                 sensorName = "",
                 sensor = linear,
                 rate = SensorManager.SENSOR_DELAY_GAME,
                 shake = true,
                 permission = null,
                 hardwareOk = !native && probe(manager, linear),
-                detail = if (native) "已被原生接管" else "|a|>18 峰值 4 次 / 800ms",
+                detail = if (native) {
+                    app.getString(R.string.sns_detail_native_shake)
+                } else {
+                    app.getString(R.string.sns_detail_imu_shake)
+                },
             )
         }
 
@@ -257,7 +262,7 @@ class SensorHub(
 
     private fun friendlyLabel(sensor: Sensor): String {
         val haystack = "${sensor.name} ${sensor.stringType ?: ""}".uppercase()
-        FRIENDLY.forEach { (key, label) -> if (haystack.contains(key)) return label }
+        FRIENDLY.forEach { (key, labelRes) -> if (haystack.contains(key)) return app.getString(labelRes) }
         return sensor.name.take(20)
     }
 
@@ -274,16 +279,16 @@ class SensorHub(
         )
         val REFLECT_HINTS = listOf("GESTURE", "TILT", "WRIST", "DOUBLE_TAP", "PICK_UP", "GLANCE", "TAP_")
         val FRIENDLY = listOf(
-            "WRIST" to "抬腕",
-            "DOUBLE_TAP" to "双击",
-            "SHAKE" to "抖动",
-            "FLIP" to "翻转",
-            "GRIP" to "握持",
-            "PALM" to "掌心",
-            "PICK" to "拿起",
-            "GLANCE" to "瞥视",
-            "TILT" to "倾斜",
-            "GESTURE" to "手势",
+            "WRIST" to R.string.sns_cap_wrist,
+            "DOUBLE_TAP" to R.string.sns_cap_double_tap,
+            "SHAKE" to R.string.sns_cap_shake,
+            "FLIP" to R.string.sns_cap_flip,
+            "GRIP" to R.string.sns_cap_grip,
+            "PALM" to R.string.sns_cap_palm,
+            "PICK" to R.string.sns_cap_pick,
+            "GLANCE" to R.string.sns_cap_glance,
+            "TILT" to R.string.sns_cap_tilt,
+            "GESTURE" to R.string.sns_cap_gesture,
         )
         val isEmulator: Boolean
             get() = Build.HARDWARE.contains("goldfish") || Build.HARDWARE.contains("ranchu") ||

@@ -76,6 +76,7 @@ object ConfigJson {
             put("forceLoggingTransport", config.settings.forceLoggingTransport)
             put("gestureSensorsEnabled", config.settings.gestureSensorsEnabled)
             put("keepAliveService", config.settings.keepAliveService)
+            put("vibrationEnabled", config.settings.vibrationEnabled)
             put("sensorToSymbol", JSONObject(config.settings.sensorToSymbol as Map<*, *>))
         })
         root.put("activeProfile", config.activeProfileId)
@@ -128,6 +129,7 @@ object ConfigJson {
                     "forceLoggingTransport" -> s = s.copy(forceLoggingTransport = o.getBoolean(k))
                     "gestureSensorsEnabled" -> s = s.copy(gestureSensorsEnabled = o.getBoolean(k))
                     "keepAliveService" -> s = s.copy(keepAliveService = o.getBoolean(k))
+                    "vibrationEnabled" -> s = s.copy(vibrationEnabled = o.getBoolean(k))
                     "sensorToSymbol" -> {
                         val j = o.getJSONObject(k)
                         s = s.copy(sensorToSymbol = j.keys().asSequence().associateWith { j.getString(it) })

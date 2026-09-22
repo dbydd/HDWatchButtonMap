@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Names of the profiles the app seeds on first run. -->
+<resources>
+    <string name="app_profile_direct">Direct</string>
+    <string name="app_profile_macro">Macros</string>
+</resources>

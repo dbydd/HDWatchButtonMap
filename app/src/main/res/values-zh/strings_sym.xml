@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 输入符号名（映射编辑器显示） -->
+<resources>
+    <string name="sym_up">上</string>
+    <string name="sym_down">下</string>
+    <string name="sym_left">左</string>
+    <string name="sym_right">右</string>
+    <string name="sym_cw">顺转</string>
+    <string name="sym_ccw">逆转</string>
+    <string name="sym_stem">按键</string>
+    <string name="sym_stem_long">长按键</string>
+    <string name="sym_g1">手势1</string>
+    <string name="sym_g2">手势2</string>
+    <string name="sym_g3">手势3</string>
+    <string name="sym_g4">手势4</string>
+</resources>

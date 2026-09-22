@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- shared micro labels -->
+    <string name="set_label_keep_alive">保活</string>
+
+    <!-- HidScreen -->
+    <string name="set_hid_title">蓝牙 HID</string>
+    <string name="set_hid_link_status">链路状态</string>
+    <string name="set_hid_keep_alive_running">前台服务运行中</string>
+    <string name="set_hid_keep_alive_off">未开启</string>
+    <string name="set_hid_no_bluetooth">本机无蓝牙 HID 通路</string>
+    <string name="set_hid_permission_granted">已授予蓝牙连接权限</string>
+    <string name="set_hid_permission_missing">缺少蓝牙连接权限，先授权再操作</string>
+    <string name="set_hid_disconnect_hint">断连多为后台注销所致，保持保活开关开启</string>
+    <string name="set_hid_discoverable">请求可发现</string>
+    <string name="set_hid_permission">蓝牙权限</string>
+    <string name="set_hid_reconnect">重连</string>
+    <string name="set_hid_disconnect">断开</string>
+    <string name="set_hid_reregister">重新注册</string>
+    <string name="set_hid_hosts">已配对主机</string>
+    <string name="set_hid_host">HOST %1$s</string>
+    <string name="set_hid_no_hosts">没有可用主机：先在系统设置配对电脑，或授予蓝牙权限</string>
+    <string name="set_hid_tap_reconnect">点击重连</string>
+    <string name="set_hid_transport_mode">传输模式</string>
+    <string name="set_hid_log_transport">日志模拟传输</string>
+    <string name="set_hid_log_transport_on">报文只写日志，不发蓝牙</string>
+    <string name="set_hid_log_transport_off">通过蓝牙 HID 发送到主机</string>
+    <string name="set_hid_log_transport_note">模拟器没有蓝牙协议栈，必须留在日志模拟；真机关闭后即可连接电脑主机。</string>
+    <string name="set_hid_external_config">外部配置文件</string>
+    <string name="set_hid_adb_push">adb push hdmap.json %1$s</string>
+    <string name="set_hid_no_external_dir">（无外部目录）</string>
+    <string name="set_hid_external_note">把配置推到手表外部文件目录，启动时自动导入；也可在设置里手动重载。</string>
+
+    <!-- LogScreen -->
+    <string name="set_log_title">输入日志</string>
+    <string name="set_log_stream">报告 / 事件</string>
+    <string name="set_log_virtual_input">虚拟输入</string>
+    <string name="set_log_empty">暂无日志</string>
+    <string name="set_log_clear">清空日志</string>
+    <string name="set_log_release">紧急释放</string>
+
+    <!-- SettingsScreen -->
+    <string name="set_title">设置</string>
+    <string name="set_section_rotation">表冠旋转</string>
+    <string name="set_section_sequence">序列</string>
+    <string name="set_section_typing">打字</string>
+    <string name="set_section_gestures">手势传感器</string>
+    <string name="set_section_feedback">反馈</string>
+    <string name="set_section_config">配置文件</string>
+    <string name="set_step_rotate_threshold">旋转阈值</string>
+    <string name="set_step_profile_threshold">本模式阈值</string>
+    <string name="set_step_sequence_timeout">序列超时</string>
+    <string name="set_step_text_delay">字符间隔</string>
+    <plurals name="set_step_value_clicks">
+        <item quantity="other">%1$d 格</item>
+    </plurals>
+    <string name="set_step_value_ms">%1$d ms</string>
+    <string name="set_action_follow_global">跟随全局</string>
+    <string name="set_rotate_follow_global">本模式当前跟随全局（全局 %1$d 格）</string>
+    <string name="set_rotate_override_global">本模式覆盖全局（全局 %1$d 格）</string>
+    <string name="set_switch_invert">反转正负</string>
+    <string name="set_switch_invert_on">顺/逆时针对调</string>
+    <string name="set_switch_invert_off">表冠方向按系统默认</string>
+    <string name="set_switch_capture_unknown">捕获未知输入</string>
+    <string name="set_switch_capture_unknown_hint">在输入日志里显示原始按键与事件</string>
+    <string name="set_switch_gestures">启用手势传感器</string>
+    <string name="set_switch_gestures_hint">打开才注册监听；模拟器 HAL 会崩，实机也保持手动开启</string>
+    <string name="set_gestures_none">本机无可用手势能力</string>
+    <string name="set_gesture_available">可用</string>
+    <string name="set_gesture_gated">未启用监听</string>
+    <string name="set_gesture_needs_permission">缺权限</string>
+    <string name="set_gesture_broken">不可用</string>
+    <string name="set_gesture_row">%1$s · 绑定 %2$s</string>
+    <string name="set_gesture_unbound">无</string>
+    <string name="set_switch_vibration">振动</string>
+    <string name="set_switch_vibration_hint">关闭后所有触感提示静默</string>
+    <string name="set_switch_keep_alive">前台服务保活</string>
+    <string name="set_switch_keep_alive_hint">防退后台断连 + 通知栏常驻</string>
+    <string name="set_action_reload">重载</string>
+    <string name="set_action_import">导入 JSON</string>
+    <string name="set_action_export">导出 JSON</string>
+    <string name="set_action_write_external">写外部文件</string>
+    <string name="set_version_line">HD MAP %1$s</string>
+
+    <!-- ConfigRepository status -->
+    <string name="set_status_not_loaded">未加载</string>
+    <string name="set_status_loaded">已加载 (%1$s)</string>
+    <string name="set_status_config_missing">配置文件缺失，使用内置默认</string>
+    <string name="set_status_config_error">配置错误：%1$s</string>
+    <string name="set_status_imported">已导入：%1$s</string>
+    <string name="set_status_import_rejected">导入拒绝：%1$s</string>
+    <string name="set_status_import_read_failed">导入失败：无法读取 %1$s</string>
+    <string name="set_status_exported_to">已导出到 %1$s</string>
+    <string name="set_status_export_failed">导出失败：%1$s</string>
+    <string name="set_status_saved">已保存 %1$s</string>
+    <string name="set_status_pack_unlocked">已解锁 %1$s：%2$d 条呼叫</string>
+    <string name="set_status_unlock_failed">解锁失败：%1$s</string>
+    <string name="set_status_external_file">外部文件 %1$s</string>
+</resources>

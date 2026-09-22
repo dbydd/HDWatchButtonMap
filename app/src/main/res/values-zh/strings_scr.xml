@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- MenuScreen -->
+    <string name="scr_menu_title">HD MAP</string>
+    <string name="scr_menu_mode">模式 %1$s</string>
+    <string name="scr_menu_collapse">点击收起</string>
+    <string name="scr_menu_mode_hint">共 %1$d 个模式 · 点选切换</string>
+    <string name="scr_menu_kind_keys">直控 · 按啥发啥</string>
+    <string name="scr_menu_kind_macro">宏 · 序列触发</string>
+    <string name="scr_menu_single">单键映射</string>
+    <string name="scr_menu_single_hint">点按/按键/表冠/手势 → HID</string>
+    <string name="scr_menu_macros">宏命令</string>
+    <string name="scr_menu_macro_count">%1$d/%2$d 启用</string>
+    <string name="scr_menu_bluetooth">蓝牙 HID</string>
+    <string name="scr_menu_settings">设置 · 传感器 · 调试</string>
+    <string name="scr_menu_log">输入日志</string>
+    <string name="scr_menu_reload">重载配置</string>
+    <string name="scr_menu_import">从文件导入 JSON</string>
+
+    <!-- MappingScreens: list -->
+    <string name="scr_map_list_title">单键映射 · 模式 %1$s</string>
+    <string name="scr_map_list_footer">未启用序列前缀的按键立即触发；完整编辑请用外部 hdmap.json</string>
+    <string name="scr_map_seq_conflict">%1$s · 序列中×%2$d</string>
+
+    <!-- MappingScreens: edit -->
+    <string name="scr_map_edit_title">映射：%1$s %2$s · 模式 %3$s</string>
+    <string name="scr_map_current_action">当前动作</string>
+    <string name="scr_map_none_selected">未选择</string>
+    <string name="scr_map_save">保存</string>
+    <string name="scr_map_clear">清除</string>
+    <string name="scr_map_section_shortcuts">快捷键</string>
+    <string name="scr_map_mouse_left">左键</string>
+    <string name="scr_map_mouse_right">右键</string>
+    <string name="scr_map_mouse_middle">中键</string>
+    <string name="scr_map_wheel_up">滚轮↑</string>
+    <string name="scr_map_wheel_down">滚轮↓</string>
+    <string name="scr_map_media_play">播放</string>
+    <string name="scr_map_media_vol_up">音量+</string>
+    <string name="scr_map_media_vol_down">音量-</string>
+    <string name="scr_map_media_mute">静音</string>
+    <string name="scr_map_media_next">下一曲</string>
+    <string name="scr_map_media_prev">上一曲</string>
+    <string name="scr_map_section_modifiers">修饰键</string>
+    <string name="scr_map_section_pick_key">选择键 · 先选类别</string>
+    <string name="scr_map_section_pick_key_in">选择键 · %1$s</string>
+    <string name="scr_map_key_count">%1$d 个键</string>
+    <string name="scr_map_back_categories">← 返回类别</string>
+    <string name="scr_map_hint_media_page">媒体页</string>
+    <string name="scr_map_back_no_save">← 返回（不保存）</string>
+
+    <!-- MacroScreen -->
+    <string name="scr_macro_title">宏命令</string>
+    <string name="scr_macro_not_macro_mode">当前是直控模式，宏只存而不触发——到菜单切换模式</string>
+    <string name="scr_macro_empty">没有宏；用 hdmap.json 或导入添加</string>
+    <string name="scr_macro_state_on">启用</string>
+    <string name="scr_macro_state_off">停用</string>
+    <string name="scr_macro_enable">启用</string>
+    <string name="scr_macro_disable">停用</string>
+    <string name="scr_macro_steps">%1$d步</string>
+    <string name="scr_macro_run">试跑</string>
+    <string name="scr_macro_delete">删除</string>
+    <string name="scr_macro_confirm_delete">确认删除</string>
+</resources>

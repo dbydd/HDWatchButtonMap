@@ -30,12 +30,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
+import dev.hdwatch.buttonmap.R
 import dev.hdwatch.buttonmap.config.ProfileKind
 import dev.hdwatch.buttonmap.config.Macro
 import kotlinx.coroutines.delay
@@ -46,10 +48,6 @@ import kotlinx.coroutines.delay
  */
 
 private const val DELETE_CONFIRM_MS = 4000L
-
-/** configRepo.status 中表示读取/解析/写入失败的关键字；命中时用 danger 色呈现。 */
-internal fun isStatusError(status: String): Boolean =
-    status.contains("失败") || status.contains("拒绝") || status.contains("错误") || status.contains("缺失")
 
 /** 配置屏动作按钮的配色档位：中性（描边感）、主强调、危险。 */
 enum class HdTone { Neutral, Accent, Danger }
@@ -186,6 +184,7 @@ fun MacroListScreen() {
     val palette = LocalHdPalette.current
     val config by app.configRepo.config.collectAsState()
     val status by app.configRepo.status.collectAsState()
+    val statusIsError by app.configRepo.statusIsError.collectAsState()
     var pendingDelete by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(pendingDelete) {
@@ -195,10 +194,10 @@ fun MacroListScreen() {
         }
     }
 
-    ScreenScaffold(title = "宏命令") {
+    ScreenScaffold(title = stringResource(R.string.scr_macro_title)) {
         if (config.activeProfile.kind != ProfileKind.MACRO) {
             Text(
-                text = "当前是直控模式，宏只存而不触发——到菜单切换模式",
+                text = stringResource(R.string.scr_macro_not_macro_mode),
                 color = palette.primary,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -210,7 +209,7 @@ fun MacroListScreen() {
         }
         Text(
             text = status,
-            color = if (isStatusError(status)) palette.danger else palette.muted,
+            color = if (statusIsError) palette.danger else palette.muted,
             fontSize = 11.sp,
             maxLines = 2,
             modifier = Modifier
@@ -218,7 +217,7 @@ fun MacroListScreen() {
                 .padding(bottom = 4.dp),
         )
         if (config.activeProfile.macros.isEmpty()) {
-            Text("没有宏；用 hdmap.json 或导入添加", color = palette.muted, fontSize = 11.sp, maxLines = 2)
+            Text(stringResource(R.string.scr_macro_empty), color = palette.muted, fontSize = 11.sp, maxLines = 2)
         }
         config.activeProfile.macros.forEach { macro ->
             MacroCard(
@@ -273,14 +272,16 @@ private fun MacroCard(
                         ),
                 )
                 Text(
-                    text = if (macro.enabled) " 启用" else " 停用",
+                    text = " " + stringResource(
+                        if (macro.enabled) R.string.scr_macro_state_on else R.string.scr_macro_state_off,
+                    ),
                     color = if (macro.enabled) palette.primary.copy(alpha = 0.85f) else palette.muted,
                     fontSize = 9.sp,
                     maxLines = 1,
                 )
             }
             Text(
-                text = macro.sequenceDisplay + " · " + macro.steps.size + "步" +
+                text = macro.sequenceDisplay + " · " + stringResource(R.string.scr_macro_steps, macro.steps.size) +
                     if (macro.repeat > 1) " · x" + macro.repeat else "",
                 fontFamily = FontFamily.Monospace,
                 color = palette.secondary.copy(alpha = 0.8f),
@@ -292,10 +293,15 @@ private fun MacroCard(
                 modifier = Modifier.padding(top = 5.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                ActionButton("试跑", onRun, tone = HdTone.Accent)
-                ActionButton(if (macro.enabled) "停用" else "启用", onToggle)
+                ActionButton(stringResource(R.string.scr_macro_run), onRun, tone = HdTone.Accent)
                 ActionButton(
-                    text = if (confirming) "确认删除" else "删除",
+                    stringResource(if (macro.enabled) R.string.scr_macro_disable else R.string.scr_macro_enable),
+                    onToggle,
+                )
+                ActionButton(
+                    text = stringResource(
+                        if (confirming) R.string.scr_macro_confirm_delete else R.string.scr_macro_delete,
+                    ),
                     onClick = onDelete,
                     tone = HdTone.Danger,
                 )

@@ -40,7 +40,11 @@ class HdApp : Application() {
         val vibrator = runCatching {
             getSystemService(VibratorManager::class.java).defaultVibrator
         }.getOrNull()
-        haptics = Haptics(vibrator) { msg -> ring.log("HAP  $msg") }
+        haptics = Haptics(
+            vibrator = vibrator,
+            onError = { msg -> ring.log("HAP  $msg") },
+            vibrationEnabled = { configRepo.config.value.settings.vibrationEnabled },
+        )
         configRepo = ConfigRepository(this, ring)
         transports = TransportManager(this, ring)
         runner = MacroRunner(scope, transports, { configRepo.config.value.settings }, ring)

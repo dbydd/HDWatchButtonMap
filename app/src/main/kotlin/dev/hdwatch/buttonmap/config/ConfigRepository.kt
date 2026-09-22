@@ -3,6 +3,7 @@ package dev.hdwatch.buttonmap.config
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import dev.hdwatch.buttonmap.R
 import dev.hdwatch.buttonmap.input.Symbol
 import dev.hdwatch.buttonmap.hid.ReportRing
 import java.io.File
@@ -35,8 +36,22 @@ class ConfigRepository(
     private val _config = MutableStateFlow(Config.EMPTY)
     val config: StateFlow<Config> = _config.asStateFlow()
 
-    private val _status = MutableStateFlow("未加载")
+    private val _status = MutableStateFlow(app.getString(R.string.set_status_not_loaded))
     val status: StateFlow<String> = _status.asStateFlow()
+
+    private val _statusIsError = MutableStateFlow(false)
+
+    /** True when [status] reports a read/parse/write failure; drives the danger color. */
+    val statusIsError: StateFlow<Boolean> = _statusIsError.asStateFlow()
+
+    /**
+     * Sole writer of [status]: the flag travels with the text so screens never have to
+     * re-derive "is this an error" from the localized string they are rendering.
+     */
+    private fun setStatus(text: String, isError: Boolean = false) {
+        _status.value = text
+        _statusIsError.value = isError
+    }
 
     init {
         if (!configFile.exists()) {
@@ -57,7 +72,7 @@ class ConfigRepository(
             app.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
         }.getOrNull()
         if (text == null) {
-            _status.value = "导入失败：无法读取 $uri"
+            setStatus(app.getString(R.string.set_status_import_read_failed, uri), isError = true)
             ring.log("CFG  import failed uri=$uri")
             return
         }
@@ -72,7 +87,7 @@ class ConfigRepository(
             }
             true
         }.getOrElse {
-            _status.value = "导出失败：${it.message}"
+            setStatus(app.getString(R.string.set_status_export_failed, it.message), isError = true)
             false
         }
     }
@@ -82,7 +97,7 @@ class ConfigRepository(
         return runCatching {
             target.writeText(ConfigJson.encode(_config.value))
             prefs.edit().putLong(KEY_EXT_STAMP, target.lastModified()).apply()
-            _status.value = "已导出到 ${target.absolutePath}"
+            setStatus(app.getString(R.string.set_status_exported_to, target.absolutePath))
             target
         }.getOrNull()
     }
@@ -94,7 +109,7 @@ class ConfigRepository(
         val seen = prefs.getLong(KEY_EXT_STAMP, 0L)
         if (ext.lastModified() <= seen) return false
         val text = runCatching { ext.readText() }.getOrNull() ?: return false
-        val ok = storeAndActivate(text, "外部文件 ${ext.name}")
+        val ok = storeAndActivate(text, app.getString(R.string.set_status_external_file, ext.name))
         // Only consume the timestamp on success: a rejected file must be
         // retried after the user fixes it in place.
         if (ok) {
@@ -108,7 +123,8 @@ class ConfigRepository(
         val next = transform(_config.value)
         persist(next)
         _config.value = next
-        _status.value = "已保存 ${java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date())}"
+        val stamp = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date())
+        setStatus(app.getString(R.string.set_status_saved, stamp))
     }
 
     fun updateSettings(transform: (Settings) -> Settings) = update { it.copy(settings = transform(it.settings)) }
@@ -166,11 +182,11 @@ class ConfigRepository(
                 ),
             )
         }
-        _status.value = "已解锁 ${profile.name}：${profile.macros.size} 条呼叫"
+        setStatus(app.getString(R.string.set_status_pack_unlocked, profile.name, profile.macros.size))
         ring.log("CFG  pack $assetName installed (${profile.macros.size} macros)")
         true
     } catch (e: Exception) {
-        _status.value = "解锁失败：${e.message}"
+        setStatus(app.getString(R.string.set_status_unlock_failed, e.message), isError = true)
         false
     }
 
@@ -194,14 +210,30 @@ class ConfigRepository(
         val text = runCatching {
             app.assets.open(assetSeedName).bufferedReader().use { it.readText() }
         }.getOrNull() ?: return
-        runCatching { configFile.writeText(text) }
+        // The seed carries language-neutral names for its two built-in
+        // profiles; give them the local names before they ever reach the UI.
+        val localized = runCatching {
+            val cfg = ConfigJson.decode(text)
+            ConfigJson.encode(
+                cfg.copy(
+                    profiles = cfg.profiles.map { p ->
+                        when (p.id) {
+                            "keys" -> p.copy(name = app.getString(R.string.app_profile_direct))
+                            "macro" -> p.copy(name = app.getString(R.string.app_profile_macro))
+                            else -> p
+                        }
+                    },
+                ),
+            )
+        }.getOrDefault(text)
+        runCatching { configFile.writeText(localized) }
         ring.log("CFG  seeded defaults")
     }
 
     private fun loadFile(source: String) {
         val text = runCatching { configFile.readText() }.getOrNull()
         if (text == null) {
-            _status.value = "配置文件缺失，使用内置默认"
+            setStatus(app.getString(R.string.set_status_config_missing), isError = true)
             seedFromAssets()
             runCatching { _config.value = ConfigJson.decode(configFile.readText()) }
             return
@@ -210,11 +242,14 @@ class ConfigRepository(
             val decoded = stripBundledDemoMacros(ConfigJson.decode(text))
             _config.value = decoded
             persist(decoded)
-            _status.value = "已加载 ($source)"
+            setStatus(app.getString(R.string.set_status_loaded, source))
             ring.log("CFG  loaded from $source: ${_config.value.profiles.size} profiles, " +
                 "active=${_config.value.activeProfile.name}")
         } catch (e: ConfigJson.ConfigError) {
-            _status.value = "配置错误：${e.problems.take(3).joinToString(" | ")}"
+            setStatus(
+                app.getString(R.string.set_status_config_error, e.problems.take(3).joinToString(" | ")),
+                isError = true,
+            )
             ring.log("CFG  decode failed: ${e.problems}")
             // Keep running on defaults so the watch stays usable while editing.
             if (_config.value === Config.EMPTY) {
@@ -229,11 +264,14 @@ class ConfigRepository(
             val decoded = ConfigJson.decode(text)
             runCatching { configFile.writeText(text) }
             _config.value = decoded
-            _status.value = "已导入：$label"
+            setStatus(app.getString(R.string.set_status_imported, label))
             ring.log("CFG  imported ($label): ${decoded.profiles.size} profiles")
             return true
         } catch (e: ConfigJson.ConfigError) {
-            _status.value = "导入拒绝：${e.problems.take(4).joinToString(" | ")}"
+            setStatus(
+                app.getString(R.string.set_status_import_rejected, e.problems.take(4).joinToString(" | ")),
+                isError = true,
+            )
             ring.log("CFG  import rejected ($label): ${e.problems}")
             return false
         }

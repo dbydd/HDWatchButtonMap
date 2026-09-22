@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Input symbol names shown by the mapping editor. -->
+<resources>
+    <string name="sym_up">Up</string>
+    <string name="sym_down">Down</string>
+    <string name="sym_left">Left</string>
+    <string name="sym_right">Right</string>
+    <string name="sym_cw">Clockwise</string>
+    <string name="sym_ccw">Counter-clockwise</string>
+    <string name="sym_stem">Stem press</string>
+    <string name="sym_stem_long">Stem long-press</string>
+    <string name="sym_g1">Gesture 1</string>
+    <string name="sym_g2">Gesture 2</string>
+    <string name="sym_g3">Gesture 3</string>
+    <string name="sym_g4">Gesture 4</string>
+</resources>

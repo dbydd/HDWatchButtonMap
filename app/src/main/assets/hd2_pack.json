@@ -7,7 +7,7 @@
   "textDelayMs": 40,
   "captureUnknownInput": true,
   "forceLoggingTransport": false,
-  "gestureSensorsEnabled": true,
+  "gestureSensorsEnabled": false,
   "keepAliveService": true,
   "sensorToSymbol": {
    "imu:shake": "G1"

@@ -28,6 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.delay
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
@@ -36,6 +38,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
+import dev.hdwatch.buttonmap.R
 import dev.hdwatch.buttonmap.input.CapStatus
 import dev.hdwatch.buttonmap.input.GestureBackend
 import dev.hdwatch.buttonmap.input.Symbol
@@ -55,6 +58,7 @@ fun SettingsScreen() {
     val config by app.configRepo.config.collectAsState()
     val settings = config.settings
     val status by app.configRepo.status.collectAsState()
+    val statusIsError by app.configRepo.statusIsError.collectAsState()
     val gestures = app.gestures as GestureBackend
     var caps by remember { mutableStateOf(gestures.capabilities()) }
     val boundSlots = remember { mutableStateMapOf<String, Symbol?>() }
@@ -75,21 +79,21 @@ fun SettingsScreen() {
         }
     }
 
-    ScreenScaffold(title = "设置") {
-        SectionLabel("表冠旋转")
+    ScreenScaffold(title = stringResource(R.string.set_title)) {
+        SectionLabel(stringResource(R.string.set_section_rotation))
         StepperRow(
-            label = "旋转阈值",
+            label = stringResource(R.string.set_step_rotate_threshold),
             value = settings.rotateThreshold.toLong(),
-            suffix = " 格",
+            pluralRes = R.plurals.set_step_value_clicks,
             min = 1,
             max = 15,
             step = 1,
             onChange = { v -> app.configRepo.updateSettings { it.copy(rotateThreshold = v.toInt()) } },
         )
         StepperRow(
-            label = "本模式阈值",
+            label = stringResource(R.string.set_step_profile_threshold),
             value = config.effectiveRotateThreshold().toLong(),
-            suffix = " 格",
+            pluralRes = R.plurals.set_step_value_clicks,
             min = 1,
             max = 15,
             step = 1,
@@ -104,7 +108,7 @@ fun SettingsScreen() {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             ActionButton(
-                text = "跟随全局",
+                text = stringResource(R.string.set_action_follow_global),
                 tone = HdTone.Accent,
                 onClick = {
                     app.configRepo.updateProfile(config.activeProfileId) {
@@ -115,9 +119,9 @@ fun SettingsScreen() {
         }
         Text(
             text = if (config.activeProfile.rotateThreshold == null) {
-                "本模式当前跟随全局（全局 ${settings.rotateThreshold} 格）"
+                stringResource(R.string.set_rotate_follow_global, settings.rotateThreshold)
             } else {
-                "本模式覆盖全局（全局 ${settings.rotateThreshold} 格）"
+                stringResource(R.string.set_rotate_override_global, settings.rotateThreshold)
             },
             color = palette.muted,
             fontSize = 9.sp,
@@ -125,54 +129,58 @@ fun SettingsScreen() {
             modifier = Modifier.padding(top = 2.dp),
         )
         SwitchRow(
-            label = "反转正负",
+            label = stringResource(R.string.set_switch_invert),
             checked = settings.invertRotation,
             onCheckedChange = { on -> app.configRepo.updateSettings { it.copy(invertRotation = on) } },
-            hint = if (settings.invertRotation) "顺/逆时针对调" else "表冠方向按系统默认",
+            hint = if (settings.invertRotation) {
+                stringResource(R.string.set_switch_invert_on)
+            } else {
+                stringResource(R.string.set_switch_invert_off)
+            },
         )
 
-        SectionLabel("序列")
+        SectionLabel(stringResource(R.string.set_section_sequence))
         StepperRow(
-            label = "序列超时",
+            label = stringResource(R.string.set_step_sequence_timeout),
             value = settings.sequenceTimeoutMs,
-            suffix = " ms",
+            valueRes = R.string.set_step_value_ms,
             min = 1000,
             max = 8000,
             step = 500,
             onChange = { v -> app.configRepo.updateSettings { it.copy(sequenceTimeoutMs = v) } },
         )
         SwitchRow(
-            label = "捕获未知输入",
+            label = stringResource(R.string.set_switch_capture_unknown),
             checked = settings.captureUnknownInput,
             onCheckedChange = { on ->
                 app.configRepo.updateSettings { it.copy(captureUnknownInput = on) }
             },
-            hint = "在输入日志里显示原始按键与事件",
+            hint = stringResource(R.string.set_switch_capture_unknown_hint),
         )
 
-        SectionLabel("打字")
+        SectionLabel(stringResource(R.string.set_section_typing))
         StepperRow(
-            label = "字符间隔",
+            label = stringResource(R.string.set_step_text_delay),
             value = settings.textDelayMs,
-            suffix = " ms",
+            valueRes = R.string.set_step_value_ms,
             min = 10,
             max = 200,
             step = 10,
             onChange = { v -> app.configRepo.updateSettings { it.copy(textDelayMs = v) } },
         )
 
-        SectionLabel("手势传感器")
+        SectionLabel(stringResource(R.string.set_section_gestures))
         SwitchRow(
-            label = "启用手势传感器",
+            label = stringResource(R.string.set_switch_gestures),
             checked = settings.gestureSensorsEnabled,
             onCheckedChange = { on ->
                 app.configRepo.updateSettings { it.copy(gestureSensorsEnabled = on) }
             },
-            hint = "打开才注册监听；模拟器 HAL 会崩，实机也保持手动开启",
+            hint = stringResource(R.string.set_switch_gestures_hint),
         )
         if (caps.isEmpty()) {
             Text(
-                "本机无可用手势能力",
+                stringResource(R.string.set_gestures_none),
                 color = palette.muted,
                 fontSize = 9.sp,
                 maxLines = 2,
@@ -198,36 +206,44 @@ fun SettingsScreen() {
             )
         }
 
-        SectionLabel("保活")
+        SectionLabel(stringResource(R.string.set_section_feedback))
         SwitchRow(
-            label = "前台服务保活",
+            label = stringResource(R.string.set_switch_vibration),
+            checked = settings.vibrationEnabled,
+            onCheckedChange = { on -> app.configRepo.updateSettings { it.copy(vibrationEnabled = on) } },
+            hint = stringResource(R.string.set_switch_vibration_hint),
+        )
+
+        SectionLabel(stringResource(R.string.set_label_keep_alive))
+        SwitchRow(
+            label = stringResource(R.string.set_switch_keep_alive),
             checked = settings.keepAliveService,
             onCheckedChange = { on ->
                 app.configRepo.updateSettings { it.copy(keepAliveService = on) }
             },
-            hint = "防退后台断连 + 通知栏常驻",
+            hint = stringResource(R.string.set_switch_keep_alive_hint),
         )
 
-        SectionLabel("配置文件")
+        SectionLabel(stringResource(R.string.set_section_config))
         Row(
             modifier = Modifier
                 .padding(top = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ActionButton("重载", { app.configRepo.reload() })
-            ActionButton("导入 JSON", { actions.importFile() })
+            ActionButton(stringResource(R.string.set_action_reload), { app.configRepo.reload() })
+            ActionButton(stringResource(R.string.set_action_import), { actions.importFile() })
         }
         Row(
             modifier = Modifier
                 .padding(top = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ActionButton("导出 JSON", { actions.exportFile() })
-            ActionButton("写外部文件", { app.configRepo.copyToExternal() })
+            ActionButton(stringResource(R.string.set_action_export), { actions.exportFile() })
+            ActionButton(stringResource(R.string.set_action_write_external), { app.configRepo.copyToExternal() })
         }
         Text(
             text = status,
-            color = if (isStatusError(status)) palette.danger else palette.muted,
+            color = if (statusIsError) palette.danger else palette.muted,
             fontSize = 10.sp,
             maxLines = 2,
             modifier = Modifier
@@ -248,7 +264,7 @@ fun SettingsScreen() {
             }
         }
         Text(
-            text = "HD MAP $version",
+            text = stringResource(R.string.set_version_line, version),
             color = palette.muted.copy(alpha = 0.55f),
             fontFamily = FontFamily.Monospace,
             fontSize = 8.sp,
@@ -294,6 +310,12 @@ private fun GestureCapabilityRow(
         CapStatus.NEEDS_PERMISSION -> palette.danger
         CapStatus.BROKEN -> palette.muted
     }
+    val statusText = when (status) {
+        CapStatus.AVAILABLE -> stringResource(R.string.set_gesture_available)
+        CapStatus.GATED -> stringResource(R.string.set_gesture_gated)
+        CapStatus.NEEDS_PERMISSION -> stringResource(R.string.set_gesture_needs_permission)
+        CapStatus.BROKEN -> stringResource(R.string.set_gesture_broken)
+    }
     HdPanel(
         modifier = Modifier
             .widthIn(min = 132.dp, max = 168.dp)
@@ -322,18 +344,11 @@ private fun GestureCapabilityRow(
                     textDecoration = if (status == CapStatus.BROKEN) TextDecoration.LineThrough else null,
                 )
                 Text(
-                    text = buildString {
-                        append(
-                            when (status) {
-                                CapStatus.AVAILABLE -> "可用"
-                                CapStatus.GATED -> "未启用监听"
-                                CapStatus.NEEDS_PERMISSION -> "缺权限"
-                                CapStatus.BROKEN -> "不可用"
-                            },
-                        )
-                        append(" · 绑定 ")
-                        append(bound?.display ?: "无")
-                    },
+                    text = stringResource(
+                        R.string.set_gesture_row,
+                        statusText,
+                        bound?.display ?: stringResource(R.string.set_gesture_unbound),
+                    ),
                     color = palette.muted,
                     fontSize = 9.sp,
                     maxLines = 2,
@@ -348,7 +363,8 @@ private fun GestureCapabilityRow(
 private fun StepperRow(
     label: String,
     value: Long,
-    suffix: String,
+    valueRes: Int? = null,
+    pluralRes: Int? = null,
     min: Long,
     max: Long,
     step: Long,
@@ -383,7 +399,11 @@ private fun StepperRow(
                     enabled = value > min,
                 )
                 Text(
-                    text = "$value$suffix",
+                    text = when {
+                        pluralRes != null -> pluralStringResource(pluralRes, value.toInt(), value)
+                        valueRes != null -> stringResource(valueRes, value)
+                        else -> value.toString()
+                    },
                     color = palette.primary,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 11.sp,

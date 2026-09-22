@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -57,10 +58,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
+import dev.hdwatch.buttonmap.R
 import dev.hdwatch.buttonmap.config.ProfileKind
 import dev.hdwatch.buttonmap.config.Step
 import dev.hdwatch.buttonmap.engine.EngineEvent
 import dev.hdwatch.buttonmap.hid.TransportKind
+import dev.hdwatch.buttonmap.hid.TransportState
 import dev.hdwatch.buttonmap.hid.TransportStatus
 import dev.hdwatch.buttonmap.input.Symbol
 import kotlin.math.cos
@@ -211,13 +214,14 @@ fun PadScreen() {
         ) { feed(Symbol.RIGHT) }
 
         // ---- hub plaque ----
+        val link = linkCode(transportStatus)
         HubCard(
             profile = profile,
             buffer = buffer,
             hint = hint,
             showEvent = showEvent,
             event = event,
-            link = linkCode(transportStatus),
+            link = link,
             flareProvider = { flare },
             modifier = Modifier
                 .align(Alignment.Center)
@@ -454,8 +458,9 @@ private fun HubCard(
                 } else {
                     // Keys mode: confirmation line, self-clearing after 0.8s.
                     if (event != EngineEvent.Idle && showEvent) {
+                        val line = eventLine(event)
                         Text(
-                            text = eventLine(event),
+                            text = line,
                             color = when (event) {
                                 is EngineEvent.FiredMacro -> palette.primary
                                 is EngineEvent.FiredSingle -> palette.secondary
@@ -484,22 +489,38 @@ private fun HubCard(
     }
 }
 
-/** Compact transport code for the hub footer. */
-private fun linkCode(s: TransportStatus): String = when {
-    s.kind == TransportKind.LOGGING -> "LINK · SIM"
-    s.label.contains("已连接") -> "LINK · HOST"
-    s.label.contains("缺少权限") -> "LINK · AUTH"
-    s.label.contains("不可用") || s.label.contains("失败") -> "LINK · DOWN"
-    else -> "LINK · IDLE"
+/**
+ * Compact transport code for the hub footer. [TransportStatus] exposes no state
+ * enum and its label comes from the transport layer, so the state is read off
+ * that label: the literals below are protocol constants matching
+ * hid/BluetoothHidTransport.kt, not display copy — move them together with it.
+ */
+@Composable
+private fun linkCode(s: TransportStatus): String = when (s.state) {
+    TransportState.LOGGING -> stringResource(R.string.pad_link_sim)
+    TransportState.CONNECTED -> stringResource(R.string.pad_link_host)
+    TransportState.NEEDS_PERMISSION -> stringResource(R.string.pad_link_auth)
+    TransportState.UNAVAILABLE,
+    TransportState.NO_ADAPTER,
+    TransportState.REGISTER_FAILED,
+    -> stringResource(R.string.pad_link_down)
+    else -> stringResource(R.string.pad_link_idle)
 }
 
+@Composable
 private fun eventLine(event: EngineEvent): String = when (event) {
-    is EngineEvent.FiredMacro -> "激活「${event.macro.name}」"
-    is EngineEvent.FiredSingle -> "${event.symbol.display} ${summarize(event.step)}"
-    is EngineEvent.Unmapped -> "未映射 ${event.symbol.display}"
-    is EngineEvent.Pending -> "序列中 ${event.buffer.joinToString(" ") { it.display }}"
-    EngineEvent.SequenceTimeout -> "序列超时清空"
-    EngineEvent.Idle -> "待命"
+    is EngineEvent.FiredMacro -> stringResource(R.string.pad_event_fired_macro, event.macro.name)
+    is EngineEvent.FiredSingle -> {
+        val stepSummary = summarize(event.step)
+        "${event.symbol.display} $stepSummary"
+    }
+    is EngineEvent.Unmapped -> stringResource(R.string.pad_event_unmapped, event.symbol.display)
+    is EngineEvent.Pending -> {
+        val typed = event.buffer.joinToString(" ") { it.display }
+        stringResource(R.string.pad_event_pending, typed)
+    }
+    EngineEvent.SequenceTimeout -> stringResource(R.string.pad_event_seq_timeout)
+    EngineEvent.Idle -> stringResource(R.string.pad_event_idle)
 }
 
 /** Static dial geometry: one path per ink group, built once per size. */

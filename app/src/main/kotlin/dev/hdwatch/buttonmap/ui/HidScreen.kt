@@ -20,12 +20,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
+import dev.hdwatch.buttonmap.R
 import dev.hdwatch.buttonmap.hid.TransportKind
 
 /**
@@ -51,7 +53,7 @@ fun HidScreen() {
         if (bluetooth != null && hasPermission) bluetooth.bondedHosts() else emptyList()
     val externalPath = app.configRepo.externalFile?.absolutePath
 
-    ScreenScaffold(title = "蓝牙 HID") {
+    ScreenScaffold(title = stringResource(R.string.set_hid_title)) {
         HdPanel(
             modifier = Modifier
                 .widthIn(min = 140.dp, max = 178.dp)
@@ -65,7 +67,7 @@ fun HidScreen() {
                     .padding(horizontal = 11.dp, vertical = 9.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    MicroLabel("链路状态", palette.primary.copy(alpha = 0.6f))
+                    MicroLabel(stringResource(R.string.set_hid_link_status), palette.primary.copy(alpha = 0.6f))
                     Spacer(Modifier.weight(1f))
                     Text(
                         text = if (status.kind == TransportKind.BLUETOOTH) "BLUETOOTH" else "LOG ONLY",
@@ -87,7 +89,7 @@ fun HidScreen() {
                 )
                 status.hostName?.let { host ->
                     Text(
-                        text = "HOST $host",
+                        text = stringResource(R.string.set_hid_host, host),
                         fontFamily = FontFamily.Monospace,
                         color = palette.primary,
                         fontSize = 9.sp,
@@ -107,10 +109,14 @@ fun HidScreen() {
                 Hairline()
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    MicroLabel("保活", palette.primary.copy(alpha = 0.6f))
+                    MicroLabel(stringResource(R.string.set_label_keep_alive), palette.primary.copy(alpha = 0.6f))
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = if (settings.keepAliveService) "前台服务运行中" else "未开启",
+                        text = if (settings.keepAliveService) {
+                            stringResource(R.string.set_hid_keep_alive_running)
+                        } else {
+                            stringResource(R.string.set_hid_keep_alive_off)
+                        },
                         color = if (settings.keepAliveService) palette.primary else palette.danger,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -119,9 +125,9 @@ fun HidScreen() {
                 }
                 Text(
                     text = when {
-                        bluetooth == null -> "本机无蓝牙 HID 通路"
-                        hasPermission -> "已授予蓝牙连接权限"
-                        else -> "缺少蓝牙连接权限，先授权再操作"
+                        bluetooth == null -> stringResource(R.string.set_hid_no_bluetooth)
+                        hasPermission -> stringResource(R.string.set_hid_permission_granted)
+                        else -> stringResource(R.string.set_hid_permission_missing)
                     },
                     color = if (bluetooth != null && !hasPermission) palette.danger else palette.muted,
                     fontSize = 9.sp,
@@ -131,7 +137,7 @@ fun HidScreen() {
             }
         }
         Text(
-            text = "断连多为后台注销所致，保持保活开关开启",
+            text = stringResource(R.string.set_hid_disconnect_hint),
             color = palette.muted,
             fontSize = 9.sp,
             maxLines = 2,
@@ -143,11 +149,11 @@ fun HidScreen() {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             ActionButton(
-                text = "请求可发现",
+                text = stringResource(R.string.set_hid_discoverable),
                 onClick = { actions.requestDiscoverable() },
             )
             ActionButton(
-                text = "蓝牙权限",
+                text = stringResource(R.string.set_hid_permission),
                 onClick = { actions.requestBluetoothPermissions() },
                 tone = if (hasPermission) HdTone.Neutral else HdTone.Accent,
             )
@@ -158,27 +164,27 @@ fun HidScreen() {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             ActionButton(
-                text = "重连",
+                text = stringResource(R.string.set_hid_reconnect),
                 onClick = { bluetooth?.tryReconnect() },
                 tone = HdTone.Accent,
                 enabled = bluetooth != null,
             )
             ActionButton(
-                text = "断开",
+                text = stringResource(R.string.set_hid_disconnect),
                 onClick = { bluetooth?.disconnectTarget() },
                 enabled = bluetooth != null,
             )
             ActionButton(
-                text = "重新注册",
+                text = stringResource(R.string.set_hid_reregister),
                 onClick = { bluetooth?.reRegister() },
                 enabled = bluetooth != null,
             )
         }
 
-        SectionLabel("已配对主机")
+        SectionLabel(stringResource(R.string.set_hid_hosts))
         if (hosts.isEmpty()) {
             Text(
-                text = "没有可用主机：先在系统设置配对电脑，或授予蓝牙权限",
+                text = stringResource(R.string.set_hid_no_hosts),
                 color = palette.muted,
                 fontSize = 9.sp,
                 maxLines = 2,
@@ -187,30 +193,37 @@ fun HidScreen() {
         hosts.forEach { device ->
             HostRow(
                 label = bluetooth?.hostLabel(device) ?: device.address,
-                hint = "点击重连",
+                hint = stringResource(R.string.set_hid_tap_reconnect),
             ) { bluetooth?.tryReconnect() }
         }
 
-        SectionLabel("传输模式")
+        SectionLabel(stringResource(R.string.set_hid_transport_mode))
         SwitchRow(
-            label = "日志模拟传输",
+            label = stringResource(R.string.set_hid_log_transport),
             checked = settings.forceLoggingTransport,
             onCheckedChange = { on ->
                 app.configRepo.updateSettings { it.copy(forceLoggingTransport = on) }
             },
-            hint = if (settings.forceLoggingTransport) "报文只写日志，不发蓝牙" else "通过蓝牙 HID 发送到主机",
+            hint = if (settings.forceLoggingTransport) {
+                stringResource(R.string.set_hid_log_transport_on)
+            } else {
+                stringResource(R.string.set_hid_log_transport_off)
+            },
         )
         Text(
-            text = "模拟器没有蓝牙协议栈，必须留在日志模拟；真机关闭后即可连接电脑主机。",
+            text = stringResource(R.string.set_hid_log_transport_note),
             color = palette.muted,
             fontSize = 9.sp,
             maxLines = 2,
             modifier = Modifier.padding(top = 4.dp),
         )
 
-        SectionLabel("外部配置文件")
+        SectionLabel(stringResource(R.string.set_hid_external_config))
         Text(
-            text = "adb push hdmap.json " + (externalPath ?: "（无外部目录）"),
+            text = stringResource(
+                R.string.set_hid_adb_push,
+                externalPath ?: stringResource(R.string.set_hid_no_external_dir),
+            ),
             fontFamily = FontFamily.Monospace,
             color = palette.primary,
             fontSize = 9.sp,
@@ -219,7 +232,7 @@ fun HidScreen() {
             overflow = TextOverflow.Ellipsis,
         )
         Text(
-            text = "把配置推到手表外部文件目录，启动时自动导入；也可在设置里手动重载。",
+            text = stringResource(R.string.set_hid_external_note),
             color = palette.muted,
             fontSize = 9.sp,
             maxLines = 2,

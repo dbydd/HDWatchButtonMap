@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Gesture capability labels/details shown in the settings row. Display only:
+         capability ids in Settings.sensorToSymbol stay untranslated sensor names. -->
+    <string name="sns_cap_wrist">Wrist tilt</string>
+    <string name="sns_cap_double_tap">Double tap</string>
+    <string name="sns_cap_shake">Shake</string>
+    <string name="sns_cap_flip">Flip</string>
+    <string name="sns_cap_grip">Grip</string>
+    <string name="sns_cap_palm">Palm</string>
+    <string name="sns_cap_pick">Pick up</string>
+    <string name="sns_cap_glance">Glance</string>
+    <string name="sns_cap_tilt">Tilt</string>
+    <string name="sns_cap_gesture">Gesture</string>
+    <string name="sns_detail_type">Type #%1$d · %2$s</string>
+    <string name="sns_detail_native_shake">Superseded by native shake</string>
+    <string name="sns_detail_imu_shake">|a|&gt;18, 4 peaks / 800ms</string>
+</resources>

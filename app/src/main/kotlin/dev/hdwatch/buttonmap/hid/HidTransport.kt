@@ -9,9 +9,26 @@ import kotlinx.coroutines.flow.asStateFlow
 
 enum class TransportKind { LOGGING, BLUETOOTH }
 
-/** Human-readable transport state, rendered by the HID status screen. */
+/**
+ * Machine-readable transport state. UI must branch on this, never on the
+ * human text: the label/detail strings are localized.
+ */
+enum class TransportState {
+    LOGGING,
+    STARTING,
+    DISCONNECTED,
+    REGISTER_FAILED,
+    CONNECTING,
+    CONNECTED,
+    NEEDS_PERMISSION,
+    UNAVAILABLE,
+    NO_ADAPTER,
+}
+
+/** Transport state plus its localized, ready-to-render text. */
 data class TransportStatus(
     val kind: TransportKind,
+    val state: TransportState,
     val label: String,
     val detail: String = "",
     val hostName: String? = null,
@@ -43,10 +60,18 @@ interface HidTransport {
  * Log-only transport used by the emulator and `forceLoggingTransport`.
  * Reports are hex-formatted into [reportLog]; send always succeeds.
  */
-class LoggingTransport(private val ring: ReportRing) : HidTransport {
+class LoggingTransport(
+    private val app: android.app.Application,
+    private val ring: ReportRing,
+) : HidTransport {
     override val kind = TransportKind.LOGGING
     override val status = MutableStateFlow(
-        TransportStatus(TransportKind.LOGGING, "模拟传输", "报文只写入日志，不发蓝牙")
+        TransportStatus(
+            TransportKind.LOGGING,
+            TransportState.LOGGING,
+            app.getString(dev.hdwatch.buttonmap.R.string.hid_log_label),
+            app.getString(dev.hdwatch.buttonmap.R.string.hid_log_detail),
+        ),
     )
 
     override val reportLog: SharedFlow<String> = ring.recent

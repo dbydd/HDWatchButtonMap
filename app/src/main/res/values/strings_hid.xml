@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bluetooth HID transport status text (hid layer). -->
+<resources>
+    <string name="hid_bt_label">Bluetooth HID</string>
+    <string name="hid_log_label">Log-only</string>
+    <string name="hid_log_detail">Reports go to the input log; nothing is sent over Bluetooth</string>
+
+    <string name="hid_st_starting">Attaching to the Bluetooth profile proxy</string>
+    <string name="hid_st_proxy_down">Bluetooth stack disconnected</string>
+    <string name="hid_st_registered">Registered, waiting for a host</string>
+    <string name="hid_st_register_failed">Registration failed (the app must stay in the foreground)</string>
+    <string name="hid_st_connected_label">Connected</string>
+    <string name="hid_st_connected_detail">HID host online</string>
+    <string name="hid_st_waiting_host">Waiting for a host to connect</string>
+    <string name="hid_st_unavailable_label">Unavailable</string>
+    <string name="hid_st_no_adapter">No Bluetooth adapter on this device</string>
+    <string name="hid_st_need_permission_label">Permission needed</string>
+    <string name="hid_st_need_permission">Bluetooth connect permission is required</string>
+    <string name="hid_st_profile_missing">HID Device profile unsupported (disabled by the OEM)</string>
+    <string name="hid_st_register_failed_label">Registration failed</string>
+    <string name="hid_st_register_false">registerApp returned false; keep the app in the foreground and retry</string>
+
+    <!-- key-picker categories -->
+    <string name="hid_cat_letters">Letters</string>
+    <string name="hid_cat_digits">Digits</string>
+    <string name="hid_cat_editing">Editing keys</string>
+    <string name="hid_cat_arrows">Arrow keys</string>
+    <string name="hid_cat_punctuation">Punctuation</string>
+    <string name="hid_cat_modifiers">Modifiers</string>
+    <string name="hid_cat_media">Media keys</string>
+    <string name="hid_cat_function">Function keys</string>
+    <string name="hid_cat_numpad">Numpad</string>
+</resources>

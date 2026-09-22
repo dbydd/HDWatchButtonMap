@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 首次运行写入的默认模式名 -->
+<resources>
+    <string name="app_profile_direct">直控</string>
+    <string name="app_profile_macro">宏</string>
+</resources>

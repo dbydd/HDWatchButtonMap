@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 设置页手势能力行的展示文案；能力 id 不是文案，保持不翻译。 -->
+    <string name="sns_cap_wrist">抬腕</string>
+    <string name="sns_cap_double_tap">双击</string>
+    <string name="sns_cap_shake">抖动</string>
+    <string name="sns_cap_flip">翻转</string>
+    <string name="sns_cap_grip">握持</string>
+    <string name="sns_cap_palm">掌心</string>
+    <string name="sns_cap_pick">拿起</string>
+    <string name="sns_cap_glance">瞥视</string>
+    <string name="sns_cap_tilt">倾斜</string>
+    <string name="sns_cap_gesture">手势</string>
+    <string name="sns_detail_type">类型 #%1$d · %2$s</string>
+    <string name="sns_detail_native_shake">已被原生接管</string>
+    <string name="sns_detail_imu_shake">|a|&gt;18 峰值 4 次 / 800ms</string>
+</resources>
