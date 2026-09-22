@@ -17,6 +17,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -24,6 +29,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -157,4 +163,42 @@ fun goldTextBrush(): Brush {
             androidx.compose.ui.graphics.lerp(palette.primary, palette.goldDeep, 0.55f),
         ),
     )
+}
+
+/**
+ * Regular octagon (corner cut 0.293 of each side) with rounded vertices,
+ * inscribed in the layout box — the Orokin medallion silhouette.
+ */
+class OctagonShape(private val corner: Dp) : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+        val w = size.width
+        val h = size.height
+        val cx = w * 0.293f
+        val cy = h * 0.293f
+        val pts = listOf(
+            Offset(cx, 0f), Offset(w - cx, 0f),
+            Offset(w, cy), Offset(w, h - cy),
+            Offset(w - cx, h), Offset(cx, h),
+            Offset(0f, h - cy), Offset(0f, cy),
+        )
+        val want = with(density) { corner.toPx() }
+        val path = Path()
+        val n = pts.size
+        for (i in 0 until n) {
+            val curr = pts[i]
+            val prev = pts[(i - 1 + n) % n]
+            val next = pts[(i + 1) % n]
+            val vPrev = prev - curr
+            val vNext = next - curr
+            val dPrev = kotlin.math.sqrt(vPrev.x * vPrev.x + vPrev.y * vPrev.y)
+            val dNext = kotlin.math.sqrt(vNext.x * vNext.x + vNext.y * vNext.y)
+            val r = want.coerceAtMost(minOf(dPrev, dNext) / 2f)
+            val start = curr + vPrev * (r / dPrev)
+            val end = curr + vNext * (r / dNext)
+            if (i == 0) path.moveTo(start.x, start.y) else path.lineTo(start.x, start.y)
+            path.quadraticBezierTo(curr.x, curr.y, end.x, end.y)
+        }
+        path.close()
+        return Outline.Generic(path)
+    }
 }
