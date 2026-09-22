@@ -64,10 +64,10 @@ data class Macro(
 data class Settings(
     /**
      * Accumulated rotary-axis delta that produces one CW/CCW symbol.
-     * Galaxy Watch 6 Classic bezel emits 1.0 per detent (measured); 5 detents
-     * make one deliberate gesture without accidental triggers.
+     * Galaxy Watch 6 Classic bezel emits 1.0 per detent (measured); 3 detents
+     * feel deliberate on the wrist (user-calibrated).
      */
-    val rotateThreshold: Int = 5,
+    val rotateThreshold: Int = 3,
     /** GW6C sends clockwise as negative; invert maps it back to CROWN_CW. */
     val invertRotation: Boolean = true,
     /** Idle time that drops a half-typed sequence with no penalty. */

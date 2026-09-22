@@ -1,7 +1,7 @@
 {
   "version": 1,
   "settings": {
-    "rotateThreshold": 5,
+    "rotateThreshold": 3,
     "invertRotation": true,
     "sequenceTimeoutMs": 3000,
     "textDelayMs": 40,
