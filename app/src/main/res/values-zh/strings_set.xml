@@ -96,4 +96,5 @@
     <string name="set_status_pack_unlocked">已解锁 %1$s：%2$d 条呼叫</string>
     <string name="set_status_unlock_failed">解锁失败：%1$s</string>
     <string name="set_status_external_file">外部文件 %1$s</string>
+    <string name="set_step_key_jitter">按键抖动（上限）</string>
 </resources>

@@ -147,7 +147,7 @@ class SensorHub(
         // "" is an explicit unbind; null arrives as the same empty value.
         val code = symbol?.code ?: ""
         repo.updateSettings { it.copy(sensorToSymbol = it.sensorToSymbol + (capabilityId to code)) }
-        ring.log("SNS  bind $capabilityId -> ${code.ifEmpty { "无" }}")
+        ring.log("SNS  bind $capabilityId -> ${code.ifEmpty { "none" }}")
     }
 
     // ------------------------------------------------------------- listening
@@ -162,7 +162,7 @@ class SensorHub(
     override fun start() {
         if (listening) return
         if (!gateEnabled) {
-            ring.log("SNS  监听未启用（设置中打开 gestureSensorsEnabled）")
+            ring.log("SNS  listening off (gestureSensorsEnabled is off in Settings)")
             return
         }
         val manager = sensorManager ?: return

@@ -111,6 +111,12 @@ data class Settings(
     val sequenceTimeoutMs: Long = 3000,
     /** Per-character gap when typing text; also the down gap for single taps. */
     val textDelayMs: Long = 40,
+    /**
+     * Upper bound of a random extra gap inserted between consecutive macro
+     * key steps. Mechanical, perfectly even bursts look synthetic to game
+     * input handlers; 0 disables the jitter.
+     */
+    val keyJitterMs: Long = 25,
     /** Debug aid: show every raw captured event on the input-log screen. */
     val captureUnknownInput: Boolean = true,
     /** Force the log-only transport even when Bluetooth HID is available. */

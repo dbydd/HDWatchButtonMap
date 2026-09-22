@@ -10,6 +10,7 @@ import dev.hdwatch.buttonmap.hid.HidReports
 import dev.hdwatch.buttonmap.hid.KeyTable
 import dev.hdwatch.buttonmap.hid.ReportRing
 import dev.hdwatch.buttonmap.hid.TransportManager
+import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -50,7 +51,10 @@ class MacroRunner(
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             ring.log("MACRO ${macro.name} x${macro.repeat} (${macro.steps.size} steps)")
             repeat(macro.repeat) {
-                macro.steps.forEach { execute(it) }
+                macro.steps.forEachIndexed { index, step ->
+                    execute(step)
+                    if (index < macro.steps.lastIndex) jitterGap()
+                }
             }
         }
     }
@@ -129,6 +133,12 @@ class MacroRunner(
             syncLatched()
             ring.log("RUN  holds released ($n)")
         }
+    }
+
+    /** Randomised breathing room between steps; see Settings.keyJitterMs. */
+    private suspend fun jitterGap() {
+        val bound = settings().keyJitterMs
+        if (bound > 0) delay(Random.nextLong(0L, bound + 1))
     }
 
     /** Kill switch: every held key/button up. */

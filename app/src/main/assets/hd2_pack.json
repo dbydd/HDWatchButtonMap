@@ -21,8 +21,18 @@
    "kind": "MACRO",
    "rotateThreshold": 1,
    "single": {
+    "CW": {
+     "mouse": {
+      "wheel": -1
+     }
+    },
     "CCW": {
-     "hold": "CTRL"
+     "mouse": {
+      "wheel": 1
+     }
+    },
+    "S": {
+     "click": "left"
     },
     "G1": {
      "hold": "CTRL"
@@ -32,14 +42,6 @@
     },
     "G3": {
      "hold": "ALT"
-    },
-    "CW": {
-     "mouse": {
-      "wheel": -1
-     }
-    },
-    "S": {
-     "click": "left"
     }
    },
    "macros": [
@@ -50,6 +52,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "D"
       },
       {
@@ -59,7 +64,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -70,6 +75,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "D"
       },
       {
@@ -85,7 +93,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -96,6 +104,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "D"
       },
       {
@@ -108,7 +119,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -119,6 +130,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "D"
       },
       {
@@ -137,7 +151,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -148,7 +162,7 @@
      "enabled": true,
      "steps": [
       {
-       "key": "D"
+       "keydown": "CTRL"
       },
       {
        "key": "D"
@@ -157,7 +171,10 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "key": "D"
+      },
+      {
+       "keyup": "CTRL"
       }
      ]
     },
@@ -168,6 +185,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "D"
       },
       {
@@ -180,7 +200,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -191,6 +211,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "D"
       },
       {
@@ -203,7 +226,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -214,6 +237,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "D"
       },
       {
@@ -235,7 +261,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -246,10 +272,7 @@
      "enabled": true,
      "steps": [
       {
-       "key": "D"
-      },
-      {
-       "key": "S"
+       "keydown": "CTRL"
       },
       {
        "key": "D"
@@ -264,7 +287,13 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "key": "D"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "keyup": "CTRL"
       }
      ]
     },
@@ -275,6 +304,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "D"
       },
       {
@@ -290,7 +322,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -301,6 +333,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "D"
       },
       {
@@ -319,7 +354,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -330,6 +365,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "D"
       },
       {
@@ -345,7 +383,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -356,6 +394,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -368,7 +409,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -379,6 +420,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -388,7 +432,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -399,6 +443,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -411,7 +458,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -422,6 +469,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -437,7 +487,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -448,6 +498,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -460,7 +513,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -471,6 +524,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -483,7 +539,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -494,6 +550,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -506,7 +565,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -517,6 +576,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -532,7 +594,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -543,6 +605,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -558,7 +623,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -569,6 +634,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -584,7 +652,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -595,6 +663,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -613,7 +684,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -624,6 +695,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -639,7 +713,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -650,6 +724,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -665,7 +742,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -676,6 +753,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -691,7 +771,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -702,6 +782,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -717,7 +800,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -728,6 +811,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -743,7 +829,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -754,6 +840,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -769,7 +858,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -780,6 +869,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -798,7 +890,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -809,6 +901,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -827,7 +922,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -838,6 +933,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -853,7 +951,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -864,6 +962,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -879,7 +980,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -890,6 +991,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -905,7 +1009,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -916,6 +1020,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -931,7 +1038,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -942,6 +1049,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -960,7 +1070,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -971,6 +1081,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -986,7 +1099,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -997,6 +1110,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1012,7 +1128,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1023,6 +1139,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1038,7 +1157,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1049,6 +1168,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1067,7 +1189,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1078,6 +1200,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1096,7 +1221,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1107,6 +1232,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1122,7 +1250,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1133,6 +1261,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1148,7 +1279,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1159,6 +1290,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1174,7 +1308,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1185,6 +1319,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1200,7 +1337,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1211,6 +1348,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1226,7 +1366,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1237,6 +1377,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1255,7 +1398,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1266,6 +1409,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1284,7 +1430,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1295,6 +1441,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1310,7 +1459,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1321,6 +1470,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1339,7 +1491,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1350,6 +1502,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1368,7 +1523,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1379,6 +1534,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1394,7 +1552,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1405,6 +1563,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1423,7 +1584,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1434,6 +1595,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1452,7 +1616,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1463,13 +1627,7 @@
      "enabled": true,
      "steps": [
       {
-       "key": "S"
-      },
-      {
-       "key": "W"
-      },
-      {
-       "key": "W"
+       "keydown": "CTRL"
       },
       {
        "key": "S"
@@ -1478,7 +1636,16 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1489,6 +1656,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1507,7 +1677,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1518,6 +1688,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1536,7 +1709,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1547,6 +1720,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1565,7 +1741,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1576,6 +1752,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1594,7 +1773,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1605,6 +1784,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1623,7 +1805,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1634,6 +1816,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1652,7 +1837,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1663,6 +1848,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1678,7 +1866,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1689,6 +1877,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1707,7 +1898,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1718,6 +1909,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1736,7 +1930,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1747,6 +1941,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -1765,7 +1962,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1776,13 +1973,7 @@
      "enabled": true,
      "steps": [
       {
-       "key": "S"
-      },
-      {
-       "key": "A"
-      },
-      {
-       "key": "D"
+       "keydown": "CTRL"
       },
       {
        "key": "S"
@@ -1794,7 +1985,16 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "key": "S"
+      },
+      {
+       "key": "A"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1805,6 +2005,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "A"
       },
       {
@@ -1826,7 +2029,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1837,6 +2040,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "A"
       },
       {
@@ -1858,7 +2064,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1869,6 +2075,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "A"
       },
       {
@@ -1890,7 +2099,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1901,6 +2110,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "A"
       },
       {
@@ -1922,7 +2134,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1933,6 +2145,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "A"
       },
       {
@@ -1954,7 +2169,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -1965,6 +2180,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "A"
       },
       {
@@ -1992,7 +2210,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2003,6 +2221,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "A"
       },
       {
@@ -2024,7 +2245,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2035,6 +2256,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "A"
       },
       {
@@ -2056,7 +2280,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2067,6 +2291,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2082,7 +2309,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2093,6 +2320,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2105,7 +2335,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2116,6 +2346,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2134,7 +2367,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2145,6 +2378,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2160,7 +2396,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2171,6 +2407,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2186,7 +2425,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2197,6 +2436,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2215,7 +2457,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2226,6 +2468,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2241,7 +2486,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2252,13 +2497,7 @@
      "enabled": true,
      "steps": [
       {
-       "key": "S"
-      },
-      {
-       "key": "W"
-      },
-      {
-       "key": "D"
+       "keydown": "CTRL"
       },
       {
        "key": "S"
@@ -2270,7 +2509,16 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "key": "D"
+      },
+      {
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2281,6 +2529,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2299,7 +2550,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2310,6 +2561,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2325,7 +2579,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2336,6 +2590,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2348,7 +2605,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2359,6 +2616,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2371,7 +2631,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2382,6 +2642,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2394,7 +2657,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2405,6 +2668,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2423,7 +2689,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2434,6 +2700,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2452,7 +2721,7 @@
        "key": "A"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2463,6 +2732,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2478,7 +2750,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2489,6 +2761,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2501,7 +2776,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2512,6 +2787,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2530,7 +2808,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2541,6 +2819,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -2556,7 +2837,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2567,6 +2848,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -2591,7 +2875,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2602,6 +2886,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -2614,7 +2901,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2625,6 +2912,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2637,7 +2927,7 @@
        "key": "D"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2648,6 +2938,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -2663,7 +2956,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2674,6 +2967,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -2692,7 +2988,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2703,6 +2999,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2727,7 +3026,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2738,6 +3037,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -2756,7 +3058,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2767,6 +3069,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2788,7 +3093,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2799,10 +3104,7 @@
      "enabled": true,
      "steps": [
       {
-       "key": "W"
-      },
-      {
-       "key": "S"
+       "keydown": "CTRL"
       },
       {
        "key": "W"
@@ -2817,7 +3119,13 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "key": "W"
+      },
+      {
+       "key": "S"
+      },
+      {
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2828,6 +3136,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "A"
       },
       {
@@ -2843,7 +3154,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2854,6 +3165,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "A"
       },
       {
@@ -2869,7 +3183,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2880,6 +3194,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "A"
       },
       {
@@ -2904,7 +3221,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2915,6 +3232,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -2936,7 +3256,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2947,6 +3267,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -2965,7 +3288,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -2976,6 +3299,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "A"
       },
       {
@@ -2994,7 +3320,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -3005,6 +3331,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "S"
       },
       {
@@ -3023,7 +3352,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -3034,6 +3363,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "W"
       },
       {
@@ -3052,7 +3384,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -3063,10 +3395,7 @@
      "enabled": true,
      "steps": [
       {
-       "key": "S"
-      },
-      {
-       "key": "W"
+       "keydown": "CTRL"
       },
       {
        "key": "S"
@@ -3075,7 +3404,13 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "key": "S"
+      },
+      {
+       "key": "W"
+      },
+      {
+       "keyup": "CTRL"
       }
      ]
     },
@@ -3086,6 +3421,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "D"
       },
       {
@@ -3098,7 +3436,7 @@
        "key": "S"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     },
@@ -3109,6 +3447,9 @@
      "enabled": true,
      "steps": [
       {
+       "keydown": "CTRL"
+      },
+      {
        "key": "D"
       },
       {
@@ -3130,7 +3471,7 @@
        "key": "W"
       },
       {
-       "click": "left"
+       "keyup": "CTRL"
       }
      ]
     }

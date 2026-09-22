@@ -160,6 +160,15 @@ fun SettingsScreen() {
 
         SectionLabel(stringResource(R.string.set_section_typing))
         StepperRow(
+            label = stringResource(R.string.set_step_key_jitter),
+            value = settings.keyJitterMs,
+            valueRes = R.string.set_step_value_ms,
+            min = 0,
+            max = 100,
+            step = 5,
+            onChange = { v -> app.configRepo.updateSettings { it.copy(keyJitterMs = v) } },
+        )
+        StepperRow(
             label = stringResource(R.string.set_step_text_delay),
             value = settings.textDelayMs,
             valueRes = R.string.set_step_value_ms,

@@ -97,4 +97,5 @@
     <string name="set_status_pack_unlocked">Unlocked %1$s: %2$d macros</string>
     <string name="set_status_unlock_failed">Unlock failed: %1$s</string>
     <string name="set_status_external_file">external file %1$s</string>
+    <string name="set_step_key_jitter">Key jitter (max)</string>
 </resources>

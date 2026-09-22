@@ -53,6 +53,7 @@ class SequenceEngine(
     private var buffer: List<Symbol> = emptyList()
     private var timeoutJob: Job? = null
     @Volatile private var lastSource: InputSource = InputSource.TOUCH
+    private val lastLatchAt = HashMap<Symbol, Long>()
 
     private val _bufferFlow = MutableStateFlow<List<Symbol>>(emptyList())
     val bufferState: StateFlow<List<Symbol>> = _bufferFlow.asStateFlow()
@@ -144,6 +145,18 @@ class SequenceEngine(
             ring.log("ENG  '${symbol.code}' unmapped")
             return
         }
+        // A latch bound to the crown must not flicker: twisting three detents
+        // the same way is one gesture, so repeats inside the window are
+        // swallowed instead of toggling the key on/off/on/off.
+        if (step is Step.Hold && lastSource == InputSource.ROTARY) {
+            val now = android.os.SystemClock.uptimeMillis()
+            val prev = lastLatchAt[symbol] ?: 0L
+            if (now - prev < LATCH_WINDOW_MS) {
+                ring.log("ENG  '${symbol.code}' latch repeat ignored")
+                return
+            }
+            lastLatchAt[symbol] = now
+        }
         emit(EngineEvent.FiredSingle(symbol, step))
         runner.runStep(step)
     }
@@ -207,4 +220,8 @@ class SequenceEngine(
         }
 
     private fun render(seq: List<Symbol>): String = seq.joinToString(" ") { it.code }
+    private companion object {
+        /** Same-direction detents inside this window count as one latch. */
+        const val LATCH_WINDOW_MS = 700L
+    }
 }
