@@ -2,8 +2,10 @@ package dev.hdwatch.buttonmap.ui
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,9 +32,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -44,12 +50,15 @@ import dev.hdwatch.buttonmap.engine.EngineEvent
 import dev.hdwatch.buttonmap.hid.TransportKind
 import dev.hdwatch.buttonmap.hid.TransportStatus
 import dev.hdwatch.buttonmap.input.Symbol
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlinx.coroutines.delay
 
 /**
- * The pad, Orokin console cut: a double-ringed circular focus card at the
- * dial center, four diamond cells on the cardinal axes, gold ornaments in the
- * free corners. Everything radial — no square block wasting the round screen.
+ * The pad as a full Orokin dial: a textured watch face (sunburst, tick rings,
+ * dot ring) drawn behind everything, a double-ringed focus card at the hub,
+ * four diamond cells on the cardinal axes, and the eight secondary symbols on
+ * a live ring between them — every mark on this dial is also an input.
  */
 @Composable
 fun PadScreen() {
@@ -72,7 +81,7 @@ fun PadScreen() {
     // half-entered sequence across a switch.
     LaunchedEffect(config.activeProfileId) { app.engine.reset() }
 
-    // Ignition: the card's halo ring flares when an action fires.
+    // Ignition: the card halo flares when an action fires.
     var pulse by remember { mutableStateOf(0) }
     LaunchedEffect(event) {
         if (event is EngineEvent.FiredMacro || event is EngineEvent.FiredSingle) pulse++
@@ -93,86 +102,214 @@ fun PadScreen() {
         label = "flare",
     )
 
+    fun feed(sym: Symbol) {
+        haptics.press()
+        app.engine.feed(sym)
+    }
+
+    // Which ring symbols currently do something (mapping or sequence start).
+    val liveSymbols = remember(profile) {
+        buildSet {
+            profile.single.keys.forEach { add(it) }
+            profile.macros.filter { it.enabled }.forEach { m -> m.sequence.firstOrNull()?.let { add(it) } }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.radialGradient(
-                    listOf(palette.surface, palette.background, palette.edge),
-                ),
-            ),
+            .background(palette.edge),
     ) {
+        // ---- dial face: pure decoration, no hit targets here ----
+        Canvas(Modifier.fillMaxSize()) {
+            val cx = size.width / 2f
+            val cy = size.height / 2f
+            val R = size.minDimension / 2f
+            fun at(angleDeg: Double, radius: Float) = Offset(
+                cx + (radius * sin(angleDeg)).toFloat(),
+                cy - (radius * cos(angleDeg)).toFloat(),
+            )
+
+            // Domed field.
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(palette.surface, palette.background, palette.edge),
+                    center = Offset(cx, cy),
+                    radius = R,
+                ),
+                radius = R,
+                center = Offset(cx, cy),
+            )
+            // Sunburst rays: long bright every 15°, faint short between.
+            var i = 0
+            while (i < 72) {
+                val a = i * 5.0
+                val major = i % 3 == 0
+                drawLine(
+                    color = palette.primary.copy(alpha = if (major) 0.17f else 0.07f),
+                    start = at(a, R * if (major) 0.46f else 0.50f),
+                    end = at(a, R * if (major) 0.99f else 0.94f),
+                    strokeWidth = if (major) 1.4f else 1f,
+                )
+                i++
+            }
+            // Structural rings.
+            drawCircle(
+                color = palette.primary.copy(alpha = 0.24f + 0.25f * flare),
+                radius = R * 0.965f,
+                center = Offset(cx, cy),
+                style = Stroke(1.5f),
+            )
+            drawCircle(
+                color = palette.primary.copy(alpha = 0.10f),
+                radius = R * 0.90f,
+                center = Offset(cx, cy),
+                style = Stroke(1f),
+            )
+            drawCircle(
+                color = palette.primary.copy(alpha = 0.30f),
+                radius = R * 0.56f,
+                center = Offset(cx, cy),
+                style = Stroke(1f),
+            )
+            // Outer minute ticks, 24 of them, skipping the four cell axes.
+            i = 0
+            while (i < 24) {
+                val a = i * 15.0
+                if (i % 6 != 0) {
+                    drawLine(
+                        palette.primary.copy(alpha = 0.60f),
+                        at(a, R * 0.915f),
+                        at(a, R * 0.955f),
+                        2f,
+                    )
+                }
+                i++
+            }
+            // Inner fine tick ring between symbol ring and card.
+            i = 0
+            while (i < 48) {
+                val a = i * 7.5
+                val major = i % 4 == 0
+                drawLine(
+                    palette.secondary.copy(alpha = if (major) 0.35f else 0.14f),
+                    at(a, R * if (major) 0.60f else 0.62f),
+                    at(a, R * 0.655f),
+                    if (major) 1.6f else 1f,
+                )
+                i++
+            }
+            // Dot ring filling the band outside the diamond cells.
+            i = 0
+            while (i < 36) {
+                val a = i * 10.0
+                drawCircle(
+                    palette.primary.copy(alpha = if (i % 3 == 0) 0.35f else 0.12f),
+                    radius = if (i % 3 == 0) 1.6f else 1f,
+                    center = at(a, R * 0.765f),
+                )
+                i++
+            }
+        }
+
+        // ---- symbol ring: 8 secondary inputs at the diagonal offsets ----
+        val ringSymbols = listOf(
+            Symbol.CROWN_CW, Symbol.STEM, Symbol.CROWN_CCW, Symbol.STEM_LONG,
+            Symbol.GESTURE_1, Symbol.GESTURE_2, Symbol.GESTURE_3, Symbol.GESTURE_4,
+        )
+        ringSymbols.forEachIndexed { idx, sym ->
+            RingSymbol(
+                symbol = sym,
+                active = sym in liveSymbols,
+                angleDeg = 22.5 + idx * 45.0,
+                radiusFrac = 0.55f,
+                modifier = Modifier.align(Alignment.Center),
+            ) { feed(sym) }
+        }
+
+        // ---- four diamond cells on the cardinal axes ----
+        DiamondCell(
+            symbol = Symbol.UP,
+            action = profile.single[Symbol.UP],
+            modifier = Modifier
+                .align(Alignment.Center)
+                .offset(y = (-78).dp),
+        ) { feed(Symbol.UP) }
+        DiamondCell(
+            symbol = Symbol.DOWN,
+            action = profile.single[Symbol.DOWN],
+            modifier = Modifier
+                .align(Alignment.Center)
+                .offset(y = 78.dp),
+        ) { feed(Symbol.DOWN) }
+        DiamondCell(
+            symbol = Symbol.LEFT,
+            action = profile.single[Symbol.LEFT],
+            modifier = Modifier
+                .align(Alignment.Center)
+                .offset(x = (-78).dp),
+        ) { feed(Symbol.LEFT) }
+        DiamondCell(
+            symbol = Symbol.RIGHT,
+            action = profile.single[Symbol.RIGHT],
+            modifier = Modifier
+                .align(Alignment.Center)
+                .offset(x = 78.dp),
+        ) { feed(Symbol.RIGHT) }
+
+        // ---- hub: double-ringed focus card ----
         FocusCard(
             name = profile.name,
             buffer = buffer,
             event = event,
-            single = profile.single,
-            flare = flare,
             link = linkCode(transportStatus),
+            flare = flare,
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(124.dp),
+                .size(104.dp),
             onCycle = {
                 haptics.tick()
                 app.configRepo.cycleActiveProfile()
             },
             onMenu = { nav.push(Route.Menu) },
         )
-
-        DiamondCell(
-            symbol = Symbol.UP,
-            action = profile.single[Symbol.UP],
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 5.dp)
-                .size(46.dp),
-        ) {
-            haptics.press()
-            app.engine.feed(Symbol.UP)
-        }
-        DiamondCell(
-            symbol = Symbol.DOWN,
-            action = profile.single[Symbol.DOWN],
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 5.dp)
-                .size(46.dp),
-        ) {
-            haptics.press()
-            app.engine.feed(Symbol.DOWN)
-        }
-        DiamondCell(
-            symbol = Symbol.LEFT,
-            action = profile.single[Symbol.LEFT],
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 2.dp)
-                .size(46.dp),
-        ) {
-            haptics.press()
-            app.engine.feed(Symbol.LEFT)
-        }
-        DiamondCell(
-            symbol = Symbol.RIGHT,
-            action = profile.single[Symbol.RIGHT],
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 2.dp)
-                .size(46.dp),
-        ) {
-            haptics.press()
-            app.engine.feed(Symbol.RIGHT)
-        }
-
-        // Ornaments: tiny gold diamonds settling the free corners.
-        OrnamentDiamond(Modifier.align(Alignment.TopStart).padding(start = 42.dp, top = 44.dp))
-        OrnamentDiamond(Modifier.align(Alignment.TopEnd).padding(end = 42.dp, top = 44.dp))
-        OrnamentDiamond(Modifier.align(Alignment.BottomStart).padding(start = 42.dp, bottom = 44.dp))
-        OrnamentDiamond(Modifier.align(Alignment.BottomEnd).padding(end = 42.dp, bottom = 44.dp))
-
-        // (link readout lives in the card header now; the lower crescent is
-        // reserved for the DOWN diamond.)
     }
+}
+
+/** One radial symbol on the live ring; tap feeds it straight into the engine. */
+@Composable
+private fun RingSymbol(
+    symbol: Symbol,
+    active: Boolean,
+    angleDeg: Double,
+    radiusFrac: Float,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val palette = LocalHdPalette.current
+    // 0° = up; place by trigonometry, orient tangentially, keep bottom legible.
+    val dx = kotlin.math.sin(Math.toRadians(angleDeg)).toFloat()
+    val dy = -kotlin.math.cos(Math.toRadians(angleDeg)).toFloat()
+    Text(
+        text = symbol.code,
+        fontFamily = FontFamily.Monospace,
+        fontSize = 8.sp,
+        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+        letterSpacing = 1.sp,
+        color = if (active) palette.primary.copy(alpha = 0.9f) else palette.muted.copy(alpha = 0.7f),
+        maxLines = 1,
+        modifier = modifier
+            .offset(x = (dx * radiusFrac * 113f).dp, y = (dy * radiusFrac * 113f).dp)
+            .graphicsLayer {
+                rotationZ = if (angleDeg <= 180) (angleDeg + 90).toFloat() else (angleDeg - 90).toFloat()
+            }
+            .clickable(
+                interactionSource = null,
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(horizontal = 4.dp, vertical = 3.dp),
+    )
 }
 
 /** A direction key as a rotated gold-rimmed square; content stays upright. */
@@ -188,7 +325,7 @@ private fun DiamondCell(
     val pressed by interaction.collectIsPressedAsState()
     val key = summarize(action).let { if (it == "—") "·" else it }
 
-    Box(modifier) {
+    Box(modifier.size(44.dp)) {
         Box(
             Modifier
                 .fillMaxSize()
@@ -216,7 +353,7 @@ private fun DiamondCell(
                             listOf(
                                 Color.White.copy(alpha = 0.22f),
                                 palette.hairline,
-                                palette.primary.copy(alpha = 0.25f),
+                                palette.primary.copy(alpha = 0.30f),
                             ),
                         )
                     },
@@ -244,7 +381,7 @@ private fun DiamondCell(
                 fontFamily = FontFamily.Monospace,
                 fontSize = 9.sp,
                 letterSpacing = 1.sp,
-                color = if (pressed) palette.onPrimary.copy(alpha = 0.75f) else palette.secondary.copy(alpha = 0.8f),
+                color = if (pressed) palette.onPrimary.copy(alpha = 0.75f) else palette.secondary.copy(alpha = 0.85f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
@@ -253,48 +390,37 @@ private fun DiamondCell(
     }
 }
 
-/** The double-ringed circular focus card: identity, live sequence, mode switch. */
+/** The double-ringed hub card: identity, live sequence, mode switch. */
 @Composable
 private fun FocusCard(
     name: String,
     buffer: List<Symbol>,
     event: EngineEvent,
-    single: Map<Symbol, Step>,
-    flare: Float,
     link: String,
+    flare: Float,
     onCycle: () -> Unit,
     onMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalHdPalette.current
     Box(modifier) {
-        // Outer hairline ring.
         Box(
             Modifier
                 .fillMaxSize()
-                .border(1.dp, palette.primary.copy(alpha = 0.30f + 0.30f * flare), CircleShape),
-        )
-        // Halo between the rings, driven by the ignition flare.
-        Box(
-            Modifier
-                .fillMaxSize()
-                .padding(2.dp)
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            Color.Transparent,
-                            palette.primary.copy(alpha = 0.06f + 0.22f * flare),
+                            palette.primary.copy(alpha = 0.05f + 0.20f * flare),
                             Color.Transparent,
                         ),
                     ),
                     CircleShape,
                 ),
         )
-        // Inner panel.
         Box(
             Modifier
-                .align(Alignment.Center)
-                .size(116.dp)
+                .fillMaxSize()
+                .padding(4.dp)
                 .background(
                     Brush.verticalGradient(listOf(palette.panelTop, palette.panelBottom)),
                     CircleShape,
@@ -305,7 +431,7 @@ private fun FocusCard(
                         listOf(
                             Color.White.copy(alpha = 0.22f),
                             palette.hairline,
-                            palette.primary.copy(alpha = 0.30f),
+                            palette.primary.copy(alpha = 0.35f + 0.4f * flare),
                         ),
                     ),
                     CircleShape,
@@ -320,41 +446,40 @@ private fun FocusCard(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 18.dp),
+                    .padding(horizontal = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(Modifier.height(19.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    MicroLabel("MODE", palette.primary.copy(alpha = 0.6f))
-                    Spacer(Modifier.weight(1f))
-                    MicroLabel(
-                        text = link,
-                        color = palette.muted,
-                    )
-                }
-                Spacer(Modifier.height(3.dp))
+                Spacer(Modifier.height(14.dp))
                 Text(
                     text = name,
-                    style = androidx.compose.ui.text.TextStyle(
+                    style = TextStyle(
                         brush = goldTextBrush(),
-                        fontSize = 17.sp,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp,
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Hairline(modifier = Modifier.width(14.dp))
+                    Box(
+                        Modifier
+                            .size(3.dp)
+                            .background(palette.primary.copy(alpha = 0.8f))
+                            .graphicsLayer { rotationZ = 45f },
+                    )
+                    Hairline(modifier = Modifier.width(14.dp))
+                }
+                Spacer(Modifier.height(2.dp))
                 // One live line: sequence while entering, last action after.
                 if (buffer.isNotEmpty()) {
                     Text(
                         text = buffer.joinToString(" ") { it.display },
                         fontFamily = FontFamily.Monospace,
                         color = palette.primary,
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp,
                         maxLines = 1,
@@ -370,50 +495,30 @@ private fun FocusCard(
                             is EngineEvent.Unmapped -> palette.danger
                             else -> palette.secondary.copy(alpha = 0.75f)
                         },
-                        fontSize = 10.sp,
+                        fontSize = 9.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                // Diamond-pierced rule instead of a plain divider.
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Hairline(modifier = Modifier.width(24.dp))
-                    Box(
-                        Modifier
-                            .size(4.dp)
-                            .background(palette.primary.copy(alpha = 0.8f))
-                            .graphicsLayer { rotationZ = 45f },
-                    )
-                    Hairline(modifier = Modifier.width(24.dp))
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = compactSingleMap(single),
-                    fontFamily = FontFamily.Monospace,
-                    color = palette.secondary.copy(alpha = 0.8f),
-                    fontSize = 9.sp,
-                    letterSpacing = 1.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                MicroLabel(
+                    text = link,
+                    color = palette.muted,
+                    modifier = Modifier.padding(bottom = 11.dp),
                 )
-                Spacer(Modifier.height(13.dp))
             }
         }
     }
 }
 
-/** Small gold diamond for the free corners. */
-@Composable
-private fun OrnamentDiamond(modifier: Modifier = Modifier) {
-    val palette = LocalHdPalette.current
-    Box(
-        modifier
-            .size(5.dp)
-            .graphicsLayer { rotationZ = 45f }
-            .background(palette.primary.copy(alpha = 0.45f)),
-    )
+/** Compact transport code for the hub footer. */
+private fun linkCode(s: TransportStatus): String = when {
+    s.kind == TransportKind.LOGGING -> "LINK · SIM"
+    s.label.contains("已连接") -> "LINK · HOST"
+    s.label.contains("缺少权限") -> "LINK · AUTH"
+    s.label.contains("不可用") || s.label.contains("失败") -> "LINK · DOWN"
+    else -> "LINK · IDLE"
 }
 
 private fun eventLine(event: EngineEvent): String = when (event) {
@@ -423,18 +528,4 @@ private fun eventLine(event: EngineEvent): String = when (event) {
     is EngineEvent.Pending -> "序列中 ${event.buffer.joinToString(" ") { it.display }}"
     EngineEvent.SequenceTimeout -> "序列超时清空"
     EngineEvent.Idle -> "待命"
-}
-
-/** Compact transport code for the card header. */
-private fun linkCode(s: TransportStatus): String = when {
-    s.kind == TransportKind.LOGGING -> "SIM"
-    s.label.contains("已连接") -> "HOST"
-    s.label.contains("缺少权限") -> "AUTH"
-    s.label.contains("不可用") || s.label.contains("失败") -> "DOWN"
-    else -> "IDLE"
-}
-
-private fun compactSingleMap(single: Map<Symbol, Step>): String {
-    fun q(sym: Symbol) = summarize(single[sym]).let { if (it == "—") "?" else it }
-    return "↑${q(Symbol.UP)} ↓${q(Symbol.DOWN)} ←${q(Symbol.LEFT)} →${q(Symbol.RIGHT)}"
 }
