@@ -7,16 +7,16 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
-// Helldivers palette: dark steel, stratagem yellow, hazard red.
 data class HdPalette(
-    val background: Color = Color(0xFF070B10),
-    val surface: Color = Color(0xFF101722),
-    val primary: Color = Color(0xFFF2B705),
-    val secondary: Color = Color(0xFFD4F12B),
-    val danger: Color = Color(0xFFE2483D),
-    val muted: Color = Color(0xFF8A97A8),
-    val text: Color = Color(0xFFEDF2F7),
-    val onPrimary: Color = Color(0xFF070B10),
+    // Precious-metal scheme: gunmetal field, silver body, gold accents.
+    val background: Color = Color(0xFF14181E),
+    val surface: Color = Color(0xFF1D232C),
+    val primary: Color = Color(0xFFD9B45B),   // gold
+    val secondary: Color = Color(0xFFC9D1DB), // silver
+    val danger: Color = Color(0xFFD0605A),
+    val muted: Color = Color(0xFF7E8794),
+    val text: Color = Color(0xFFE6EAF0),      // bright silver
+    val onPrimary: Color = Color(0xFF171B21),
 )
 
 val LocalHdPalette = staticCompositionLocalOf { HdPalette() }

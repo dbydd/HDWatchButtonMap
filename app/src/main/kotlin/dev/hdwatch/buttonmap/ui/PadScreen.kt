@@ -111,6 +111,14 @@ fun PadScreen() {
             val radius = min(cx, cy)
             val s = radius * HUB_HALF
 
+            // screen rim: silver hairline
+            drawCircle(
+                color = palette.secondary.copy(alpha = 0.16f),
+                radius = radius * 0.985f,
+                center = Offset(cx, cy),
+                style = Stroke(width = 1.dp.toPx()),
+            )
+
             // ---- four slim edge buttons (flat inner side, concave outer arc) ----
             fun band(symbol: Symbol, baseDeg: Float) {
                 drawBand(
@@ -132,16 +140,23 @@ fun PadScreen() {
                 cornerRadius = CornerRadius(s * 0.14f),
             )
             drawRoundRect(
-                color = palette.primary.copy(alpha = 0.85f),
+                color = palette.primary.copy(alpha = 0.9f),
                 topLeft = Offset(cx - s, cy - s),
                 size = androidx.compose.ui.geometry.Size(s * 2f, s * 2f),
                 cornerRadius = CornerRadius(s * 0.14f),
-                style = Stroke(width = 2.5.dp.toPx()),
+                style = Stroke(width = 1.6.dp.toPx()),
+            )
+            // inner silver hairline for a double-metal inlay feel
+            drawRoundRect(
+                color = palette.secondary.copy(alpha = 0.28f),
+                topLeft = Offset(cx - s * 0.92f, cy - s * 0.92f),
+                size = androidx.compose.ui.geometry.Size(s * 1.84f, s * 1.84f),
+                cornerRadius = CornerRadius(s * 0.11f),
+                style = Stroke(width = 0.8.dp.toPx()),
             )
 
             val single = config.single
-            val line1 = "HD MAP"
-            val line2 = if (buffer.isNotEmpty()) buffer.joinToString(" ") { it.display } else "点中心开菜单"
+            val line1 = if (buffer.isNotEmpty()) buffer.joinToString(" ") { it.display } else "HD MAP"
             val line3 = when (event) {
                 is EngineEvent.FiredMacro -> "激活「${(event as EngineEvent.FiredMacro).macro.name}」"
                 is EngineEvent.FiredSingle -> {
@@ -154,18 +169,19 @@ fun PadScreen() {
             }
             val line4 = compactSingleMap(single)
 
-            drawLabel(measurer, line1, cx, cy - s * 0.62f, radius * 0.10f, palette.primary)
+            // line1: title gold / live buffer silver (biggest element)
             drawLabel(
-                measurer, line2, cx, cy - s * 0.16f,
-                radius * (if (buffer.isNotEmpty()) 0.155f else 0.095f),
-                if (buffer.isNotEmpty()) palette.secondary else palette.muted,
+                measurer, line1, cx, cy - s * 0.52f,
+                radius * (if (buffer.isNotEmpty()) 0.15f else 0.085f),
+                if (buffer.isNotEmpty()) palette.secondary else palette.primary,
             )
-            drawLabel(measurer, line3, cx, cy + s * 0.32f, radius * 0.082f, palette.text)
-            drawLabel(measurer, line4, cx, cy + s * 0.62f, radius * 0.075f, palette.muted)
+            // center: menu affordance
+            drawLabel(measurer, "菜 单", cx, cy + s * 0.02f, radius * 0.075f, palette.text)
+            drawLabel(measurer, line3, cx, cy + s * 0.4f, radius * 0.068f, palette.text.copy(alpha = 0.85f))
+            drawLabel(measurer, line4, cx, cy + s * 0.68f, radius * 0.064f, palette.secondary.copy(alpha = 0.8f))
         }
     }
 }
-
 private fun summarizeStatus(s: dev.hdwatch.buttonmap.hid.TransportStatus): String = when {
     s.kind == TransportKind.LOGGING -> "日志模拟传输"
     s.label.contains("已连接") -> "HID→${s.hostName ?: "主机"}"
@@ -210,18 +226,22 @@ private fun DrawScope.drawBand(
     if (pressed) {
         drawPath(path, color = palette.primary.copy(alpha = 0.42f))
     }
-    drawPath(path, color = palette.primary.copy(alpha = if (pressed) 1f else 0.65f), style = Stroke(width = 1.6.dp.toPx()))
+    drawPath(
+        path,
+        color = if (pressed) palette.primary else palette.secondary.copy(alpha = 0.5f),
+        style = Stroke(width = 1.4.dp.toPx()),
+    )
 
     val midDeg = baseDeg + 45f
     // glyph sits in the middle of the band, safely inside the screen circle
     val gx = cx + cos(rad(midDeg)) * radius * 0.815f
     val gy = cy + sin(rad(midDeg)) * radius * 0.815f
-    drawLabel(measurer, symbol.display ?: symbol.code, gx, gy, radius * 0.085f, palette.text)
+    drawLabel(measurer, symbol.display ?: symbol.code, gx, gy, radius * 0.095f, palette.secondary)
 }
 
 private fun rad(deg: Float): Float = deg * 0.017453292f
 
-private const val HUB_HALF = 0.58f
+private const val HUB_HALF = 0.46f
 
 @OptIn(ExperimentalTextApi::class)
 private fun DrawScope.drawLabel(

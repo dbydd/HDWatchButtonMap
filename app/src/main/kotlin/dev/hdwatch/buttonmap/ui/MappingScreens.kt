@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -114,9 +115,9 @@ fun MappingEditScreen(symbol: Symbol) {
     ScreenScaffold(title = "映射：${symbol.display} ${symbol.label}") {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(palette.surface, RoundedCornerShape(10.dp))
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .background(palette.surface, RoundedCornerShape(9.dp))
+                .border(1.dp, palette.primary.copy(alpha = 0.35f), RoundedCornerShape(9.dp))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
         ) {
             Text("当前动作", color = palette.muted, fontSize = 10.sp)
             Text(
@@ -129,55 +130,54 @@ fun MappingEditScreen(symbol: Symbol) {
 
         Spacer(Modifier.height(8.dp))
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.padding(top = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Chip("保存", Modifier.weight(1f), active = true) { save() }
-            Chip("清除", Modifier.weight(1f), danger = true) { clear() }
+            Chip("保存", active = true) { save() }
+            Chip("清除", danger = true) { clear() }
         }
 
         MappingSectionLabel("快捷键")
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Chip("左键", Modifier.weight(1f), active = pendingMatches { it is Step.MouseClick && it.button == "left" }) { pending = Step.MouseClick("left") }
-            Chip("右键", Modifier.weight(1f), active = pendingMatches { it is Step.MouseClick && it.button == "right" }) { pending = Step.MouseClick("right") }
-            Chip("中键", Modifier.weight(1f), active = pendingMatches { it is Step.MouseClick && it.button == "middle" }) { pending = Step.MouseClick("middle") }
+            Chip("左键", active = pendingMatches { it is Step.MouseClick && it.button == "left" }) { pending = Step.MouseClick("left") }
+            Chip("右键", active = pendingMatches { it is Step.MouseClick && it.button == "right" }) { pending = Step.MouseClick("right") }
+            Chip("中键", active = pendingMatches { it is Step.MouseClick && it.button == "middle" }) { pending = Step.MouseClick("middle") }
         }
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Chip("滚轮↑", Modifier.weight(1f), active = pendingMatches { it is Step.Mouse && it.wheel > 0 }) { pending = Step.Mouse(wheel = 1) }
-            Chip("滚轮↓", Modifier.weight(1f), active = pendingMatches { it is Step.Mouse && it.wheel < 0 }) { pending = Step.Mouse(wheel = -1) }
+            Chip("滚轮↑", active = pendingMatches { it is Step.Mouse && it.wheel > 0 }) { pending = Step.Mouse(wheel = 1) }
+            Chip("滚轮↓", active = pendingMatches { it is Step.Mouse && it.wheel < 0 }) { pending = Step.Mouse(wheel = -1) }
         }
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Chip("播放", Modifier.weight(1f), active = pendingMatches { it is Step.ConsumerKey && it.usage == "PLAY_PAUSE" }) { pending = Step.ConsumerKey("PLAY_PAUSE") }
-            Chip("音量+", Modifier.weight(1f), active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_UP" }) { pending = Step.ConsumerKey("VOL_UP") }
-            Chip("音量-", Modifier.weight(1f), active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_DOWN" }) { pending = Step.ConsumerKey("VOL_DOWN") }
+            Chip("播放", active = pendingMatches { it is Step.ConsumerKey && it.usage == "PLAY_PAUSE" }) { pending = Step.ConsumerKey("PLAY_PAUSE") }
+            Chip("音量+", active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_UP" }) { pending = Step.ConsumerKey("VOL_UP") }
+            Chip("音量-", active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_DOWN" }) { pending = Step.ConsumerKey("VOL_DOWN") }
         }
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Chip("静音", Modifier.weight(1f), active = pendingMatches { it is Step.ConsumerKey && it.usage == "MUTE" }) { pending = Step.ConsumerKey("MUTE") }
-            Chip("下一曲", Modifier.weight(1f), active = pendingMatches { it is Step.ConsumerKey && it.usage == "NEXT_TRACK" }) { pending = Step.ConsumerKey("NEXT_TRACK") }
-            Chip("上一曲", Modifier.weight(1f), active = pendingMatches { it is Step.ConsumerKey && it.usage == "PREV_TRACK" }) { pending = Step.ConsumerKey("PREV_TRACK") }
+            Chip("静音", active = pendingMatches { it is Step.ConsumerKey && it.usage == "MUTE" }) { pending = Step.ConsumerKey("MUTE") }
+            Chip("下一曲", active = pendingMatches { it is Step.ConsumerKey && it.usage == "NEXT_TRACK" }) { pending = Step.ConsumerKey("NEXT_TRACK") }
+            Chip("上一曲", active = pendingMatches { it is Step.ConsumerKey && it.usage == "PREV_TRACK" }) { pending = Step.ConsumerKey("PREV_TRACK") }
         }
 
         MappingSectionLabel("修饰键")
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             KeyMod.entries.forEach { mod ->
                 Chip(
                     label = modShort(mod),
-                    modifier = Modifier.weight(1f),
                     active = mod in mods,
                 ) { toggleMod(mod) }
             }

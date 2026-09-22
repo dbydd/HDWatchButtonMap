@@ -1,6 +1,7 @@
 package dev.hdwatch.buttonmap.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -61,19 +63,24 @@ fun ActionButton(
     }
     Box(
         modifier = modifier
-            .heightIn(min = 40.dp)
+            .heightIn(min = 34.dp)
             .background(
-                accent.copy(alpha = if (enabled) 0.16f else 0.05f),
+                accent.copy(alpha = if (enabled) 0.13f else 0.05f),
+                RoundedCornerShape(8.dp),
+            )
+            .border(
+                1.dp,
+                accent.copy(alpha = if (enabled) 0.5f else 0.18f),
                 RoundedCornerShape(8.dp),
             )
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 9.dp),
+            .padding(horizontal = 10.dp, vertical = 5.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             color = if (enabled) accent else palette.muted,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
         )
@@ -92,33 +99,34 @@ fun SwitchRow(
     val palette = LocalHdPalette.current
     Row(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 3.dp)
-            .background(palette.surface, RoundedCornerShape(10.dp))
+            .padding(vertical = 2.dp)
+            .background(palette.surface, RoundedCornerShape(9.dp))
+            .border(1.dp, palette.secondary.copy(alpha = 0.22f), RoundedCornerShape(9.dp))
             .clickable { onCheckedChange(!checked) }
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(label, color = palette.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        Column {
+            Text(label, color = palette.text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             if (hint.isNotEmpty()) {
-                Text(hint, color = palette.muted, fontSize = 10.sp)
+                Text(hint, color = palette.muted, fontSize = 9.sp, maxLines = 2)
             }
         }
         Box(
             modifier = Modifier
-                .size(width = 46.dp, height = 26.dp)
+                .padding(start = 8.dp)
+                .size(width = 38.dp, height = 20.dp)
                 .background(
-                    if (checked) palette.primary else palette.muted.copy(alpha = 0.35f),
-                    RoundedCornerShape(13.dp),
+                    if (checked) palette.primary else palette.muted.copy(alpha = 0.30f),
+                    RoundedCornerShape(10.dp),
                 ),
             contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
         ) {
             Box(
                 modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .size(18.dp)
-                    .background(if (checked) palette.onPrimary else palette.text, CircleShape),
+                    .padding(horizontal = 2.dp)
+                    .size(16.dp)
+                    .background(if (checked) palette.onPrimary else palette.secondary, CircleShape),
             )
         }
     }
@@ -196,43 +204,42 @@ private fun MacroCard(
     val palette = LocalHdPalette.current
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .background(palette.surface, RoundedCornerShape(10.dp))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .widthIn(min = 168.dp)
+            .widthIn(max = 210.dp)
+            .padding(vertical = 3.dp)
+            .background(palette.surface, RoundedCornerShape(9.dp))
+            .border(1.dp, palette.primary.copy(alpha = if (macro.enabled) 0.35f else 0.15f), RoundedCornerShape(9.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = macro.name,
                 color = palette.text,
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.padding(end = 8.dp),
             )
             Text(
                 text = if (macro.enabled) "启用中" else "已停用",
-                color = if (macro.enabled) palette.secondary else palette.muted,
+                color = if (macro.enabled) palette.primary else palette.muted,
                 fontSize = 10.sp,
             )
         }
         Text(
             text = macro.sequenceDisplay + " · " + macro.steps.size + " 步" +
                 if (macro.repeat > 1) " · x" + macro.repeat else "",
-            color = palette.muted,
+            color = palette.secondary.copy(alpha = 0.75f),
             fontSize = 11.sp,
         )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 6.dp),
+            modifier = Modifier.padding(top = 5.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ActionButton("试跑", onRun, Modifier.weight(1f), HdTone.Accent)
-            ActionButton(if (macro.enabled) "停用" else "启用", onToggle, Modifier.weight(1f))
+            ActionButton("试跑", onRun, tone = HdTone.Accent)
+            ActionButton(if (macro.enabled) "停用" else "启用", onToggle)
             ActionButton(
                 text = if (confirming) "确认删除" else "删除",
                 onClick = onDelete,
-                modifier = Modifier.weight(1f),
                 tone = HdTone.Danger,
             )
         }

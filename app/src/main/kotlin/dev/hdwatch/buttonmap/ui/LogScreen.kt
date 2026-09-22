@@ -78,7 +78,6 @@ fun LogScreen() {
         listOf(0, 4).forEach { start ->
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
                     .padding(top = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
@@ -86,7 +85,6 @@ fun LogScreen() {
                     ActionButton(
                         text = "${sym.display} ${sym.label}",
                         onClick = { app.engine.feed(sym) },
-                        modifier = Modifier.weight(1f),
                         tone = HdTone.Accent,
                     )
                 }
@@ -95,7 +93,6 @@ fun LogScreen() {
 
         Row(
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(top = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
@@ -105,12 +102,10 @@ fun LogScreen() {
                     app.ring.clear()
                     lines.clear()
                 },
-                modifier = Modifier.weight(1f),
             )
             ActionButton(
                 text = "紧急释放",
                 onClick = { app.runner.emergencyRelease() },
-                modifier = Modifier.weight(1f),
                 tone = HdTone.Danger,
             )
         }

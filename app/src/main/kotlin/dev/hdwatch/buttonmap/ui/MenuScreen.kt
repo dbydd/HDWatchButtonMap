@@ -1,11 +1,13 @@
 package dev.hdwatch.buttonmap.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -33,7 +35,8 @@ fun ScreenScaffold(
         modifier = Modifier
             .fillMaxSize()
             .background(palette.background)
-            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .padding(top = 8.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -46,7 +49,7 @@ fun ScreenScaffold(
             modifier = Modifier.padding(bottom = 8.dp),
         )
         content()
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(46.dp))
     }
 }
 
@@ -55,15 +58,20 @@ fun MenuRow(label: String, hint: String = "", onClick: () -> Unit) {
     val palette = LocalHdPalette.current
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 3.dp)
-            .background(palette.surface, shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+            .widthIn(min = 140.dp, max = 206.dp)
+            .padding(vertical = 2.dp)
+            .background(palette.surface, shape = androidx.compose.foundation.shape.RoundedCornerShape(9.dp))
+            .border(
+                1.dp,
+                palette.primary.copy(alpha = 0.30f),
+                androidx.compose.foundation.shape.RoundedCornerShape(9.dp),
+            )
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
-        Text(label, color = palette.text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text(label, color = palette.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 2)
         if (hint.isNotEmpty()) {
-            Text(hint, color = palette.muted, fontSize = 11.sp)
+            Text(hint, color = palette.muted, fontSize = 10.sp, maxLines = 2)
         }
     }
 }

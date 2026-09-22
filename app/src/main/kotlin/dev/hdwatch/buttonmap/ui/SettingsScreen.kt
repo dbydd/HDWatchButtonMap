@@ -3,6 +3,7 @@ package dev.hdwatch.buttonmap.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -121,21 +122,19 @@ fun SettingsScreen() {
         SectionLabel("配置文件")
         Row(
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(top = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ActionButton("重载", { app.configRepo.reload() }, Modifier.weight(1f))
-            ActionButton("导入 JSON", { actions.importFile() }, Modifier.weight(1f))
+            ActionButton("重载", { app.configRepo.reload() })
+            ActionButton("导入 JSON", { actions.importFile() })
         }
         Row(
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(top = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ActionButton("导出 JSON", { actions.exportFile() }, Modifier.weight(1f))
-            ActionButton("写外部文件", { app.configRepo.copyToExternal() }, Modifier.weight(1f))
+            ActionButton("导出 JSON", { actions.exportFile() })
+            ActionButton("写外部文件", { app.configRepo.copyToExternal() })
         }
         Text(
             text = status,
@@ -160,40 +159,38 @@ private fun StepperRow(
     onChange: (Long) -> Unit,
 ) {
     val palette = LocalHdPalette.current
-    Column(
+    Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 3.dp)
-            .background(palette.surface, RoundedCornerShape(10.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(vertical = 2.dp)
+            .background(palette.surface, RoundedCornerShape(9.dp))
+            .border(1.dp, palette.secondary.copy(alpha = 0.22f), RoundedCornerShape(9.dp))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, color = palette.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ActionButton(
-                text = "-",
-                onClick = { onChange((value - step).coerceIn(min, max)) },
-                modifier = Modifier.weight(1f),
-                enabled = value > min,
-            )
-            Text(
-                text = "$value$suffix",
-                color = palette.primary,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1.2f),
-            )
-            ActionButton(
-                text = "+",
-                onClick = { onChange((value + step).coerceIn(min, max)) },
-                modifier = Modifier.weight(1f),
-                enabled = value < max,
-            )
-        }
+        Text(
+            label,
+            color = palette.text,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(end = 8.dp),
+        )
+        ActionButton(
+            text = "-",
+            onClick = { onChange((value - step).coerceIn(min, max)) },
+            enabled = value > min,
+        )
+        Text(
+            text = "$value$suffix",
+            color = palette.primary,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 6.dp),
+        )
+        ActionButton(
+            text = "+",
+            onClick = { onChange((value + step).coerceIn(min, max)) },
+            enabled = value < max,
+        )
     }
 }

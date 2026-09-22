@@ -2,6 +2,7 @@ package dev.hdwatch.buttonmap.ui
 
 import android.bluetooth.BluetoothDevice
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,10 +47,10 @@ fun HidScreen() {
     ScreenScaffold(title = "蓝牙 HID") {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(bottom = 4.dp)
-                .background(palette.surface, RoundedCornerShape(10.dp))
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .background(palette.surface, RoundedCornerShape(9.dp))
+                .border(1.dp, palette.secondary.copy(alpha = 0.22f), RoundedCornerShape(9.dp))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
         ) {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Text(
@@ -57,7 +58,7 @@ fun HidScreen() {
                     color = palette.text,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.padding(end = 8.dp),
                 )
                 Text(
                     text = if (status.kind == TransportKind.BLUETOOTH) "蓝牙" else "日志",
@@ -85,44 +86,38 @@ fun HidScreen() {
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             ActionButton(
                 text = "请求可发现",
                 onClick = { actions.requestDiscoverable() },
-                modifier = Modifier.weight(1f),
             )
             ActionButton(
                 text = "蓝牙权限",
                 onClick = { actions.requestBluetoothPermissions() },
-                modifier = Modifier.weight(1f),
                 tone = if (hasPermission) HdTone.Neutral else HdTone.Accent,
             )
         }
         Row(
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(top = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             ActionButton(
                 text = "重连",
                 onClick = { bluetooth?.tryReconnect() },
-                modifier = Modifier.weight(1f),
                 tone = HdTone.Accent,
                 enabled = bluetooth != null,
             )
             ActionButton(
                 text = "断开",
                 onClick = { bluetooth?.disconnectTarget() },
-                modifier = Modifier.weight(1f),
                 enabled = bluetooth != null,
             )
             ActionButton(
                 text = "重新注册",
                 onClick = { bluetooth?.reRegister() },
-                modifier = Modifier.weight(1f),
                 enabled = bluetooth != null,
             )
         }
