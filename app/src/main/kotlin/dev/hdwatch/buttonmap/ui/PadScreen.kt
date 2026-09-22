@@ -210,19 +210,24 @@ fun PadScreen() {
             }
         }
 
-        // ---- live symbol ring, 8 inputs at the diagonal offsets ----
-        val ringSymbols = listOf(
-            Symbol.CROWN_CW, Symbol.STEM, Symbol.CROWN_CCW, Symbol.STEM_LONG,
-            Symbol.GESTURE_1, Symbol.GESTURE_2, Symbol.GESTURE_3, Symbol.GESTURE_4,
+        // ---- live symbol ring: four diagonal corners, two mini diamonds
+        // each — every spare corner of the dial becomes a real input ----
+        val ringPairs = listOf(
+            45.0 to (Symbol.CROWN_CW to Symbol.CROWN_CCW),
+            135.0 to (Symbol.STEM to Symbol.STEM_LONG),
+            225.0 to (Symbol.GESTURE_1 to Symbol.GESTURE_2),
+            315.0 to (Symbol.GESTURE_3 to Symbol.GESTURE_4),
         )
-        ringSymbols.forEachIndexed { idx, sym ->
-            RingSymbol(
-                symbol = sym,
-                active = sym in liveSymbols,
-                angleDeg = 22.5 + idx * 45.0,
-                radiusDp = 97f,
-                modifier = Modifier.align(Alignment.Center),
-            ) { feed(sym) }
+        ringPairs.forEach { (center, pair) ->
+            listOf(pair.first to -14.0, pair.second to 14.0).forEach { (sym, off) ->
+                MiniDiamond(
+                    symbol = sym,
+                    active = sym in liveSymbols,
+                    angleDeg = center + off,
+                    radiusDp = 88f,
+                    modifier = Modifier.align(Alignment.Center),
+                ) { feed(sym) }
+            }
         }
 
         // ---- four arc keycaps riding the rim ----
@@ -274,9 +279,12 @@ fun PadScreen() {
     }
 }
 
-/** One radial symbol on the live ring; tap feeds it straight into the engine. */
+/**
+ * Mini diamond input on the live ring: same rotated-square silhouette as the
+ * arc keycaps at a fifth of the size; gold when bound, grey when dormant.
+ */
 @Composable
-private fun RingSymbol(
+private fun MiniDiamond(
     symbol: Symbol,
     active: Boolean,
     angleDeg: Double,
@@ -285,28 +293,58 @@ private fun RingSymbol(
     onClick: () -> Unit,
 ) {
     val palette = LocalHdPalette.current
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
     val dx = sin(Math.toRadians(angleDeg)).toFloat()
     val dy = -cos(Math.toRadians(angleDeg)).toFloat()
-    Text(
-        text = symbol.code,
-        fontFamily = FontFamily.Monospace,
-        fontSize = 8.sp,
-        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-        letterSpacing = 1.sp,
-        color = if (active) palette.primary.copy(alpha = 0.95f) else palette.muted.copy(alpha = 0.7f),
-        maxLines = 1,
-        modifier = modifier
+    val label = symbol.display ?: symbol.code
+
+    Box(
+        modifier
             .offset(x = (dx * radiusDp).dp, y = (dy * radiusDp).dp)
-            .graphicsLayer {
-                rotationZ = if (angleDeg <= 180) (angleDeg + 90).toFloat() else (angleDeg - 90).toFloat()
-            }
-            .clickable(
-                interactionSource = null,
-                indication = null,
-                onClick = onClick,
-            )
-            .padding(horizontal = 4.dp, vertical = 3.dp),
-    )
+            .size(30.dp),
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer { rotationZ = 45f }
+                .background(
+                    if (pressed) {
+                        Brush.verticalGradient(listOf(palette.primary, palette.goldDeep))
+                    } else {
+                        Brush.verticalGradient(listOf(palette.panelTop, palette.panelBottom))
+                    },
+                    RoundedCornerShape(5.dp),
+                )
+                .border(
+                    1.dp,
+                    when {
+                        pressed -> palette.goldDeep
+                        active -> palette.primary.copy(alpha = 0.75f)
+                        else -> palette.hairline
+                    },
+                    RoundedCornerShape(5.dp),
+                )
+                .combinedClickable(
+                    interactionSource = interaction,
+                    indication = null,
+                    onClick = onClick,
+                ),
+        )
+        Text(
+            text = label,
+            fontFamily = FontFamily.Monospace,
+            fontSize = if (label.length > 1) 8.sp else 10.sp,
+            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+            color = when {
+                pressed -> palette.onPrimary
+                active -> palette.primary.copy(alpha = 0.95f)
+                else -> palette.muted.copy(alpha = 0.75f)
+            },
+            maxLines = 1,
+            modifier = Modifier.align(Alignment.Center),
+        )
+    }
 }
 
 private enum class ArcDir { UP, DOWN, LEFT, RIGHT }
@@ -476,18 +514,15 @@ private fun HubCard(
                     .padding(horizontal = 7.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(Modifier.height(9.dp))
-                // Keys mode wears a small gold name at the top; macro mode
-                // shows no title at all — the list speaks for itself.
+                Spacer(Modifier.height(6.dp))
+                // Keys mode whispers its name at the rim; macro mode shows
+                // no title at all — the list speaks for itself.
                 if (profile.kind != ProfileKind.MACRO) {
                     Text(
                         text = profile.name,
-                        style = TextStyle(
-                            brush = goldTextBrush(),
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.sp,
-                        ),
+                        fontSize = 7.sp,
+                        letterSpacing = 2.sp,
+                        color = palette.muted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
