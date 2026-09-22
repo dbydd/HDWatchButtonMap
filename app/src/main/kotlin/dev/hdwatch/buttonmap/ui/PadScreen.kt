@@ -205,7 +205,8 @@ fun PadScreen() {
             315.0 to (Symbol.GESTURE_3 to Symbol.GESTURE_4),
         )
         ringPairs.forEach { (center, pair) ->
-            listOf(pair.first to -12.0, pair.second to 12.0).forEach { (sym, off) ->
+            // Keep clear of the keycap angular footprint: hug the diagonal.
+            listOf(pair.first to -7.0, pair.second to 7.0).forEach { (sym, off) ->
                 RingSymbol(
                     symbol = sym,
                     active = sym in liveSymbols,
