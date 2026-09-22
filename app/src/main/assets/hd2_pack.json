@@ -20,6 +20,9 @@
    "name": "HD2",
    "kind": "MACRO",
    "single": {
+    "CCW": {
+     "keydown": "CTRL"
+    },
     "G1": {
      "keydown": "CTRL"
     },
@@ -32,11 +35,6 @@
     "CW": {
      "mouse": {
       "wheel": -1
-     }
-    },
-    "CCW": {
-     "mouse": {
-      "wheel": 1
      }
     },
     "S": {

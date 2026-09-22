@@ -175,6 +175,21 @@ class ConfigRepository(
     }
 
     // -------------------------------------------------------------- internals
+
+    /**
+     * Earlier builds seeded a handful of demo macros (the game-name ones).
+     * They are ours, not the user's: strip them wherever they survive so the
+     * shipped default is the neutral set.
+     */
+    private fun stripBundledDemoMacros(cfg: Config): Config {
+        val legacy = setOf("demo1", "demo2", "demo3", "demo4", "resupply", "eagle", "shield", "mine")
+        if (cfg.profiles.none { p -> p.macros.any { it.id in legacy } }) return cfg
+        ring.log("CFG  dropped bundled demo macros")
+        return cfg.copy(
+            profiles = cfg.profiles.map { p -> p.copy(macros = p.macros.filterNot { it.id in legacy }) },
+        )
+    }
+
     private fun seedFromAssets() {
         val text = runCatching {
             app.assets.open(assetSeedName).bufferedReader().use { it.readText() }
@@ -192,7 +207,9 @@ class ConfigRepository(
             return
         }
         try {
-            _config.value = ConfigJson.decode(text)
+            val decoded = stripBundledDemoMacros(ConfigJson.decode(text))
+            _config.value = decoded
+            persist(decoded)
             _status.value = "已加载 ($source)"
             ring.log("CFG  loaded from $source: ${_config.value.profiles.size} profiles, " +
                 "active=${_config.value.activeProfile.name}")

@@ -145,11 +145,14 @@ class SequenceEngine(
             return
         }
         emit(EngineEvent.FiredSingle(symbol, step))
-        // A gesture carries no release edge, so a KeyDown bound to a sensor is
-        // a toggle: clench to hold CTRL, clench again to let go.
-        if (lastSource == InputSource.SENSOR && step is Step.KeyDown) {
+        // Neither a gesture nor a detent carries a release edge, so a KeyDown
+        // bound to one is a latch: twist or shake once to hold CTRL, again to
+        // let go. (Detents are discrete: one symbol per threshold crossing.)
+        if (step is Step.KeyDown &&
+            (lastSource == InputSource.SENSOR || lastSource == InputSource.ROTARY)
+        ) {
             runner.toggleHold(step)
-            ring.log("ENG  gesture '${symbol.code}' -> hold ${step.key} toggled")
+            ring.log("ENG  ${lastSource.name.lowercase()} '${symbol.code}' -> hold ${step.key} toggled")
             return
         }
         ring.log("ENG  '${symbol.code}' -> single $step")
