@@ -56,20 +56,32 @@ fun HidScreen() {
                 Text(
                     text = status.label,
                     color = palette.text,
-                    fontSize = 14.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
+                    maxLines = 2,
                     modifier = Modifier.padding(end = 8.dp),
                 )
                 Text(
                     text = if (status.kind == TransportKind.BLUETOOTH) "蓝牙" else "日志",
                     color = palette.secondary,
-                    fontSize = 10.sp,
+                    fontSize = 9.sp,
+                    maxLines = 1,
                 )
             }
             status.hostName?.let { host ->
-                Text("主机 $host", color = palette.primary, fontSize = 12.sp)
+                Text("主机 $host", color = palette.primary, fontSize = 11.sp, maxLines = 1)
             }
-            Text(status.detail, color = palette.muted, fontSize = 11.sp)
+            Text(status.detail, color = palette.muted, fontSize = 11.sp, maxLines = 2)
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text("保活 ", color = palette.muted, fontSize = 9.sp, maxLines = 1)
+                Text(
+                    text = if (settings.keepAliveService) "前台服务运行中" else "未开启",
+                    color = if (settings.keepAliveService) palette.primary else palette.danger,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                )
+            }
             Text(
                 text = when {
                     bluetooth == null -> "本机无蓝牙 HID 通路"
@@ -81,9 +93,17 @@ fun HidScreen() {
                     hasPermission -> palette.muted
                     else -> palette.danger
                 },
-                fontSize = 10.sp,
+                fontSize = 9.sp,
+                maxLines = 2,
             )
         }
+        Text(
+            text = "断连多为后台注销所致，保持保活开关开启",
+            color = palette.muted,
+            fontSize = 9.sp,
+            maxLines = 2,
+            modifier = Modifier.padding(top = 2.dp),
+        )
 
         Row(
             modifier = Modifier.padding(top = 2.dp),
@@ -128,6 +148,7 @@ fun HidScreen() {
                 text = "没有可用主机：先在系统设置配对电脑，或授予蓝牙权限",
                 color = palette.muted,
                 fontSize = 11.sp,
+                maxLines = 2,
             )
         }
         hosts.forEach { device ->
@@ -149,19 +170,22 @@ fun HidScreen() {
         Text(
             text = "模拟器没有蓝牙协议栈，必须留在日志模拟；真机关闭后即可连接电脑主机。",
             color = palette.muted,
-            fontSize = 10.sp,
+            fontSize = 9.sp,
+            maxLines = 2,
         )
 
         SectionLabel("外部配置文件")
         Text(
             text = "adb push hdmap.json " + (externalPath ?: "（无外部目录）"),
             color = palette.primary,
-            fontSize = 10.sp,
+            fontSize = 9.sp,
+            maxLines = 1,
         )
         Text(
             text = "把配置推到手表外部文件目录，启动时自动导入；也可在设置里手动重载。",
             color = palette.muted,
-            fontSize = 10.sp,
+            fontSize = 9.sp,
+            maxLines = 2,
         )
     }
 }

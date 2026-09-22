@@ -75,13 +75,13 @@ fun LogScreen() {
         }
 
         SectionLabel("虚拟输入")
-        listOf(0, 4).forEach { start ->
+        Symbol.mappable.chunked(6).forEach { rowSymbols ->
             Row(
                 modifier = Modifier
                     .padding(top = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
-                Symbol.mappable.drop(start).take(4).forEach { sym ->
+                rowSymbols.forEach { sym ->
                     ActionButton(
                         text = "${sym.display} ${sym.label}",
                         onClick = { app.engine.feed(sym) },

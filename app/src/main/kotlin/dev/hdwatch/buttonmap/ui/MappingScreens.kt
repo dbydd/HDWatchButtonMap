@@ -32,6 +32,7 @@ import dev.hdwatch.buttonmap.hid.HidKey
 import dev.hdwatch.buttonmap.hid.HidPage
 import dev.hdwatch.buttonmap.hid.KeyTable
 import dev.hdwatch.buttonmap.input.Symbol
+import dev.hdwatch.buttonmap.config.ProfileKind
 
 /** 单键映射：列表页显示每个输入符号的当前动作与宏序列冲突，编辑页选择 HID 键/修饰键/快捷键。 */
 
@@ -42,13 +43,18 @@ fun MappingListScreen() {
     val config by app.configRepo.config.collectAsState()
     val palette = LocalHdPalette.current
 
-    ScreenScaffold(title = "单键映射") {
+    ScreenScaffold(title = "单键映射 · 模式 ${config.activeProfile.name}") {
         Symbol.mappable.forEach { sym ->
-            val step = config.single[sym]
+            val step = config.activeProfile.single[sym]
             // A symbol that starts an enabled multi-symbol sequence never fires
             // its single mapping, so say so instead of showing a dead action.
-            val seqCount = config.macros.count {
-                it.enabled && it.sequence.size > 1 && it.sequence.first() == sym
+            // Only macro profiles fire sequences; keys-mode mappings always fire.
+            val seqCount = if (config.activeProfile.kind == ProfileKind.MACRO) {
+                config.activeProfile.macros.count {
+                    it.enabled && it.sequence.size > 1 && it.sequence.first() == sym
+                }
+            } else {
+                0
             }
             val hint = if (seqCount > 0) "${summarize(step)} · 序列中×$seqCount" else summarize(step)
             MenuRow(
@@ -59,7 +65,8 @@ fun MappingListScreen() {
         Text(
             "未启用序列前缀的按键立即触发；完整编辑请用外部 hdmap.json",
             color = palette.muted,
-            fontSize = 11.sp,
+            fontSize = 9.sp,
+            maxLines = 2,
             modifier = Modifier.padding(top = 8.dp),
         )
     }
@@ -72,9 +79,9 @@ fun MappingEditScreen(symbol: Symbol) {
     val config by app.configRepo.config.collectAsState()
     val palette = LocalHdPalette.current
 
-    var pending by remember(symbol) { mutableStateOf(config.single[symbol]) }
+    var pending by remember(symbol) { mutableStateOf(config.activeProfile.single[symbol]) }
     var mods by remember(symbol) {
-        mutableStateOf((config.single[symbol] as? Step.TapKey)?.mods ?: emptySet())
+        mutableStateOf((config.activeProfile.single[symbol] as? Step.TapKey)?.mods ?: emptySet())
     }
     var openCategory by remember(symbol) { mutableStateOf<String?>(null) }
 
@@ -112,19 +119,20 @@ fun MappingEditScreen(symbol: Symbol) {
     val category = openCategory
     val categoryKeys = KeyTable.categories.firstOrNull { it.first == category }?.second.orEmpty()
 
-    ScreenScaffold(title = "映射：${symbol.display} ${symbol.label}") {
+    ScreenScaffold(title = "映射：${symbol.display} ${symbol.label} · 模式 ${config.activeProfile.name}") {
         Column(
             modifier = Modifier
                 .background(palette.surface, RoundedCornerShape(9.dp))
                 .border(1.dp, palette.primary.copy(alpha = 0.35f), RoundedCornerShape(9.dp))
                 .padding(horizontal = 10.dp, vertical = 6.dp),
         ) {
-            Text("当前动作", color = palette.muted, fontSize = 10.sp)
+            Text("当前动作", color = palette.muted, fontSize = 9.sp, maxLines = 1)
             Text(
                 if (pending == null) "未选择" else summarize(pending),
                 color = palette.primary,
-                fontSize = 17.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
+                maxLines = 2,
             )
         }
 
@@ -212,6 +220,7 @@ private fun MappingSectionLabel(text: String) {
         fontSize = 11.sp,
         fontWeight = FontWeight.SemiBold,
         textAlign = TextAlign.Start,
+        maxLines = 2,
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp, bottom = 2.dp),
@@ -251,6 +260,7 @@ private fun Chip(
             fontSize = 11.sp,
             fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
             textAlign = TextAlign.Center,
+            maxLines = 1,
         )
     }
 }

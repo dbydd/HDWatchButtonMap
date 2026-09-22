@@ -1,29 +1,42 @@
 package dev.hdwatch.buttonmap.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
+import dev.hdwatch.buttonmap.input.CapStatus
+import dev.hdwatch.buttonmap.input.GestureBackend
+import dev.hdwatch.buttonmap.input.Symbol
 
 /**
- * 设置屏：表冠阈值 / 序列超时 / 打字延迟步进器，反转与未知输入捕获开关，
- * 手势传感器→符号绑定（点击循环 G1..G4→解绑），以及配置的重载 / 导入 / 导出 / 写外部文件。
+ * 设置屏：表冠全局阈值 / 本模式阈值 / 序列超时 / 打字延迟步进器，反转与未知输入捕获开关，
+ * 保活开关，手势能力卡（探测式兼容层：状态点 + 绑定循环），以及配置的重载 / 导入 / 导出 / 写外部文件。
  */
 
 private val GESTURE_SLOTS = listOf("G1", "G2", "G3", "G4")
@@ -36,8 +49,13 @@ fun SettingsScreen() {
     val config by app.configRepo.config.collectAsState()
     val settings = config.settings
     val status by app.configRepo.status.collectAsState()
-    // Sensors cannot appear or disappear while this screen is up.
-    val candidates = remember { app.sensorHub.candidates() }
+    val gestures = app.gestures as GestureBackend
+    var caps by remember { mutableStateOf(gestures.capabilities()) }
+    val boundSlots = remember { mutableStateMapOf<String, Symbol?>() }
+    LaunchedEffect(settings.gestureSensorsEnabled) {
+        gestures.refresh()
+        caps = gestures.capabilities()
+    }
 
     ScreenScaffold(title = "设置") {
         SectionLabel("表冠旋转")
@@ -45,10 +63,48 @@ fun SettingsScreen() {
             label = "旋转阈值",
             value = settings.rotateThreshold.toLong(),
             suffix = " 格",
-            min = 10,
-            max = 90,
-            step = 10,
+            min = 1,
+            max = 15,
+            step = 1,
             onChange = { v -> app.configRepo.updateSettings { it.copy(rotateThreshold = v.toInt()) } },
+        )
+        StepperRow(
+            label = "本模式阈值",
+            value = config.effectiveRotateThreshold().toLong(),
+            suffix = " 格",
+            min = 1,
+            max = 15,
+            step = 1,
+            onChange = { v ->
+                app.configRepo.updateProfile(config.activeProfileId) {
+                    it.copy(rotateThreshold = v.toInt())
+                }
+            },
+        )
+        Row(
+            modifier = Modifier.padding(top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            ActionButton(
+                text = "跟随全局",
+                tone = HdTone.Accent,
+                onClick = {
+                    app.configRepo.updateProfile(config.activeProfileId) {
+                        it.copy(rotateThreshold = null)
+                    }
+                },
+            )
+        }
+        Text(
+            text = if (config.activeProfile.rotateThreshold == null) {
+                "本模式当前跟随全局（全局 ${settings.rotateThreshold} 格）"
+            } else {
+                "本模式覆盖全局（全局 ${settings.rotateThreshold} 格）"
+            },
+            color = palette.muted,
+            fontSize = 9.sp,
+            maxLines = 2,
+            modifier = Modifier.padding(top = 2.dp),
         )
         SwitchRow(
             label = "反转正负",
@@ -96,28 +152,43 @@ fun SettingsScreen() {
             },
             hint = "打开才注册监听；模拟器 HAL 会崩，实机也保持手动开启",
         )
-        if (candidates.isEmpty()) {
-            Text("本机无可用手势传感器", color = palette.muted, fontSize = 11.sp)
+        if (caps.isEmpty()) {
+            Text(
+                "本机无可用手势能力",
+                color = palette.muted,
+                fontSize = 9.sp,
+                maxLines = 2,
+                modifier = Modifier.padding(top = 2.dp),
+            )
         }
-        candidates.forEachIndexed { index, candidate ->
-            val name = candidate.sensor.name
-            val effective = app.sensorHub.symbolFor(index, candidate.sensor)
-            val binding = when (val bound = settings.sensorToSymbol[name]) {
-                null -> "默认 ${effective?.display ?: "无"}"
-                "" -> "未绑定"
-                else -> bound
-            }
-            MenuRow(
-                label = name,
-                hint = "类型 #${candidate.type} · 触发 $binding · 点击切换 G1→G4→解绑",
-            ) {
-                val order = GESTURE_SLOTS + ""
-                val next = order[(order.indexOf(settings.sensorToSymbol[name]) + 1) % order.size]
-                app.configRepo.updateSettings {
-                    it.copy(sensorToSymbol = it.sensorToSymbol + (name to next))
-                }
-            }
+        caps.forEach { cap ->
+            val bound = boundSlots[cap.id]
+                ?: settings.sensorToSymbol[cap.id]?.let { Symbol.fromCode(it) }
+            GestureCapabilityRow(
+                label = cap.label,
+                detail = cap.detail,
+                status = cap.status,
+                bound = bound,
+                onClick = {
+                    if (cap.status == CapStatus.AVAILABLE) {
+                        val order = GESTURE_SLOTS.map { Symbol.fromCode(it) } + listOf(null)
+                        val next = order[(order.indexOf(bound) + 1) % order.size]
+                        gestures.bind(cap.id, next)
+                        boundSlots[cap.id] = next
+                    }
+                },
+            )
         }
+
+        SectionLabel("保活")
+        SwitchRow(
+            label = "前台服务保活",
+            checked = settings.keepAliveService,
+            onCheckedChange = { on ->
+                app.configRepo.updateSettings { it.copy(keepAliveService = on) }
+            },
+            hint = "防退后台断连 + 通知栏常驻",
+        )
 
         SectionLabel("配置文件")
         Row(
@@ -140,10 +211,80 @@ fun SettingsScreen() {
             text = status,
             color = if (isStatusError(status)) palette.danger else palette.muted,
             fontSize = 10.sp,
+            maxLines = 2,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp),
         )
+    }
+}
+
+/**
+ * 手势能力卡一行：状态色点 + 标签 + 详情 + 当前绑定符号；只有 AVAILABLE 可点，
+ * 点击循环绑定 G1→G2→G3→G4→解绑（写入走 GestureBackend.bind）。
+ */
+@Composable
+private fun GestureCapabilityRow(
+    label: String,
+    detail: String,
+    status: CapStatus,
+    bound: Symbol?,
+    onClick: () -> Unit,
+) {
+    val palette = LocalHdPalette.current
+    val bindable = status == CapStatus.AVAILABLE
+    val capColor = when (status) {
+        CapStatus.AVAILABLE -> palette.primary
+        CapStatus.GATED -> palette.muted
+        CapStatus.NEEDS_PERMISSION -> palette.danger
+        CapStatus.BROKEN -> palette.muted
+    }
+    HdPanel(
+        modifier = Modifier
+            .widthIn(min = 132.dp, max = 168.dp)
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        shape = RoundedCornerShape(8.dp),
+        onClick = if (bindable) onClick else null,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(7.dp)
+                    .background(capColor, RoundedCornerShape(1.5.dp))
+                    .border(1.dp, palette.hairline, RoundedCornerShape(1.5.dp)),
+            )
+            Column(modifier = Modifier.padding(start = 7.dp)) {
+                Text(
+                    text = label,
+                    color = if (status == CapStatus.BROKEN) palette.muted else palette.text,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    textDecoration = if (status == CapStatus.BROKEN) TextDecoration.LineThrough else null,
+                )
+                Text(
+                    text = buildString {
+                        append(
+                            when (status) {
+                                CapStatus.AVAILABLE -> "可用"
+                                CapStatus.GATED -> "未启用监听"
+                                CapStatus.NEEDS_PERMISSION -> "缺权限"
+                                CapStatus.BROKEN -> "不可用"
+                            },
+                        )
+                        append(" · 绑定 ")
+                        append(bound?.display ?: "无")
+                    },
+                    color = palette.muted,
+                    fontSize = 9.sp,
+                    maxLines = 2,
+                )
+            }
+        }
     }
 }
 
@@ -159,38 +300,49 @@ private fun StepperRow(
     onChange: (Long) -> Unit,
 ) {
     val palette = LocalHdPalette.current
-    Row(
+    HdPanel(
         modifier = Modifier
-            .padding(vertical = 2.dp)
-            .background(palette.surface, RoundedCornerShape(9.dp))
-            .border(1.dp, palette.secondary.copy(alpha = 0.22f), RoundedCornerShape(9.dp))
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .widthIn(min = 132.dp, max = 168.dp)
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        shape = RoundedCornerShape(8.dp),
     ) {
-        Text(
-            label,
-            color = palette.text,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(end = 8.dp),
-        )
-        ActionButton(
-            text = "-",
-            onClick = { onChange((value - step).coerceIn(min, max)) },
-            enabled = value > min,
-        )
-        Text(
-            text = "$value$suffix",
-            color = palette.primary,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 6.dp),
-        )
-        ActionButton(
-            text = "+",
-            onClick = { onChange((value + step).coerceIn(min, max)) },
-            enabled = value < max,
-        )
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                label,
+                color = palette.text,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                ActionButton(
+                    text = "-",
+                    onClick = { onChange((value - step).coerceIn(min, max)) },
+                    enabled = value > min,
+                )
+                Text(
+                    text = "$value$suffix",
+                    color = palette.primary,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
+                ActionButton(
+                    text = "+",
+                    onClick = { onChange((value + step).coerceIn(min, max)) },
+                    enabled = value < max,
+                )
+            }
+        }
     }
 }

@@ -1,12 +1,23 @@
 package dev.hdwatch.buttonmap.ui
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,52 +25,34 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.TextMeasurer
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
+import dev.hdwatch.buttonmap.config.Step
 import dev.hdwatch.buttonmap.engine.EngineEvent
 import dev.hdwatch.buttonmap.hid.TransportKind
+import dev.hdwatch.buttonmap.hid.TransportStatus
 import dev.hdwatch.buttonmap.input.Symbol
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.hypot
-import kotlin.math.min
-import kotlin.math.sin
+import kotlinx.coroutines.delay
 
 /**
- * The remote face.
- *
- * Layout: a large square hub owns the middle — it is the information panel
- * (pending sequence HUD, last event, transport state, compact single-key
- * map, menu affordance). The four direction buttons are slim edge bands
- * hugging the round screen border: a flat inner side against the hub and a
- * concave circular outer edge, sized only for thumb contact.
- *
- * Geometry convention (canvas coords): 0°=east, angles grow clockwise;
- * square half-side s = 0.58R, hub corners sit at 45° diagonals.
+ * The pad: a Helldivers console face. Four glass direction cells frame one
+ * haloed focus card; the card owns the profile HUD and the mode switch.
  */
-@OptIn(ExperimentalTextApi::class)
 @Composable
 fun PadScreen() {
     val app = HdApp.instance
     val nav = LocalAppNav.current
     val palette = LocalHdPalette.current
+    val haptics = LocalHaptics.current
+
     val config by app.configRepo.config.collectAsState()
     val buffer by app.engine.bufferState.collectAsState()
     val event by app.engine.event.collectAsState()
@@ -68,229 +61,302 @@ fun PadScreen() {
     }
     val transportStatus by transport.status.collectAsState()
 
-    val measurer = rememberTextMeasurer()
-    var pressed by remember { mutableStateOf<Symbol?>(null) }
-    val haptics = LocalHaptics.current
+    val profile = config.activeProfile
 
-    // firing pulse: gold halo sweeping from hub to rim
-    val flash = remember { Animatable(0f) }
+    // A different profile has a different macro table: never carry a
+    // half-entered sequence across a switch.
+    LaunchedEffect(config.activeProfileId) { app.engine.reset() }
+
+    // Ignition: the focus card halo flares twice when an action fires.
+    var pulse by remember { mutableStateOf(0) }
     LaunchedEffect(event) {
-        when (event) {
-            is EngineEvent.FiredMacro -> { flash.snapTo(1f); flash.animateTo(0f, tween(650)) }
-            is EngineEvent.FiredSingle -> { flash.snapTo(0.5f); flash.animateTo(0f, tween(320)) }
-            else -> Unit
+        if (event is EngineEvent.FiredMacro || event is EngineEvent.FiredSingle) pulse++
+    }
+    var hot by remember { mutableStateOf(false) }
+    LaunchedEffect(pulse) {
+        if (pulse == 0) return@LaunchedEffect
+        repeat(2) {
+            hot = true
+            delay(110)
+            hot = false
+            delay(110)
         }
     }
-
-    fun feedOrMenu(offset: Offset, w: Float, h: Float): Symbol? {
-        val cx = w / 2f
-        val cy = h / 2f
-        val radius = min(cx, cy)
-        val s = radius * HUB_HALF
-        val dx = offset.x - cx
-        val dy = offset.y - cy
-        if (abs(dx) <= s && abs(dy) <= s) return Symbol.STEM // hub sentinel
-        if (hypot(dx, dy) > radius) return null
-        return if (abs(dy) >= abs(dx)) {
-            if (dy < 0) Symbol.UP else Symbol.DOWN
-        } else {
-            if (dx < 0) Symbol.LEFT else Symbol.RIGHT
-        }
-    }
+    val flare by animateFloatAsState(
+        targetValue = if (hot) 1f else 0f,
+        animationSpec = tween(if (hot) 60 else 220),
+        label = "flare",
+    )
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(palette.background)
-            .pointerInput(config) {
-                detectTapGestures(
-                    onPress = { off ->
-                        pressed = feedOrMenu(off, size.width.toFloat(), size.height.toFloat())
-                        if (pressed != null) haptics.press()
-                        tryAwaitRelease()
-                        pressed = null
-                    },
-                    onTap = { off ->
-                        when (val zone = feedOrMenu(off, size.width.toFloat(), size.height.toFloat())) {
-                            null -> Unit
-                            Symbol.STEM -> nav.push(Route.Menu)
-                            else -> app.engine.feed(zone)
-                        }
-                    },
-                )
-            },
+            .background(
+                Brush.radialGradient(
+                    listOf(palette.surface, palette.background, palette.edge),
+                ),
+            ),
     ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            val radius = min(cx, cy)
-            val s = radius * HUB_HALF
-
-            // firing halo: expanding ring between hub and rim
-            if (flash.value > 0.01f) {
-                val f = flash.value
-                drawCircle(
-                    color = palette.primary.copy(alpha = 0.55f * f),
-                    radius = (s * 1.42f) + (radius * 0.98f - s * 1.42f) * (1f - f),
-                    center = Offset(cx, cy),
-                    style = Stroke(width = (1f + 3f * f).dp.toPx()),
-                )
-            }
-
-            // screen rim: silver hairline
-            drawCircle(
-                color = palette.secondary.copy(alpha = 0.16f),
-                radius = radius * 0.985f,
-                center = Offset(cx, cy),
-                style = Stroke(width = 1.dp.toPx()),
-            )
-
-            // ---- four slim edge buttons (flat inner side, concave outer arc) ----
-            fun band(symbol: Symbol, baseDeg: Float) {
-                drawBand(
-                    measurer, palette, symbol,
-                    pressed = pressed == symbol,
-                    cx = cx, cy = cy, radius = radius, hubHalf = s, baseDeg = baseDeg,
-                )
-            }
-            band(Symbol.UP, 225f)   // hub corner angles: up edge 225°..315°
-            band(Symbol.RIGHT, 315f)
-            band(Symbol.DOWN, 45f)
-            band(Symbol.LEFT, 135f)
-
-            // ---- hub: the big information square ----
-            drawRoundRect(
-                color = if (pressed == Symbol.STEM) palette.primary.copy(alpha = 0.18f) else palette.surface,
-                topLeft = Offset(cx - s, cy - s),
-                size = androidx.compose.ui.geometry.Size(s * 2f, s * 2f),
-                cornerRadius = CornerRadius(s * 0.14f),
-            )
-            drawRoundRect(
-                color = palette.primary.copy(alpha = 0.9f),
-                topLeft = Offset(cx - s, cy - s),
-                size = androidx.compose.ui.geometry.Size(s * 2f, s * 2f),
-                cornerRadius = CornerRadius(s * 0.14f),
-                style = Stroke(width = 1.6.dp.toPx()),
-            )
-            // inner silver hairline for a double-metal inlay feel
-            drawRoundRect(
-                color = palette.secondary.copy(alpha = 0.28f),
-                topLeft = Offset(cx - s * 0.92f, cy - s * 0.92f),
-                size = androidx.compose.ui.geometry.Size(s * 1.84f, s * 1.84f),
-                cornerRadius = CornerRadius(s * 0.11f),
-                style = Stroke(width = 0.8.dp.toPx()),
-            )
-
-            val single = config.single
-            val line1 = if (buffer.isNotEmpty()) buffer.joinToString(" ") { it.display } else "HD MAP"
-            val line3 = when (event) {
-                is EngineEvent.FiredMacro -> "激活「${(event as EngineEvent.FiredMacro).macro.name}」"
-                is EngineEvent.FiredSingle -> {
-                    val e = event as EngineEvent.FiredSingle
-                    "${e.symbol.display} ${summarize(e.step)}"
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 22.dp, end = 22.dp, top = 15.dp, bottom = 44.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                Spacer(Modifier.weight(2.7f))
+                PadCell(
+                    symbol = Symbol.UP,
+                    action = profile.single[Symbol.UP],
+                    modifier = Modifier.weight(3.6f).fillMaxHeight(),
+                ) {
+                    haptics.press()
+                    app.engine.feed(Symbol.UP)
                 }
-                is EngineEvent.Unmapped -> "未映射 ${(event as EngineEvent.Unmapped).symbol.display}"
-                EngineEvent.SequenceTimeout -> "序列已清空"
-                else -> summarizeStatus(transportStatus)
+                Spacer(Modifier.weight(2.7f))
             }
-            val line4 = compactSingleMap(single)
-
-            // line1: title gold / live buffer silver (biggest element)
-            drawLabel(
-                measurer, line1, cx, cy - s * 0.52f,
-                radius * (if (buffer.isNotEmpty()) 0.15f else 0.085f),
-                if (buffer.isNotEmpty()) palette.secondary else palette.primary,
+            Row(
+                modifier = Modifier.fillMaxWidth().weight(2.5f),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                PadCell(
+                    symbol = Symbol.LEFT,
+                    action = profile.single[Symbol.LEFT],
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                ) {
+                    haptics.press()
+                    app.engine.feed(Symbol.LEFT)
+                }
+                FocusCard(
+                    name = profile.name,
+                    buffer = buffer,
+                    event = event,
+                    single = profile.single,
+                    flare = flare,
+                    modifier = Modifier.weight(3.6f).fillMaxHeight(),
+                    onCycle = {
+                        haptics.tick()
+                        app.configRepo.cycleActiveProfile()
+                    },
+                    onMenu = { nav.push(Route.Menu) },
+                )
+                PadCell(
+                    symbol = Symbol.RIGHT,
+                    action = profile.single[Symbol.RIGHT],
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                ) {
+                    haptics.press()
+                    app.engine.feed(Symbol.RIGHT)
+                }
+            }
+            Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                Spacer(Modifier.weight(2.7f))
+                PadCell(
+                    symbol = Symbol.DOWN,
+                    action = profile.single[Symbol.DOWN],
+                    modifier = Modifier.weight(3.6f).fillMaxHeight(),
+                ) {
+                    haptics.press()
+                    app.engine.feed(Symbol.DOWN)
+                }
+                Spacer(Modifier.weight(2.7f))
+            }
+        }
+        // Footer: link readout between two fading rules.
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 26.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Hairline(modifier = Modifier.width(22.dp))
+            MicroLabel(
+                text = summarizeStatus(transportStatus),
+                color = palette.muted,
+                modifier = Modifier.padding(horizontal = 8.dp),
             )
-            // center: menu affordance
-            drawLabel(measurer, "菜 单", cx, cy + s * 0.02f, radius * 0.075f, palette.text)
-            drawLabel(measurer, line3, cx, cy + s * 0.4f, radius * 0.068f, palette.text.copy(alpha = 0.85f))
-            drawLabel(measurer, line4, cx, cy + s * 0.68f, radius * 0.064f, palette.secondary.copy(alpha = 0.8f))
+            Hairline(modifier = Modifier.width(22.dp))
         }
     }
 }
-private fun summarizeStatus(s: dev.hdwatch.buttonmap.hid.TransportStatus): String = when {
-    s.kind == TransportKind.LOGGING -> "日志模拟传输"
-    s.label.contains("已连接") -> "HID→${s.hostName ?: "主机"}"
-    s.label.contains("缺少权限") -> "待授予蓝牙权限"
-    s.label.contains("不可用") || s.label.contains("失败") -> "HID不可用:${s.label}"
-    else -> "HID待配对"
-}
 
-private fun compactSingleMap(single: Map<Symbol, dev.hdwatch.buttonmap.config.Step>): String {
-    fun q(sym: Symbol) = summarize(single[sym]).let { if (it == "—") "?" else it }
-    return "↑${q(Symbol.UP)} ↓${q(Symbol.DOWN)} ←${q(Symbol.LEFT)} →${q(Symbol.RIGHT)}"
-}
-
-/**
- * Draws one edge band: hub corner A -> hub corner B straight (flat inner
- * side), circular arc B->A through the side midpoint (concave outer edge).
- */
-@OptIn(ExperimentalTextApi::class)
-private fun DrawScope.drawBand(
-    measurer: TextMeasurer,
-    palette: HdPalette,
+/** Direction cell: glass panel, glyph over its bound key, gold flood on press. */
+@Composable
+private fun PadCell(
     symbol: Symbol,
-    pressed: Boolean,
-    cx: Float,
-    cy: Float,
-    radius: Float,
-    hubHalf: Float,
-    baseDeg: Float,
+    action: Step?,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
 ) {
-    val cornerDist = hubHalf * 1.41421356f
-    val endDeg = baseDeg + 90f
-    val path = Path().apply {
-        moveTo(cx + cos(rad(baseDeg)) * cornerDist, cy + sin(rad(baseDeg)) * cornerDist)
-        lineTo(cx + cos(rad(endDeg)) * cornerDist, cy + sin(rad(endDeg)) * cornerDist)
-        val steps = 10
-        for (i in 1..steps) {
-            val a = endDeg - 90f * i / steps
-            lineTo(cx + cos(rad(a)) * radius, cy + sin(rad(a)) * radius)
-        }
-        close()
-    }
-    if (pressed) {
-        drawPath(path, color = palette.primary.copy(alpha = 0.42f))
-    }
-    drawPath(
-        path,
-        color = if (pressed) palette.primary else palette.secondary.copy(alpha = 0.5f),
-        style = Stroke(width = 1.4.dp.toPx()),
-    )
+    val palette = LocalHdPalette.current
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val key = summarize(action).let { if (it == "—") "·" else it }
 
-    val midDeg = baseDeg + 45f
-    // glyph sits in the middle of the band, safely inside the screen circle
-    val gx = cx + cos(rad(midDeg)) * radius * 0.815f
-    val gy = cy + sin(rad(midDeg)) * radius * 0.815f
-    drawLabel(measurer, symbol.display ?: symbol.code, gx, gy, radius * 0.095f, palette.secondary)
+    Box(modifier) {
+        HdPanel(
+            pressed = pressed,
+            interactionSource = interaction,
+            onClick = onClick,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.align(Alignment.Center),
+            ) {
+                Text(
+                    text = symbol.display,
+                    color = if (pressed) palette.onPrimary else palette.text,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
+                Spacer(Modifier.height(1.dp))
+                Text(
+                    text = key,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 10.sp,
+                    letterSpacing = 1.sp,
+                    color = if (pressed) palette.onPrimary.copy(alpha = 0.75f) else palette.secondary.copy(alpha = 0.85f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
 }
 
-private fun rad(deg: Float): Float = deg * 0.017453292f
-
-private const val HUB_HALF = 0.46f
-
-@OptIn(ExperimentalTextApi::class)
-private fun DrawScope.drawLabel(
-    measurer: TextMeasurer,
-    text: String,
-    cx: Float,
-    cy: Float,
-    fontPx: Float,
-    color: Color,
-    cache: MutableMap<Pair<String, Int>, TextLayoutResult>? = null,
+/** The haloed focus card: profile identity, live sequence, mode switch. */
+@Composable
+private fun FocusCard(
+    name: String,
+    buffer: List<Symbol>,
+    event: EngineEvent,
+    single: Map<Symbol, Step>,
+    flare: Float,
+    onCycle: () -> Unit,
+    onMenu: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val key = text to fontPx.toInt()
-    val layout = cache?.getOrPut(key) {
-        measurer.measure(
-            text,
-            TextStyle(fontSize = fontPx.coerceAtLeast(9f).sp, fontWeight = FontWeight.Bold, color = color),
-        )
-    } ?: measurer.measure(
-        text,
-        TextStyle(fontSize = fontPx.coerceAtLeast(9f).sp, fontWeight = FontWeight.Bold, color = color),
-    )
-    drawText(
-        textLayoutResult = layout,
-        topLeft = Offset(cx - layout.size.width / 2f, cy - layout.size.height / 2f),
-    )
+    val palette = LocalHdPalette.current
+    val shape = RoundedCornerShape(8.dp)
+
+    Box(modifier) {
+        // Ignition halo behind the panel.
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            palette.primary.copy(alpha = 0.10f + 0.30f * flare),
+                            palette.primary.copy(alpha = 0.03f + 0.12f * flare),
+                        ),
+                    ),
+                    shape,
+                )
+                .padding(2.dp),
+        ) {
+            HdPanel(
+                shape = shape,
+                onClick = onCycle,
+                onLongClick = onMenu,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                CornerBrackets(
+                    color = palette.primary.copy(alpha = 0.85f + 0.15f * flare),
+                    size = 10.dp,
+                    stroke = 1.5.dp,
+                    inset = 2.dp,
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    MicroLabel(
+                        text = "MODE",
+                        color = palette.primary.copy(alpha = 0.55f),
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = name,
+                        style = androidx.compose.ui.text.TextStyle(
+                            brush = goldTextBrush(),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp,
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(7.dp))
+                    // One live line: sequence while entering, last action after.
+                    if (buffer.isNotEmpty()) {
+                        Text(
+                            text = buffer.joinToString(" ") { it.display },
+                            fontFamily = FontFamily.Monospace,
+                            color = palette.primary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.sp,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                        )
+                    } else {
+                        Text(
+                            text = eventLine(event),
+                            color = when (event) {
+                                is EngineEvent.FiredMacro -> palette.primary
+                                is EngineEvent.FiredSingle -> palette.secondary
+                                is EngineEvent.Unmapped -> palette.danger
+                                else -> palette.secondary.copy(alpha = 0.75f)
+                            },
+                            fontSize = 10.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Hairline()
+                    Spacer(Modifier.height(5.dp))
+                    Text(
+                        text = compactSingleMap(single),
+                        fontFamily = FontFamily.Monospace,
+                        color = palette.secondary.copy(alpha = 0.6f),
+                        fontSize = 8.sp,
+                        letterSpacing = 1.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun eventLine(event: EngineEvent): String = when (event) {
+    is EngineEvent.FiredMacro -> "激活「${event.macro.name}」"
+    is EngineEvent.FiredSingle -> "${event.symbol.display} ${summarize(event.step)}"
+    is EngineEvent.Unmapped -> "未映射 ${event.symbol.display}"
+    is EngineEvent.Pending -> "序列中 ${event.buffer.joinToString(" ") { it.display }}"
+    EngineEvent.SequenceTimeout -> "序列超时清空"
+    EngineEvent.Idle -> "待命"
+}
+
+private fun summarizeStatus(s: TransportStatus): String = when {
+    s.kind == TransportKind.LOGGING -> "LINK · SIM"
+    s.label.contains("已连接") -> "LINK · ${s.hostName ?: "HOST"}"
+    s.label.contains("缺少权限") -> "LINK · AUTH"
+    s.label.contains("不可用") || s.label.contains("失败") -> "LINK · DOWN"
+    else -> "LINK · IDLE"
+}
+
+private fun compactSingleMap(single: Map<Symbol, Step>): String {
+    fun q(sym: Symbol) = summarize(single[sym]).let { if (it == "—") "?" else it }
+    return "↑${q(Symbol.UP)}  ↓${q(Symbol.DOWN)}  ←${q(Symbol.LEFT)}  →${q(Symbol.RIGHT)}"
 }

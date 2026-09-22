@@ -3,11 +3,15 @@ package dev.hdwatch.buttonmap.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,11 +28,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
+import dev.hdwatch.buttonmap.config.ProfileKind
 import dev.hdwatch.buttonmap.config.Macro
 import kotlinx.coroutines.delay
 
@@ -46,7 +54,7 @@ internal fun isStatusError(status: String): Boolean =
 /** 配置屏动作按钮的配色档位：中性（描边感）、主强调、危险。 */
 enum class HdTone { Neutral, Accent, Danger }
 
-/** 配置屏通用按钮：≥40dp 触控高度，居中文案，禁用态降饱和。 */
+/** 配置屏通用按钮：玻璃面板，按下泛金，禁用态降饱和。 */
 @Composable
 fun ActionButton(
     text: String,
@@ -56,38 +64,35 @@ fun ActionButton(
     enabled: Boolean = true,
 ) {
     val palette = LocalHdPalette.current
-    val accent = when (tone) {
-        HdTone.Neutral -> palette.secondary
-        HdTone.Accent -> palette.primary
-        HdTone.Danger -> palette.danger
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val tint = when {
+        !enabled -> palette.muted
+        pressed -> palette.onPrimary
+        tone == HdTone.Accent -> palette.primary
+        tone == HdTone.Danger -> palette.danger
+        else -> palette.secondary
     }
-    Box(
-        modifier = modifier
-            .heightIn(min = 34.dp)
-            .background(
-                accent.copy(alpha = if (enabled) 0.13f else 0.05f),
-                RoundedCornerShape(8.dp),
-            )
-            .border(
-                1.dp,
-                accent.copy(alpha = if (enabled) 0.5f else 0.18f),
-                RoundedCornerShape(8.dp),
-            )
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 5.dp),
+    HdPanel(
+        modifier = modifier.heightIn(min = 34.dp),
+        shape = RoundedCornerShape(7.dp),
+        pressed = enabled && pressed,
+        interactionSource = interaction,
+        onClick = if (enabled) onClick else null,
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
-            color = if (enabled) accent else palette.muted,
+            color = tint,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
         )
     }
 }
 
-/** 配置屏开关行：左侧标题+说明，右侧自绘胶囊开关（整行可点）。 */
+/** 配置屏开关行：玻璃面板，右侧矩形推钮开关（整行可点）。 */
 @Composable
 fun SwitchRow(
     label: String,
@@ -97,54 +102,82 @@ fun SwitchRow(
     hint: String = "",
 ) {
     val palette = LocalHdPalette.current
-    Row(
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    HdPanel(
         modifier = modifier
-            .padding(vertical = 2.dp)
-            .background(palette.surface, RoundedCornerShape(9.dp))
-            .border(1.dp, palette.secondary.copy(alpha = 0.22f), RoundedCornerShape(9.dp))
-            .clickable { onCheckedChange(!checked) }
-            .padding(horizontal = 10.dp, vertical = 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .widthIn(min = 132.dp, max = 168.dp)
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        shape = RoundedCornerShape(8.dp),
+        pressed = pressed,
+        interactionSource = interaction,
+        onClick = { onCheckedChange(!checked) },
     ) {
-        Column {
-            Text(label, color = palette.text, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-            if (hint.isNotEmpty()) {
-                Text(hint, color = palette.muted, fontSize = 9.sp, maxLines = 2)
-            }
-        }
-        Box(
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .size(width = 38.dp, height = 20.dp)
-                .background(
-                    if (checked) palette.primary else palette.muted.copy(alpha = 0.30f),
-                    RoundedCornerShape(10.dp),
-                ),
-            contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    label,
+                    color = if (pressed) palette.onPrimary else palette.text,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                )
+                if (hint.isNotEmpty()) {
+                    Text(
+                        hint,
+                        color = if (pressed) palette.onPrimary.copy(alpha = 0.7f) else palette.muted,
+                        fontSize = 9.sp,
+                        maxLines = 2,
+                    )
+                }
+            }
             Box(
                 modifier = Modifier
-                    .padding(horizontal = 2.dp)
-                    .size(16.dp)
-                    .background(if (checked) palette.onPrimary else palette.secondary, CircleShape),
-            )
+                    .padding(start = 8.dp)
+                    .size(width = 36.dp, height = 18.dp)
+                    .background(
+                        if (checked) {
+                            Brush.horizontalGradient(listOf(palette.goldDeep, palette.primary))
+                        } else {
+                            Brush.verticalGradient(listOf(palette.panelBottom, Color.Black.copy(alpha = 0.35f)))
+                        },
+                        RoundedCornerShape(4.dp),
+                    )
+                    .border(1.dp, palette.hairline, RoundedCornerShape(4.dp)),
+                contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 2.dp)
+                        .size(width = 14.dp, height = 14.dp)
+                        .background(
+                            if (checked) palette.onPrimary else palette.secondary,
+                            RoundedCornerShape(3.dp),
+                        ),
+                )
+            }
         }
     }
 }
 
-/** 分区小标题，与卡片之间留一点呼吸空间。 */
+/** 分区标题：终端微标签 + 渐隐细线。 */
 @Composable
 fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     val palette = LocalHdPalette.current
-    Text(
-        text = text,
-        color = palette.secondary,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Bold,
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 2.dp),
-    )
+            .padding(top = 12.dp, bottom = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        MicroLabel(text, palette.primary.copy(alpha = 0.65f))
+        Spacer(Modifier.height(3.dp))
+        Hairline()
+    }
 }
 
 @Composable
@@ -163,18 +196,31 @@ fun MacroListScreen() {
     }
 
     ScreenScaffold(title = "宏命令") {
+        if (config.activeProfile.kind != ProfileKind.MACRO) {
+            Text(
+                text = "当前是按键模式，宏只存而不触发——到菜单切换模式",
+                color = palette.primary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
+            )
+        }
         Text(
             text = status,
             color = if (isStatusError(status)) palette.danger else palette.muted,
             fontSize = 11.sp,
+            maxLines = 2,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 4.dp),
         )
-        if (config.macros.isEmpty()) {
-            Text("没有宏；用 hdmap.json 或导入添加", color = palette.muted, fontSize = 12.sp)
+        if (config.activeProfile.macros.isEmpty()) {
+            Text("没有宏；用 hdmap.json 或导入添加", color = palette.muted, fontSize = 11.sp, maxLines = 2)
         }
-        config.macros.forEach { macro ->
+        config.activeProfile.macros.forEach { macro ->
             MacroCard(
                 macro = macro,
                 confirming = pendingDelete == macro.id,
@@ -202,46 +248,58 @@ private fun MacroCard(
     onDelete: () -> Unit,
 ) {
     val palette = LocalHdPalette.current
-    Column(
+    HdPanel(
         modifier = Modifier
-            .widthIn(min = 168.dp)
-            .widthIn(max = 210.dp)
-            .padding(vertical = 3.dp)
-            .background(palette.surface, RoundedCornerShape(9.dp))
-            .border(1.dp, palette.primary.copy(alpha = if (macro.enabled) 0.35f else 0.15f), RoundedCornerShape(9.dp))
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .widthIn(min = 150.dp, max = 178.dp)
+            .padding(vertical = 3.dp),
+        shape = RoundedCornerShape(8.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 7.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = macro.name,
+                    color = palette.text,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+                Box(
+                    Modifier
+                        .size(5.dp)
+                        .background(
+                            if (macro.enabled) palette.primary else palette.muted,
+                            RoundedCornerShape(1.dp),
+                        ),
+                )
+                Text(
+                    text = if (macro.enabled) " 启用" else " 停用",
+                    color = if (macro.enabled) palette.primary.copy(alpha = 0.85f) else palette.muted,
+                    fontSize = 9.sp,
+                    maxLines = 1,
+                )
+            }
             Text(
-                text = macro.name,
-                color = palette.text,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(end = 8.dp),
-            )
-            Text(
-                text = if (macro.enabled) "启用中" else "已停用",
-                color = if (macro.enabled) palette.primary else palette.muted,
+                text = macro.sequenceDisplay + " · " + macro.steps.size + "步" +
+                    if (macro.repeat > 1) " · x" + macro.repeat else "",
+                fontFamily = FontFamily.Monospace,
+                color = palette.secondary.copy(alpha = 0.8f),
                 fontSize = 10.sp,
+                letterSpacing = 0.5.sp,
+                maxLines = 2,
             )
-        }
-        Text(
-            text = macro.sequenceDisplay + " · " + macro.steps.size + " 步" +
-                if (macro.repeat > 1) " · x" + macro.repeat else "",
-            color = palette.secondary.copy(alpha = 0.75f),
-            fontSize = 11.sp,
-        )
-        Row(
-            modifier = Modifier.padding(top = 5.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            ActionButton("试跑", onRun, tone = HdTone.Accent)
-            ActionButton(if (macro.enabled) "停用" else "启用", onToggle)
-            ActionButton(
-                text = if (confirming) "确认删除" else "删除",
-                onClick = onDelete,
-                tone = HdTone.Danger,
-            )
+            Row(
+                modifier = Modifier.padding(top = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                ActionButton("试跑", onRun, tone = HdTone.Accent)
+                ActionButton(if (macro.enabled) "停用" else "启用", onToggle)
+                ActionButton(
+                    text = if (confirming) "确认删除" else "删除",
+                    onClick = onDelete,
+                    tone = HdTone.Danger,
+                )
+            }
         }
     }
 }
