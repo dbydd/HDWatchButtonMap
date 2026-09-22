@@ -1,0 +1,240 @@
+package dev.hdwatch.buttonmap.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import dev.hdwatch.buttonmap.HdApp
+import dev.hdwatch.buttonmap.config.Macro
+import kotlinx.coroutines.delay
+
+/**
+ * 宏命令屏：宏卡片（试跑 / 启停 / 二次点击确认删除），顶部一行配置仓库状态。
+ * 同时存放其余配置屏共用的小原语（ActionButton / SwitchRow / SectionLabel）。
+ */
+
+private const val DELETE_CONFIRM_MS = 4000L
+
+/** configRepo.status 中表示读取/解析/写入失败的关键字；命中时用 danger 色呈现。 */
+internal fun isStatusError(status: String): Boolean =
+    status.contains("失败") || status.contains("拒绝") || status.contains("错误") || status.contains("缺失")
+
+/** 配置屏动作按钮的配色档位：中性（描边感）、主强调、危险。 */
+enum class HdTone { Neutral, Accent, Danger }
+
+/** 配置屏通用按钮：≥40dp 触控高度，居中文案，禁用态降饱和。 */
+@Composable
+fun ActionButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    tone: HdTone = HdTone.Neutral,
+    enabled: Boolean = true,
+) {
+    val palette = LocalHdPalette.current
+    val accent = when (tone) {
+        HdTone.Neutral -> palette.secondary
+        HdTone.Accent -> palette.primary
+        HdTone.Danger -> palette.danger
+    }
+    Box(
+        modifier = modifier
+            .heightIn(min = 40.dp)
+            .background(
+                accent.copy(alpha = if (enabled) 0.16f else 0.05f),
+                RoundedCornerShape(8.dp),
+            )
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 9.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            color = if (enabled) accent else palette.muted,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** 配置屏开关行：左侧标题+说明，右侧自绘胶囊开关（整行可点）。 */
+@Composable
+fun SwitchRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    hint: String = "",
+) {
+    val palette = LocalHdPalette.current
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp)
+            .background(palette.surface, RoundedCornerShape(10.dp))
+            .clickable { onCheckedChange(!checked) }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, color = palette.text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            if (hint.isNotEmpty()) {
+                Text(hint, color = palette.muted, fontSize = 10.sp)
+            }
+        }
+        Box(
+            modifier = Modifier
+                .size(width = 46.dp, height = 26.dp)
+                .background(
+                    if (checked) palette.primary else palette.muted.copy(alpha = 0.35f),
+                    RoundedCornerShape(13.dp),
+                ),
+            contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .size(18.dp)
+                    .background(if (checked) palette.onPrimary else palette.text, CircleShape),
+            )
+        }
+    }
+}
+
+/** 分区小标题，与卡片之间留一点呼吸空间。 */
+@Composable
+fun SectionLabel(text: String, modifier: Modifier = Modifier) {
+    val palette = LocalHdPalette.current
+    Text(
+        text = text,
+        color = palette.secondary,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp, bottom = 2.dp),
+    )
+}
+
+@Composable
+fun MacroListScreen() {
+    val app = HdApp.instance
+    val palette = LocalHdPalette.current
+    val config by app.configRepo.config.collectAsState()
+    val status by app.configRepo.status.collectAsState()
+    var pendingDelete by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(pendingDelete) {
+        if (pendingDelete != null) {
+            delay(DELETE_CONFIRM_MS)
+            pendingDelete = null
+        }
+    }
+
+    ScreenScaffold(title = "宏命令") {
+        Text(
+            text = status,
+            color = if (isStatusError(status)) palette.danger else palette.muted,
+            fontSize = 11.sp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp),
+        )
+        if (config.macros.isEmpty()) {
+            Text("没有宏；用 hdmap.json 或导入添加", color = palette.muted, fontSize = 12.sp)
+        }
+        config.macros.forEach { macro ->
+            MacroCard(
+                macro = macro,
+                confirming = pendingDelete == macro.id,
+                onRun = { app.runner.runMacro(macro) },
+                onToggle = { app.configRepo.setMacroEnabled(macro.id, !macro.enabled) },
+                onDelete = {
+                    if (pendingDelete == macro.id) {
+                        app.configRepo.deleteMacro(macro.id)
+                        pendingDelete = null
+                    } else {
+                        pendingDelete = macro.id
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun MacroCard(
+    macro: Macro,
+    confirming: Boolean,
+    onRun: () -> Unit,
+    onToggle: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val palette = LocalHdPalette.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .background(palette.surface, RoundedCornerShape(10.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = macro.name,
+                color = palette.text,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = if (macro.enabled) "启用中" else "已停用",
+                color = if (macro.enabled) palette.secondary else palette.muted,
+                fontSize = 10.sp,
+            )
+        }
+        Text(
+            text = macro.sequenceDisplay + " · " + macro.steps.size + " 步" +
+                if (macro.repeat > 1) " · x" + macro.repeat else "",
+            color = palette.muted,
+            fontSize = 11.sp,
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            ActionButton("试跑", onRun, Modifier.weight(1f), HdTone.Accent)
+            ActionButton(if (macro.enabled) "停用" else "启用", onToggle, Modifier.weight(1f))
+            ActionButton(
+                text = if (confirming) "确认删除" else "删除",
+                onClick = onDelete,
+                modifier = Modifier.weight(1f),
+                tone = HdTone.Danger,
+            )
+        }
+    }
+}
