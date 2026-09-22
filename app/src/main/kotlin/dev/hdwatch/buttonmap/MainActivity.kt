@@ -93,11 +93,11 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         app.configRepo.checkExternalUpdate()
-        app.sensorHub.start()
+        app.gestures.start()
     }
 
     override fun onStop() {
-        app.sensorHub.stop()
+        app.gestures.stop()
         app.engine.reset()
         nav.popToPad()
         super.onStop()
@@ -184,7 +184,8 @@ class MainActivity : ComponentActivity() {
             val delta = deltaRaw
             if (delta != 0f) {
                 val s = app.configRepo.config.value.settings
-                rotary.feed(event, s.rotateThreshold, s.invertRotation).forEach { sym ->
+                val cfg = app.configRepo.config.value
+                rotary.feed(event, cfg.effectiveRotateThreshold(), s.invertRotation).forEach { sym ->
                     app.ring.log("ROT  ${sym.code}")
                     app.engine.feed(sym)
                 }

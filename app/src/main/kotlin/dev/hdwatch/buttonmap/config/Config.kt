@@ -61,6 +61,29 @@ data class Macro(
         get() = sequence.joinToString(" ") { it.display }
 }
 
+/** What an input symbol does the moment it arrives in this profile. */
+enum class ProfileKind {
+    /** Every mapped symbol fires immediately; sequences disabled. */
+    KEYS,
+
+    /** Helldivers-style: symbols buffer into sequences and fire macros. */
+    MACRO,
+}
+
+/**
+ * A complete control surface: its own symbol→action map plus macro set.
+ * Exactly one profile is active; the pad center card cycles between them.
+ */
+data class Profile(
+    val id: String,
+    val name: String,
+    val kind: ProfileKind,
+    val single: Map<Symbol, Step> = emptyMap(),
+    val macros: List<Macro> = emptyList(),
+    /** Overrides Settings.rotateThreshold when set (per-profile feel). */
+    val rotateThreshold: Int? = null,
+)
+
 data class Settings(
     /**
      * Accumulated rotary-axis delta that produces one CW/CCW symbol.
@@ -83,18 +106,42 @@ data class Settings(
      * abort the whole sensors service when @hide gesture types are activated.
      */
     val gestureSensorsEnabled: Boolean = false,
+    /** Keep HID registered through a foreground service while app is backgrounded. */
+    val keepAliveService: Boolean = true,
     val sensorToSymbol: Map<String, String> = emptyMap(),
 )
 
 data class Config(
     val version: Int = CURRENT_VERSION,
     val settings: Settings = Settings(),
-    /** Immediate actions for symbols that are not mid-sequence. */
-    val single: Map<Symbol, Step> = emptyMap(),
-    val macros: List<Macro> = emptyList(),
+    val profiles: List<Profile> = emptyList(),
+    val activeProfileId: String = "",
 ) {
+    val activeProfile: Profile
+        get() = profiles.firstOrNull { it.id == activeProfileId } ?: profiles.firstOrNull()
+            ?: Profile("default", "按键", ProfileKind.KEYS)
+
+    fun withActive(id: String): Config =
+        if (profiles.any { it.id == id }) copy(activeProfileId = id) else this
+
+    /** Replaces the active profile via [transform]; used by all on-watch editors. */
+    fun mapActive(transform: (Profile) -> Profile): Config =
+        copy(profiles = profiles.map { if (it.id == activeProfile.id) transform(it) else it })
+
+    fun effectiveRotateThreshold(): Int =
+        activeProfile.rotateThreshold ?: settings.rotateThreshold
+
     companion object {
-        const val CURRENT_VERSION = 1
+        const val CURRENT_VERSION = 2
+        const val MIN_READABLE_VERSION = 1
         val EMPTY = Config()
+
+        fun legacyDefault(): Config = Config(
+            profiles = listOf(
+                Profile("keys", "按键", ProfileKind.KEYS),
+                Profile("macros", "宏", ProfileKind.MACRO),
+            ),
+            activeProfileId = "keys",
+        )
     }
 }

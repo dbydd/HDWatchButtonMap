@@ -5,28 +5,29 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * JSON codec for the external config file (schema version 1).
+ * JSON codec, schema version 2 (also reads v1 and migrates).
  *
  * ```
  * {
- *   "version": 1,
- *   "settings": { "rotateThreshold": 30, "sequenceTimeoutMs": 3000, ... },
- *   "single": { "U": {"key":"W"}, "CW": {"mouse":{"wheel":1}} },
- *   "macros": [
- *     { "id": "resupply", "name": "补给仓", "seq": "U R D D D CW",
- *       "enabled": true, "repeat": 1,
- *       "steps": [ {"key":"1"}, {"delay":100}, {"click":"left"} ] }
+ *   "version": 2,
+ *   "settings": { ... },
+ *   "activeProfile": "keys",
+ *   "profiles": [
+ *     { "id": "keys", "name": "按键", "kind": "KEYS",
+ *       "rotateThreshold": 3,
+ *       "single": { "U": {"key":"W"}, "CW": {"mouse":{"wheel":-1}} },
+ *       "macros": [] },
+ *     { "id": "battle", "name": "作战", "kind": "MACRO",
+ *       "single": { "U": {"key":"W"} },
+ *       "macros": [ { "id":"resupply","name":"补给仓","seq":"U R D D D CW",
+ *                     "steps":[{"key":"1"},{"delay":120},{"click":"left"}] } ] }
  *   ]
  * }
  * ```
  *
- * Step forms:
- *   {"key":"W"} | {"combo":"ctrl+shift+esc"} | {"keydown":"W"} | {"keyup":"W"}
- *   {"text":"hello"} | {"delay":120}
- *   {"mouse":{"buttons":"left","dx":0,"dy":0,"wheel":-1}} | {"click":"left","count":2}
- *   {"mouseRelease":true} | {"consumer":"PLAY_PAUSE"}
- * Sequence may be a space-separated string or an array of codes.
- * Decode is strict: every problem is collected and reported together.
+ * v1 files (top-level single/macros) are accepted and wrapped into a KEYS
+ * profile plus a MACRO profile named 宏; writing always emits v2.
+ * Step/sequence grammar is documented in decodeStep/decodeSequence.
  */
 object ConfigJson {
 
@@ -42,18 +43,30 @@ object ConfigJson {
         if (version > Config.CURRENT_VERSION) {
             problems += "unsupported config version $version (app supports <= ${Config.CURRENT_VERSION})"
         }
-
         val settings = decodeSettings(root.optJSONObject("settings"), problems)
-        val single = decodeSingle(root.optJSONObject("single"), problems)
-        val macros = decodeMacros(root.optJSONArray("macros"), problems)
+
+        val profiles = when {
+            root.has("profiles") -> decodeProfiles(root.optJSONArray("profiles"), problems)
+            version == 1 -> migrateV1(root, problems)
+            else -> {
+                problems += "no profiles section"
+                emptyList()
+            }
+        }
+
+        var activeId = root.optString("activeProfile", "")
+        if (profiles.none { it.id == activeId }) {
+            activeId = profiles.firstOrNull()?.id ?: ""
+        }
 
         if (problems.isNotEmpty()) throw ConfigError(problems)
-        return Config(version = version, settings = settings, single = single, macros = macros)
+        if (profiles.isEmpty()) throw ConfigError(listOf("config has no profiles"))
+        return Config(version = Config.CURRENT_VERSION, settings = settings, profiles = profiles, activeProfileId = activeId)
     }
 
     fun encode(config: Config): String {
         val root = JSONObject()
-        root.put("version", config.version)
+        root.put("version", Config.CURRENT_VERSION)
         root.put("settings", JSONObject().apply {
             put("rotateThreshold", config.settings.rotateThreshold)
             put("invertRotation", config.settings.invertRotation)
@@ -62,20 +75,32 @@ object ConfigJson {
             put("captureUnknownInput", config.settings.captureUnknownInput)
             put("forceLoggingTransport", config.settings.forceLoggingTransport)
             put("gestureSensorsEnabled", config.settings.gestureSensorsEnabled)
+            put("keepAliveService", config.settings.keepAliveService)
             put("sensorToSymbol", JSONObject(config.settings.sensorToSymbol as Map<*, *>))
         })
-        root.put("single", JSONObject().apply {
-            config.single.forEach { (sym, step) -> put(sym.code, stepJson(step)) }
-        })
-        root.put("macros", JSONArray().apply {
-            config.macros.forEach { m ->
+        root.put("activeProfile", config.activeProfileId)
+        root.put("profiles", JSONArray().apply {
+            config.profiles.forEach { p ->
                 put(JSONObject().apply {
-                    put("id", m.id)
-                    put("name", m.name)
-                    put("seq", JSONArray(m.sequence.map { it.code }))
-                    put("enabled", m.enabled)
-                    put("repeat", m.repeat)
-                    put("steps", JSONArray().apply { m.steps.forEach { put(stepJson(it)) } })
+                    put("id", p.id)
+                    put("name", p.name)
+                    put("kind", p.kind.name)
+                    p.rotateThreshold?.let { put("rotateThreshold", it) }
+                    put("single", JSONObject().apply {
+                        p.single.forEach { (sym, step) -> put(sym.code, stepJson(step)) }
+                    })
+                    put("macros", JSONArray().apply {
+                        p.macros.forEach { m ->
+                            put(JSONObject().apply {
+                                put("id", m.id)
+                                put("name", m.name)
+                                put("seq", JSONArray(m.sequence.map { it.code }))
+                                put("enabled", m.enabled)
+                                put("repeat", m.repeat)
+                                put("steps", JSONArray().apply { m.steps.forEach { put(stepJson(it)) } })
+                            })
+                        }
+                    })
                 })
             }
         })
@@ -97,11 +122,10 @@ object ConfigJson {
                     "captureUnknownInput" -> s = s.copy(captureUnknownInput = o.getBoolean(k))
                     "forceLoggingTransport" -> s = s.copy(forceLoggingTransport = o.getBoolean(k))
                     "gestureSensorsEnabled" -> s = s.copy(gestureSensorsEnabled = o.getBoolean(k))
+                    "keepAliveService" -> s = s.copy(keepAliveService = o.getBoolean(k))
                     "sensorToSymbol" -> {
-                        val map = o.getJSONObject(k).let { j ->
-                            j.keys().asSequence().associateWith { j.getString(it) }
-                        }
-                        s = s.copy(sensorToSymbol = map)
+                        val j = o.getJSONObject(k)
+                        s = s.copy(sensorToSymbol = j.keys().asSequence().associateWith { j.getString(it) })
                     }
                     else -> problems += "settings: unknown key '$k' ignored"
                 }
@@ -109,60 +133,87 @@ object ConfigJson {
                 problems += "settings.$k: ${e.message}"
             }
         }
-        if (s.rotateThreshold < 1) {
-            s = s.copy(rotateThreshold = 1)
-        }
+        if (s.rotateThreshold < 1) s = s.copy(rotateThreshold = 1)
         return s
     }
 
-    private fun decodeSingle(o: JSONObject?, problems: MutableList<String>): Map<Symbol, Step> {
+    private fun decodeProfiles(a: JSONArray?, problems: MutableList<String>): List<Profile> {
+        if (a == null) return emptyList()
+        val out = mutableListOf<Profile>()
+        for (i in 0 until a.length()) {
+            val o = runCatching { a.getJSONObject(i) }.getOrElse {
+                problems += "profiles[$i]: not an object"
+                continue
+            }
+            val id = o.optString("id").ifBlank {
+                problems += "profiles[$i]: missing id"
+                continue
+            }
+            val name = o.optString("name").ifBlank { id }
+            val kind = when (o.optString("kind", "KEYS").uppercase()) {
+                "KEYS" -> ProfileKind.KEYS
+                "MACRO" -> ProfileKind.MACRO
+                else -> {
+                    problems += "profiles[$i]($id): unknown kind, using KEYS"
+                    ProfileKind.KEYS
+                }
+            }
+            val threshold = if (o.has("rotateThreshold")) o.optInt("rotateThreshold").takeIf { it >= 1 } else null
+            val single = decodeSingleMap(o.optJSONObject("single"), "profiles[$i]($id)", problems)
+            val macros = decodeMacros(o.optJSONArray("macros"), "profiles[$i]($id)", problems)
+            out += Profile(id, name, kind, single, macros, threshold)
+        }
+        return out
+    }
+
+    private fun decodeSingleMap(o: JSONObject?, where: String, problems: MutableList<String>): Map<Symbol, Step> {
         if (o == null) return emptyMap()
         val out = LinkedHashMap<Symbol, Step>()
         o.keys().forEach { k ->
             val sym = Symbol.fromCode(k)
             if (sym == null) {
-                problems += "single: unknown symbol '$k'"
+                problems += "$where.single: unknown symbol '$k'"
                 return@forEach
             }
             try {
                 out[sym] = decodeStep(o.getJSONObject(k))
             } catch (e: Exception) {
-                problems += "single.$k: ${e.message}"
+                problems += "$where.single.$k: ${e.message}"
             }
         }
         return out
     }
 
-    private fun decodeMacros(a: JSONArray?, problems: MutableList<String>): List<Macro> {
+    private fun decodeMacros(a: JSONArray?, where: String, problems: MutableList<String>): List<Macro> {
         if (a == null) return emptyList()
         val out = mutableListOf<Macro>()
         for (i in 0 until a.length()) {
             val m = runCatching { a.getJSONObject(i) }.getOrElse {
-                problems += "macros[$i]: not an object"
+                problems += "$where.macros[$i]: not an object"
                 continue
             }
             val id = m.optString("id").ifBlank {
-                problems += "macros[$i]: missing id"
+                problems += "$where.macros[$i]: missing id"
                 continue
             }
             val name = m.optString("name").ifBlank { id }
             val seq = decodeSequence(m.opt("seq")) { bad ->
-                problems += "macros[$i]($id).seq: $bad"
+                problems += "$where.macros[$i]($id).seq: $bad"
             }
             if (seq.isEmpty()) {
-                problems += "macros[$i]($id): empty sequence"
+                problems += "$where.macros[$i]($id): empty sequence"
                 continue
             }
             val steps = mutableListOf<Step>()
             val arr = m.optJSONArray("steps")
             if (arr == null) {
-                problems += "macros[$i]($id): missing steps"
+                problems += "$where.macros[$i]($id): missing steps"
             } else {
                 for (j in 0 until arr.length()) {
                     try {
                         steps += decodeStep(arr.getJSONObject(j))
                     } catch (e: Exception) {
-                        problems += "macros[$i]($id).steps[$j]: ${e.message}"
+                        problems += "$where.macros[$i]($id).steps[$j]: ${e.message}"
                     }
                 }
             }
@@ -176,6 +227,14 @@ object ConfigJson {
             )
         }
         return out
+    }
+
+    private fun migrateV1(root: JSONObject, problems: MutableList<String>): List<Profile> {
+        val single = decodeSingleMap(root.optJSONObject("single"), "v1", problems)
+        val macros = decodeMacros(root.optJSONArray("macros"), "v1", problems)
+        val keys = Profile("keys", "按键", ProfileKind.KEYS, single = single)
+        return if (macros.isEmpty()) listOf(keys)
+        else listOf(keys, Profile("macros", "宏", ProfileKind.MACRO, single = single, macros = macros))
     }
 
     private fun decodeSequence(node: Any?, report: (String) -> Unit): List<Symbol> {
@@ -204,8 +263,7 @@ object ConfigJson {
             return Step.TapKey(parts.last(), mods)
         }
         o.optString("key").takeIf { it.isNotBlank() }?.let { name ->
-            val mods = optMods(o.optJSONArray("mods"))
-            return Step.TapKey(name, mods)
+            return Step.TapKey(name, optMods(o.optJSONArray("mods")))
         }
         o.optString("keydown").takeIf { it.isNotBlank() }?.let {
             return Step.KeyDown(it, optMods(o.optJSONArray("mods")))

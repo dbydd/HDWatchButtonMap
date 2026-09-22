@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "settings": {
     "rotateThreshold": 3,
     "invertRotation": true,
@@ -7,46 +7,67 @@
     "textDelayMs": 40,
     "captureUnknownInput": true,
     "forceLoggingTransport": false,
+    "gestureSensorsEnabled": false,
+    "keepAliveService": true,
     "sensorToSymbol": {}
   },
-  "single": {
-    "U": { "key": "UP" },
-    "D": { "key": "DOWN" },
-    "L": { "key": "LEFT" },
-    "R": { "key": "RIGHT" },
-    "CW": { "mouse": { "wheel": -1 } },
-    "CCW": { "mouse": { "wheel": 1 } },
-    "S": { "click": "left" },
-    "SL": { "combo": "alt+tab" }
-  },
-  "macros": [
+  "activeProfile": "keys",
+  "profiles": [
     {
-      "id": "resupply",
-      "name": "补给仓",
-      "seq": "U R D D D CW",
-      "enabled": true,
-      "steps": [ { "key": "1" }, { "delay": 120 }, { "click": "left" } ]
+      "id": "keys",
+      "name": "按键",
+      "kind": "KEYS",
+      "single": {
+        "U": { "key": "W" },
+        "D": { "key": "S" },
+        "L": { "key": "A" },
+        "R": { "key": "D" },
+        "CW": { "mouse": { "wheel": -1 } },
+        "CCW": { "mouse": { "wheel": 1 } },
+        "S": { "click": "left" },
+        "SL": { "combo": "alt+tab" }
+      },
+      "macros": []
     },
     {
-      "id": "eagle",
-      "name": "鹰舰空袭",
-      "seq": "U U D L R R R CCW",
-      "enabled": true,
-      "steps": [ { "text": "HELLDIVERS" }, { "key": "ENTER" } ]
-    },
-    {
-      "id": "media",
-      "name": "播放暂停",
-      "seq": "S S S",
-      "enabled": true,
-      "steps": [ { "consumer": "PLAY_PAUSE" } ]
-    },
-    {
-      "id": "minefield",
-      "name": "地雷",
-      "seq": "L U R D CW",
-      "enabled": false,
-      "steps": [ { "key": "4" } ]
+      "id": "battle",
+      "name": "作战",
+      "kind": "MACRO",
+      "single": {
+        "CW": { "mouse": { "wheel": -1 } },
+        "CCW": { "mouse": { "wheel": 1 } },
+        "S": { "click": "left" }
+      },
+      "macros": [
+        {
+          "id": "resupply",
+          "name": "补给仓",
+          "seq": "U R D D D CW",
+          "enabled": true,
+          "steps": [ { "key": "1" }, { "delay": 120 }, { "click": "left" } ]
+        },
+        {
+          "id": "eagle",
+          "name": "鹰舰空袭",
+          "seq": "U U D L R R R CCW",
+          "enabled": true,
+          "steps": [ { "text": "HELLDIVERS" }, { "key": "ENTER" } ]
+        },
+        {
+          "id": "shield",
+          "name": "护盾",
+          "seq": "D U R R L D CCW",
+          "enabled": true,
+          "steps": [ { "consumer": "PLAY_PAUSE" } ]
+        },
+        {
+          "id": "mine",
+          "name": "地雷",
+          "seq": "L U R D CW",
+          "enabled": false,
+          "steps": [ { "key": "4" } ]
+        }
+      ]
     }
   ]
 }

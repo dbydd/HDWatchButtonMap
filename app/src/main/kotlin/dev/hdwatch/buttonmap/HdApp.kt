@@ -12,6 +12,7 @@ import dev.hdwatch.buttonmap.ui.Haptics
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /** Composition root: one object graph for the whole (single-activity) app. */
 class HdApp : Application() {
@@ -27,7 +28,7 @@ class HdApp : Application() {
         private set
     lateinit var engine: SequenceEngine
         private set
-    lateinit var sensorHub: SensorHub
+    lateinit var gestures: SensorHub
         private set
     lateinit var haptics: Haptics
         private set
@@ -43,7 +44,13 @@ class HdApp : Application() {
         transports = TransportManager(this, ring)
         runner = MacroRunner(scope, transports, { configRepo.config.value.settings }, ring)
         engine = SequenceEngine(configRepo, runner, scope, ring, onEvent = { haptics.onEvent(it) })
-        sensorHub = SensorHub(this, configRepo, engine, ring)
+        gestures = SensorHub(this, configRepo, engine, ring)
+        // Watch profile/settings changes to move the keep-alive service.
+        scope.launch {
+            configRepo.config.collect { cfg ->
+                HidForegroundService.sync(this@HdApp, cfg.settings.keepAliveService)
+            }
+        }
     }
 
     companion object {

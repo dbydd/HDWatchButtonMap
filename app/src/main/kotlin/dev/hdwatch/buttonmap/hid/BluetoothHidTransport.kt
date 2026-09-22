@@ -175,6 +175,29 @@ class BluetoothHidTransport(
         runCatching { dev.connect(candidate) }.onFailure { ring.log("BT  connect failed ${it.message}") }
     }
 
+    /**
+     * Watchdog entry point (HidForegroundService): heal registration first,
+     * then the link. Cheap enough to run every few seconds.
+     */
+    fun ensureLink() {
+        val dev = hidDevice ?: return
+        if (!hasConnectPermission()) return
+        if (!registered) {
+            ring.log("BT  watchdog: re-register")
+            register()
+            return
+        }
+        val host = target ?: bondedHosts().firstOrNull {
+            runCatching { dev.getConnectionState(it) == BluetoothProfile.STATE_CONNECTED }.getOrDefault(false)
+        } ?: bondedHosts().firstOrNull() ?: return
+        target = host
+        val state = runCatching { dev.getConnectionState(host) }.getOrDefault(BluetoothProfile.STATE_DISCONNECTED)
+        if (state == BluetoothProfile.STATE_DISCONNECTED) {
+            ring.log("BT  watchdog: reconnect ${describe(host)}")
+            runCatching { dev.connect(host) }
+        }
+    }
+
     fun disconnectTarget() {
         val dev = hidDevice ?: return
         val t = target ?: return

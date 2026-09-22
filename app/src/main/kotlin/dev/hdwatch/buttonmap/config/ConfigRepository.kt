@@ -114,17 +114,35 @@ class ConfigRepository(
     fun updateSettings(transform: (Settings) -> Settings) = update { it.copy(settings = transform(it.settings)) }
 
     fun setSingle(symbol: Symbol, step: Step?) = update { cfg ->
-        val map = LinkedHashMap(cfg.single)
-        if (step == null) map.remove(symbol) else map[symbol] = step
-        cfg.copy(single = map)
+        cfg.mapActive { p ->
+            val map = LinkedHashMap(p.single)
+            if (step == null) map.remove(symbol) else map[symbol] = step
+            p.copy(single = map)
+        }
     }
 
     fun setMacroEnabled(id: String, enabled: Boolean) = update { cfg ->
-        cfg.copy(macros = cfg.macros.map { if (it.id == id) it.copy(enabled = enabled) else it })
+        cfg.mapActive { p ->
+            p.copy(macros = p.macros.map { if (it.id == id) it.copy(enabled = enabled) else it })
+        }
     }
 
     fun deleteMacro(id: String) = update { cfg ->
-        cfg.copy(macros = cfg.macros.filterNot { it.id == id })
+        cfg.mapActive { p -> p.copy(macros = p.macros.filterNot { it.id == id }) }
+    }
+
+    /** Point all on-watch editors and the engine at another profile. */
+    fun setActiveProfile(id: String) = update { it.withActive(id) }
+
+    /** Pad center-card gesture: hop to the next profile, wrapping. */
+    fun cycleActiveProfile() = update { cfg ->
+        if (cfg.profiles.size < 2) return@update cfg
+        val idx = cfg.profiles.indexOfFirst { it.id == cfg.activeProfile.id }
+        cfg.withActive(cfg.profiles[(idx + 1) % cfg.profiles.size].id)
+    }
+
+    fun updateProfile(id: String, transform: (Profile) -> Profile) = update { cfg ->
+        cfg.copy(profiles = cfg.profiles.map { if (it.id == id) transform(it) else it })
     }
 
     // -------------------------------------------------------------- internals
@@ -147,8 +165,8 @@ class ConfigRepository(
         try {
             _config.value = ConfigJson.decode(text)
             _status.value = "已加载 ($source)"
-            ring.log("CFG  loaded from $source: ${_config.value.macros.size} macros, " +
-                "${_config.value.single.size} singles")
+            ring.log("CFG  loaded from $source: ${_config.value.profiles.size} profiles, " +
+                "active=${_config.value.activeProfile.name}")
         } catch (e: ConfigJson.ConfigError) {
             _status.value = "配置错误：${e.problems.take(3).joinToString(" | ")}"
             ring.log("CFG  decode failed: ${e.problems}")
@@ -166,7 +184,7 @@ class ConfigRepository(
             runCatching { configFile.writeText(text) }
             _config.value = decoded
             _status.value = "已导入：$label"
-            ring.log("CFG  imported ($label): ${decoded.macros.size} macros")
+            ring.log("CFG  imported ($label): ${decoded.profiles.size} profiles")
             return true
         } catch (e: ConfigJson.ConfigError) {
             _status.value = "导入拒绝：${e.problems.take(4).joinToString(" | ")}"

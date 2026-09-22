@@ -3,6 +3,8 @@ package dev.hdwatch.buttonmap.engine
 import dev.hdwatch.buttonmap.config.Config
 import dev.hdwatch.buttonmap.config.ConfigRepository
 import dev.hdwatch.buttonmap.config.Macro
+import dev.hdwatch.buttonmap.config.Profile
+import dev.hdwatch.buttonmap.config.ProfileKind
 import dev.hdwatch.buttonmap.config.Step
 import dev.hdwatch.buttonmap.hid.ReportRing
 import dev.hdwatch.buttonmap.input.Symbol
@@ -26,18 +28,15 @@ sealed interface EngineEvent {
 }
 
 /**
- * Helldivers-style input state machine.
+ * Input state machine over the *active profile*.
  *
- * Every normalized [Symbol] passes through [feed]. A symbol either
- *  - completes a macro sequence (exact suffix match) → run macro, clear buffer;
- *  - is still a proper prefix of some enabled macro  → keep buffering with a
- *    timeout that silently drops the half-typed sequence;
- *  - matches nothing                                  → buffer resets and the
- *    current symbol alone is retried once, then falls through to its single
- *    mapping (or reports Unmapped).
- *
- * A length-1 macro therefore behaves exactly like a single mapping, which lets
- * config authors choose per symbol.
+ * KEYS profile: every symbol fires its single mapping immediately (press
+ * what you get). MACRO profile runs the Helldivers rules:
+ *  - buffer ends with an enabled macro's sequence → run it, clear buffer;
+ *  - buffer is a proper prefix → keep buffering with an idle timeout that
+ *    silently drops the half-typed sequence;
+ *  - otherwise the buffer restarts at the current symbol; if even that alone
+ *    matches nothing, its single mapping fires (Unmapped when not bound).
  */
 class SequenceEngine(
     private val repo: ConfigRepository,
@@ -64,8 +63,16 @@ class SequenceEngine(
 
     fun feed(symbol: Symbol) = synchronized(lock) {
         val cfg = repo.config.value
+        val profile = cfg.activeProfile
+
+        if (profile.kind == ProfileKind.KEYS) {
+            finishBuffer()
+            fireSingle(cfg, profile, symbol)
+            return@synchronized
+        }
+
+        val macros = profile.macros.filter { it.enabled && it.sequence.isNotEmpty() }
         val attempt = buffer + symbol
-        val macros = cfg.macros.filter { it.enabled && it.sequence.isNotEmpty() }
 
         matchExact(macros, attempt)?.let { macro ->
             commitAttempt(attempt)
@@ -84,23 +91,20 @@ class SequenceEngine(
             return@synchronized
         }
 
-        // mismatch: Helldivers rule — restart with the current symbol
         if (attempt.size > 1) {
             ring.log("ENG  ${render(attempt)} no match; restart on '${symbol.code}'")
-            feedLockedRetry(symbol)
+            retrySolo(cfg, profile, symbol)
             return@synchronized
         }
         commitAttempt(attempt)
-        fireSingle(cfg, symbol)
+        fireSingle(cfg, profile, symbol)
     }
 
-    /** Second chance path after a mismatch restart; never recurses further. */
-    private fun feedLockedRetry(symbol: Symbol) {
-        val cfg = repo.config.value
-        val macros = cfg.macros.filter { it.enabled && it.sequence.isNotEmpty() }
+    /** Second chance after a mismatch restart; never recurses further. */
+    private fun retrySolo(cfg: Config, profile: Profile, symbol: Symbol) {
+        val macros = profile.macros.filter { it.enabled && it.sequence.isNotEmpty() }
         matchExact(macros, listOf(symbol))?.let { macro ->
-            buffer = emptyList()
-            _bufferFlow.value = emptyList()
+            finishBuffer()
             emit(EngineEvent.FiredMacro(macro))
             runner.runMacro(macro)
             return
@@ -111,13 +115,13 @@ class SequenceEngine(
             emit(EngineEvent.Pending(buffer))
             restartTimeout(cfg)
         } else {
-            fireSingle(cfg, symbol)
+            fireSingle(cfg, profile, symbol)
         }
     }
 
-    private fun fireSingle(cfg: Config, symbol: Symbol) {
+    private fun fireSingle(cfg: Config, profile: Profile, symbol: Symbol) {
         finishBuffer()
-        val step = cfg.single[symbol]
+        val step = profile.single[symbol]
         if (step == null) {
             emit(EngineEvent.Unmapped(symbol))
             ring.log("ENG  '${symbol.code}' unmapped")
@@ -128,13 +132,13 @@ class SequenceEngine(
         runner.runStep(step)
     }
 
-    /** Cancel any in-flight sequence (screen switches). */
+    /** Cancel any in-flight sequence (screen switches, profile change). */
     fun reset() = synchronized(lock) {
         timeoutJob?.cancel()
         timeoutJob = null
         buffer = emptyList()
         _bufferFlow.value = emptyList()
-        emit(EngineEvent.Idle)
+        _event.value = EngineEvent.Idle
     }
 
     private fun commitAttempt(attempt: List<Symbol>) {
