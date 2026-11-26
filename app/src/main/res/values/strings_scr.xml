@@ -16,6 +16,11 @@
     <string name="scr_menu_log">Input log</string>
     <string name="scr_menu_reload">Reload config</string>
     <string name="scr_menu_import">Import JSON from file</string>
+    <string name="scr_menu_profile_hint">%1$s · long-press to remove</string>
+    <string name="scr_menu_confirm_delete_profile">Tap again to remove %1$s</string>
+    <string name="scr_menu_presets_add">+ Add preset</string>
+    <string name="scr_menu_presets_hide">Hide presets</string>
+    <string name="scr_menu_preset_refresh">Installed · tap to reset (%1$s)</string>
 
     <!-- MappingScreens: list -->
     <string name="scr_map_list_title">Key map · mode %1$s</string>
@@ -41,6 +46,7 @@
     <string name="scr_map_media_next">Next</string>
     <string name="scr_map_media_prev">Prev</string>
     <string name="scr_map_section_modifiers">Modifiers</string>
+    <string name="scr_map_latch_toggle">Hold (Latch)</string>
     <string name="scr_map_section_pick_key">Keys · pick a category</string>
     <string name="scr_map_section_pick_key_in">Keys · %1$s</string>
     <string name="scr_map_key_count">%1$d keys</string>
@@ -60,4 +66,32 @@
     <string name="scr_macro_run">Run</string>
     <string name="scr_macro_delete">Delete</string>
     <string name="scr_macro_confirm_delete">Confirm delete</string>
+
+    <!-- MappingScreens v2 studio -->
+    <string name="scr_map_group_dial">DIAL KEYCAPS</string>
+    <string name="scr_map_group_crown">CROWN &amp; STEM</string>
+    <string name="scr_map_group_slots">SLOTS &amp; GESTURES</string>
+    <string name="scr_map_test">Test</string>
+    <string name="scr_map_tab_key">Key</string>
+    <string name="scr_map_tab_hold">Hold</string>
+    <string name="scr_map_tab_mouse">Mouse</string>
+    <string name="scr_map_tab_media">Media</string>
+    <string name="scr_map_section_quick_keys">QUICK KEYS</string>
+    <string name="scr_map_hold_hint">First press holds the key down; next press or macro finish releases it</string>
+    <string name="scr_map_section_hold_presets">COMMON HOLDS</string>
+    <string name="scr_map_section_more_keys">MORE KEYS (HOLD)</string>
+    <string name="scr_map_section_mouse_btn">MOUSE BUTTONS</string>
+    <string name="scr_map_mouse_back">Back</string>
+    <string name="scr_map_mouse_forward">Fwd</string>
+    <string name="scr_map_click_single">Single ×1</string>
+    <string name="scr_map_click_double">Double ×2</string>
+    <string name="scr_map_section_mouse_wheel">SCROLL WHEEL</string>
+    <string name="scr_map_wheel_up_fast">Fast ↑3</string>
+    <string name="scr_map_wheel_down_fast">Fast ↓3</string>
+    <string name="scr_map_section_media">MEDIA &amp; SYSTEM</string>
+    <string name="scr_map_media_stop">Stop</string>
+    <string name="scr_map_media_bright_up">Bright +</string>
+    <string name="scr_map_media_bright_down">Bright −</string>
+    <string name="scr_map_media_home">Home</string>
+    <string name="scr_map_media_back">Back</string>
 </resources>

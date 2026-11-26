@@ -9,14 +9,20 @@ android {
 
     defaultConfig {
         applicationId = "dev.hdwatch.buttonmap"
-        minSdk = 33
+        // Wear OS 3.0+ (Galaxy Watch 4/5/6/7/Ultra, Pixel Watch 1/2/3,
+        // TicWatch Pro 5, OnePlus Watch 2/3, Xiaomi Watch 2, Oppo Watch, etc.)
+        minSdk = 30
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.2.0"
     }
 
     buildFeatures {
         compose = true
+    }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
     }
 
     buildTypes {
@@ -38,4 +44,8 @@ dependencies {
     implementation("androidx.wear.compose:compose-material:1.6.2")
     implementation("androidx.wear.compose:compose-material3:1.6.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    testImplementation("org.json:json:20240303")
 }

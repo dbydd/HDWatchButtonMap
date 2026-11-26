@@ -11,6 +11,10 @@
     <string name="hid_st_register_failed">Registration failed (the app must stay in the foreground)</string>
     <string name="hid_st_connected_label">Connected</string>
     <string name="hid_st_connected_detail">HID host online</string>
+    <string name="hid_st_connecting_label">Connecting…</string>
+    <string name="hid_st_connecting_detail">Linking to %1$s</string>
+    <string name="hid_st_switching_label">Switching host…</string>
+    <string name="hid_st_disconnected_manual">Disconnected (auto-reconnect paused)</string>
     <string name="hid_st_waiting_host">Waiting for a host to connect</string>
     <string name="hid_st_unavailable_label">Unavailable</string>
     <string name="hid_st_no_adapter">No Bluetooth adapter on this device</string>
@@ -30,4 +34,9 @@
     <string name="hid_cat_media">Media keys</string>
     <string name="hid_cat_function">Function keys</string>
     <string name="hid_cat_numpad">Numpad</string>
+
+    <!-- Foreground keep-alive service notification -->
+    <string name="hid_notif_channel">HID Remote</string>
+    <string name="hid_notif_title">HD Remote Active</string>
+    <string name="hid_notif_text">Keeping Bluetooth HID link alive</string>
 </resources>

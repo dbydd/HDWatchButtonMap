@@ -1,18 +1,17 @@
 package dev.hdwatch.buttonmap.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,14 +19,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,17 +36,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -62,7 +58,6 @@ import dev.hdwatch.buttonmap.R
 import dev.hdwatch.buttonmap.config.ProfileKind
 import dev.hdwatch.buttonmap.config.Step
 import dev.hdwatch.buttonmap.engine.EngineEvent
-import dev.hdwatch.buttonmap.hid.TransportKind
 import dev.hdwatch.buttonmap.hid.TransportState
 import dev.hdwatch.buttonmap.hid.TransportStatus
 import dev.hdwatch.buttonmap.input.Symbol
@@ -71,10 +66,12 @@ import kotlin.math.sin
 import kotlinx.coroutines.delay
 
 /**
- * The pad as a full Orokin dial: painted sunburst/tick/dot rings behind a
- * square hub plaque (keys mode shows its map, macro mode its sequence list),
- * four arc-cut keycaps riding the rim, and the eight secondary symbols on a
- * live ring between them.
+ * The pad as a proportional horological dial: painted sunburst/tick/dot rings
+ * behind an octagonal hub medallion (keys mode shows its map + subtle keycap
+ * legends; macro mode shows matching prefixes + a live timeout sweep arc),
+ * four arc-cut keycaps riding the rim, and eight secondary slots on a live
+ * dashed ring. All coordinates scale from `min(width, height) / 2` so the
+ * dial aligns cleanly across 40mm/41mm/44mm/45mm/47mm round and square watches.
  */
 @Composable
 fun PadScreen() {
@@ -86,6 +83,7 @@ fun PadScreen() {
     val config by app.configRepo.config.collectAsState()
     val buffer by app.engine.bufferState.collectAsState()
     val hint by app.engine.hintState.collectAsState()
+    val timer by app.engine.timerState.collectAsState()
     val latched by app.runner.latched.collectAsState()
     val event by app.engine.event.collectAsState()
     val transport = remember(config.settings.forceLoggingTransport) {
@@ -118,14 +116,32 @@ fun PadScreen() {
         label = "flare",
     )
 
+    // Smooth countdown progress for an active pending sequence (read inside Canvas).
+    val countdown = remember { Animatable(0f) }
+    LaunchedEffect(timer) {
+        val t = timer
+        if (t == null) {
+            countdown.snapTo(0f)
+        } else {
+            countdown.snapTo(1f)
+            countdown.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(
+                    durationMillis = t.durationMs.toInt().coerceAtLeast(100),
+                    easing = LinearEasing,
+                ),
+            )
+        }
+    }
+
     fun feed(sym: Symbol) {
         haptics.press()
         app.engine.feed(sym)
     }
 
-    // Which keycap is under the finger. Held in a state holder that is read
-    // only inside the draw lambda: a press repaints the dial without
-    // recomposing the screen (worth ~10ms a tap on this SoC).
+    // Which keycap is under the finger. Held in a state holder read only
+    // inside the draw lambda so a press repaints the dial without recomposing
+    // the screen (worth ~10ms a tap on Watch SoCs).
     val pressedDir = remember { mutableStateOf<ArcDir?>(null) }
 
     // Keys mode: the confirmation line clears itself 0.8s after the press.
@@ -143,14 +159,28 @@ fun PadScreen() {
             .fillMaxSize()
             .background(palette.edge),
     ) {
-        // ---- dial face: the static geometry is one path per ink group and is
-        // remembered per size; the per-frame work is a dozen draw calls, not
-        // the ~200 the first version issued (48ms frames on the watch) ----
+        // ---- proportional watch metrics (baseline 113dp radius = 47mm GW6C) ----
+        val rDp = minOf(maxWidth, maxHeight) / 2f
+        val scale = (rDp.value / 113f).coerceIn(0.78f, 1.18f)
+        val midRDp = rDp * 0.7345f
+        val capMajorDp = rDp * 0.602f
+        val capMinorDp = rDp * 0.372f
+        val hubSizeDp = rDp * 0.956f
+
+        // ---- dial face: static geometry built once per size + palette ----
         val density = LocalDensity.current
         val wPx = with(density) { maxWidth.toPx() }
         val hPx = with(density) { maxHeight.toPx() }
         val dial = remember(wPx, hPx, palette) { buildDial(wPx, hPx, palette) }
-        Canvas(Modifier.fillMaxSize()) { drawDial(dial, palette, { flare }, pressedDir.value) }
+        Canvas(Modifier.fillMaxSize()) {
+            drawDial(
+                g = dial,
+                palette = palette,
+                flareProvider = { flare },
+                countdownProvider = { countdown.value },
+                pressed = pressedDir.value,
+            )
+        }
 
         // ---- live symbol ring: bare text pairs in the diagonal gaps ----
         val ringPairs = listOf(
@@ -164,84 +194,109 @@ fun PadScreen() {
             listOf(pair.first to -7.0, pair.second to 7.0).forEach { (sym, off) ->
                 val slotStep = profile.ringSteps[sym.code]
                 // A slot lights up only while it is pressed or its hold is on;
-                // idle slots all read the same grey.
-                val holdKey = (slotStep as? dev.hdwatch.buttonmap.config.Step.Hold)?.key
-                    ?: (profile.single[sym] as? dev.hdwatch.buttonmap.config.Step.Hold)?.key
+                // idle slots all read the same muted grey.
+                val holdKey = (slotStep as? Step.Hold)?.key
+                    ?: (profile.single[sym] as? Step.Hold)?.key
                 RingSymbol(
                     symbol = sym,
                     lit = holdKey != null && latched.contains(holdKey),
                     angleDeg = center + off,
-                    radiusDp = 83f,
+                    radiusDp = midRDp.value,
+                    scale = scale,
                     modifier = Modifier.align(Alignment.Center),
-                    onPress = { if (slotStep != null) app.runner.holdStep(slotStep) else feed(sym) },
+                    onPress = {
+                        if (slotStep != null) {
+                            haptics.press()
+                            app.runner.holdStep(slotStep)
+                        } else {
+                            feed(sym)
+                        }
+                    },
                     onRelease = { slotStep?.let { app.runner.releaseHold(it) } },
                 )
             }
         }
 
         // ---- four keycap touch pads (the caps themselves are painted) ----
+        val showLegends = profile.kind == ProfileKind.KEYS && config.settings.showDirectKeyLabels
         ArrowCap(
             symbol = Symbol.UP,
+            legend = if (showLegends) compactKeyLegend(profile.single[Symbol.UP]) else "",
+            scale = scale,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = (-83).dp)
-                .size(width = 68.dp, height = 42.dp),
+                .offset(y = -midRDp)
+                .size(width = capMajorDp, height = capMinorDp),
             onPressedChange = { pressedDir.value = if (it) ArcDir.UP else null },
         ) { feed(Symbol.UP) }
         ArrowCap(
             symbol = Symbol.DOWN,
+            legend = if (showLegends) compactKeyLegend(profile.single[Symbol.DOWN]) else "",
+            scale = scale,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(y = 83.dp)
-                .size(width = 68.dp, height = 42.dp),
+                .offset(y = midRDp)
+                .size(width = capMajorDp, height = capMinorDp),
             onPressedChange = { pressedDir.value = if (it) ArcDir.DOWN else null },
         ) { feed(Symbol.DOWN) }
         ArrowCap(
             symbol = Symbol.LEFT,
+            legend = if (showLegends) compactKeyLegend(profile.single[Symbol.LEFT]) else "",
+            scale = scale,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(x = (-83).dp)
-                .size(width = 42.dp, height = 68.dp),
+                .offset(x = -midRDp)
+                .size(width = capMinorDp, height = capMajorDp),
             onPressedChange = { pressedDir.value = if (it) ArcDir.LEFT else null },
         ) { feed(Symbol.LEFT) }
         ArrowCap(
             symbol = Symbol.RIGHT,
+            legend = if (showLegends) compactKeyLegend(profile.single[Symbol.RIGHT]) else "",
+            scale = scale,
             modifier = Modifier
                 .align(Alignment.Center)
-                .offset(x = 83.dp)
-                .size(width = 42.dp, height = 68.dp),
+                .offset(x = midRDp)
+                .size(width = capMinorDp, height = capMajorDp),
             onPressedChange = { pressedDir.value = if (it) ArcDir.RIGHT else null },
         ) { feed(Symbol.RIGHT) }
 
         // ---- hub plaque ----
         val link = linkCode(transportStatus)
+        val linkDotColor = linkPipColor(transportStatus.state, palette)
         HubCard(
             profile = profile,
             buffer = buffer,
             hint = hint,
+            latched = latched,
             showEvent = showEvent,
             event = event,
             link = link,
+            linkDotColor = linkDotColor,
+            scale = scale,
             flareProvider = { flare },
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(108.dp),
+                .size(hubSizeDp),
             onCycle = {
                 haptics.tick()
                 app.configRepo.cycleActiveProfile()
             },
-            onMenu = { nav.push(Route.Menu) },
+            onMenu = {
+                haptics.tick()
+                nav.push(Route.Menu)
+            },
         )
     }
 }
 
-/** Bare text input on the live ring: tangential glyph, gold when bound. */
+/** Bare text input on the live ring: tangential glyph, gold when active or latched. */
 @Composable
 private fun RingSymbol(
     symbol: Symbol,
     lit: Boolean,
     angleDeg: Double,
     radiusDp: Float,
+    scale: Float,
     modifier: Modifier = Modifier,
     onPress: () -> Unit,
     onRelease: () -> Unit,
@@ -251,11 +306,12 @@ private fun RingSymbol(
     val on = lit || pressed
     val dx = sin(Math.toRadians(angleDeg)).toFloat()
     val dy = -cos(Math.toRadians(angleDeg)).toFloat()
-    val label = symbol.display ?: symbol.code
+    val label = symbol.display
+    val baseFont = if (label.length > 1) 9f else 11f
     Text(
         text = label,
         fontFamily = FontFamily.Monospace,
-        fontSize = if (label.length > 1) 9.sp else 11.sp,
+        fontSize = (baseFont * scale).sp,
         fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
         color = if (on) palette.primary.copy(alpha = 0.95f) else palette.muted.copy(alpha = 0.8f),
         maxLines = 1,
@@ -275,7 +331,7 @@ private fun RingSymbol(
                     onRelease()
                 }
             }
-            .padding(horizontal = 5.dp, vertical = 4.dp),
+            .padding(horizontal = (5f * scale).dp, vertical = (4f * scale).dp),
     )
 }
 
@@ -286,11 +342,14 @@ private enum class ArcDir(val dialAngle: Float) {
 
 /**
  * Transparent touch pad laid over one painted keycap sector: it forwards the
- * press state to the dial Canvas (gold flood) and hosts the arrow glyph.
+ * press state to the dial Canvas (gold flood) and hosts the arrow glyph
+ * (plus an optional whisper-quiet legend in Direct mode).
  */
 @Composable
 private fun ArrowCap(
     symbol: Symbol,
+    legend: String,
+    scale: Float,
     onPressedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     onPress: () -> Unit,
@@ -316,14 +375,78 @@ private fun ArrowCap(
         },
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = symbol.display,
-            color = if (held) palette.onPrimary else palette.text,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = symbol.display,
+                color = if (held) palette.onPrimary else palette.text,
+                fontSize = (if (legend.isNotEmpty()) 13.5f else 16f).times(scale).sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+            )
+            if (legend.isNotEmpty()) {
+                Text(
+                    text = legend,
+                    fontFamily = FontFamily.Monospace,
+                    color = if (held) palette.onPrimary.copy(alpha = 0.78f) else palette.primary.copy(alpha = 0.72f),
+                    fontSize = (6.5f * scale).sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 0.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
+}
+
+/** Short, ultra-compact keycap legend for Direct mode (kept <= 5 chars). */
+private fun compactKeyLegend(step: Step?): String = when (step) {
+    null -> ""
+    is Step.TapKey -> abbreviateKey(step.key)
+    is Step.Hold -> "H:${abbreviateKey(step.key)}"
+    is Step.KeyDown -> "↓${abbreviateKey(step.key)}"
+    is Step.KeyUp -> "↑${abbreviateKey(step.key)}"
+    is Step.MouseClick -> when (step.button.lowercase()) {
+        "left" -> "LMB"
+        "right" -> "RMB"
+        "middle" -> "MMB"
+        "back" -> "MB4"
+        "forward" -> "MB5"
+        else -> step.button.take(4).uppercase()
+    }
+    is Step.Mouse -> when {
+        step.wheel > 0 -> "WH↑"
+        step.wheel < 0 -> "WH↓"
+        else -> "MOU"
+    }
+    is Step.ConsumerKey -> when (step.usage.uppercase()) {
+        "PLAY_PAUSE" -> "PLAY"
+        "VOL_UP" -> "VOL+"
+        "VOL_DOWN" -> "VOL-"
+        "NEXT_TRACK" -> "NEXT"
+        "PREV_TRACK" -> "PREV"
+        "MUTE" -> "MUTE"
+        else -> step.usage.take(4).uppercase()
+    }
+    is Step.TypeText -> "TXT"
+    is Step.Wait -> "${step.ms}ms"
+    Step.MouseRelease -> "REL"
+}
+
+private fun abbreviateKey(raw: String): String = when (val k = raw.trim().uppercase()) {
+    "SPACE", "SPACEBAR" -> "SPC"
+    "ENTER", "RETURN" -> "ENT"
+    "BACKSPACE", "BKSP" -> "BSP"
+    "DELETE", "DEL" -> "DEL"
+    "PAGE_UP", "PGUP" -> "PGU"
+    "PAGE_DOWN", "PGDN" -> "PGD"
+    "ESCAPE" -> "ESC"
+    "PRINTSCREEN" -> "PRT"
+    "LEFT" -> "←"
+    "RIGHT" -> "→"
+    "UP" -> "↑"
+    "DOWN" -> "↓"
+    else -> k.take(4)
 }
 
 /**
@@ -335,9 +458,12 @@ private fun HubCard(
     profile: dev.hdwatch.buttonmap.config.Profile,
     buffer: List<Symbol>,
     hint: List<Symbol>,
+    latched: Set<String>,
     showEvent: Boolean,
     event: EngineEvent,
     link: String,
+    linkDotColor: Color,
+    scale: Float,
     flareProvider: () -> Float,
     onCycle: () -> Unit,
     onMenu: () -> Unit,
@@ -347,8 +473,8 @@ private fun HubCard(
     // Read here on purpose: the medallion halo follows the flash, and this
     // small subtree recomposing beats the whole screen doing it.
     val flare = flareProvider()
-    val outerShape = remember(modifier) { OctagonShape(7.dp) }
-    val innerShape = remember(modifier) { OctagonShape(5.dp) }
+    val outerShape = remember(scale) { OctagonShape((7f * scale).dp) }
+    val innerShape = remember(scale) { OctagonShape((5f * scale).dp) }
     Box(modifier) {
         // Outer octagon hairline ring.
         Box(
@@ -361,7 +487,7 @@ private fun HubCard(
             Modifier
                 .align(Alignment.Center)
                 .fillMaxSize()
-                .padding(4.dp)
+                .padding((4f * scale).dp)
                 .background(
                     Brush.verticalGradient(
                         listOf(
@@ -392,16 +518,27 @@ private fun HubCard(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 7.dp),
+                    .padding(horizontal = (7f * scale).dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(Modifier.height(6.dp))
-                // Keys mode prints its name at the smallest size on the rim;
-                // macro mode shows no title at all — the list speaks itself.
-                if (profile.kind != ProfileKind.MACRO) {
+                Spacer(Modifier.height((6f * scale).dp))
+                // Top rim: show latched hold indicator when active, otherwise
+                // keep keys-mode profile name subtle (macro mode stays quiet).
+                if (latched.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.pad_hold_badge, latched.joinToString("+")),
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = (5.5f * scale).sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        color = palette.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                } else if (profile.kind != ProfileKind.MACRO) {
                     Text(
                         text = profile.name,
-                        fontSize = 4.sp,
+                        fontSize = (5f * scale).sp,
                         letterSpacing = 1.5.sp,
                         color = palette.muted,
                         maxLines = 1,
@@ -410,21 +547,21 @@ private fun HubCard(
                 }
                 Spacer(Modifier.weight(1f))
                 if (profile.kind == ProfileKind.MACRO) {
-                    // Macro mode: the typed prefix (touch only) on top, then
-                    // whatever matches it. Nothing typed = nothing suggested.
+                    // Macro mode: the typed prefix on top, then matching macros.
+                    // Quiet when idle unless a macro just fired (brief confirmation).
                     if (buffer.isNotEmpty()) {
                         Text(
-                            text = buffer.joinToString(" ") { it.display ?: it.code },
+                            text = buffer.joinToString(" ") { it.display },
                             fontFamily = FontFamily.Monospace,
                             color = palette.primary,
-                            fontSize = 10.sp,
+                            fontSize = (10f * scale).sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                         )
-                        Spacer(Modifier.height(3.dp))
+                        Spacer(Modifier.height((3f * scale).dp))
                         val shown = if (hint.isEmpty()) {
                             emptyList()
                         } else {
@@ -440,20 +577,30 @@ private fun HubCard(
                             ) {
                                 Text(
                                     text = m.name,
-                                    fontSize = 6.sp,
+                                    fontSize = (6.2f * scale).sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (m == shown.first()) palette.primary else palette.primary.copy(alpha = 0.7f),
                                     maxLines = 1,
                                 )
                                 Text(
-                                    text = m.sequence.joinToString("") { it.display ?: it.code },
+                                    text = m.sequence.joinToString("") { it.display },
                                     fontFamily = FontFamily.Monospace,
-                                    fontSize = 6.sp,
+                                    fontSize = (6.2f * scale).sp,
                                     color = palette.secondary.copy(alpha = 0.75f),
                                     maxLines = 1,
                                 )
                             }
                         }
+                    } else if (showEvent && event is EngineEvent.FiredMacro) {
+                        Text(
+                            text = event.macro.name,
+                            color = palette.primary,
+                            fontSize = (8.5f * scale).sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                        )
                     }
                 } else {
                     // Keys mode: confirmation line, self-clearing after 0.8s.
@@ -467,7 +614,7 @@ private fun HubCard(
                                 is EngineEvent.Unmapped -> palette.danger
                                 else -> palette.secondary.copy(alpha = 0.75f)
                             },
-                            fontSize = 9.sp,
+                            fontSize = (9f * scale).sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
@@ -475,26 +622,31 @@ private fun HubCard(
                     }
                 }
                 Spacer(Modifier.weight(1f))
-                Text(
-                    text = link,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 4.sp,
-                    letterSpacing = 1.5.sp,
-                    color = palette.muted,
-                    maxLines = 1,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    modifier = Modifier.padding(bottom = (7f * scale).dp),
+                ) {
+                    Box(
+                        Modifier
+                            .size((3.5f * scale).dp)
+                            .background(linkDotColor, CircleShape),
+                    )
+                    Text(
+                        text = link,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = (4.5f * scale).sp,
+                        letterSpacing = 1.4.sp,
+                        color = palette.muted,
+                        maxLines = 1,
+                    )
+                }
             }
         }
     }
 }
 
-/**
- * Compact transport code for the hub footer. [TransportStatus] exposes no state
- * enum and its label comes from the transport layer, so the state is read off
- * that label: the literals below are protocol constants matching
- * hid/BluetoothHidTransport.kt, not display copy — move them together with it.
- */
+/** Compact transport code for the hub footer, branched cleanly on [TransportState]. */
 @Composable
 private fun linkCode(s: TransportStatus): String = when (s.state) {
     TransportState.LOGGING -> stringResource(R.string.pad_link_sim)
@@ -505,6 +657,17 @@ private fun linkCode(s: TransportStatus): String = when (s.state) {
     TransportState.REGISTER_FAILED,
     -> stringResource(R.string.pad_link_down)
     else -> stringResource(R.string.pad_link_idle)
+}
+
+private fun linkPipColor(state: TransportState, palette: HdPalette): Color = when (state) {
+    TransportState.CONNECTED -> palette.primary
+    TransportState.LOGGING -> palette.secondary.copy(alpha = 0.65f)
+    TransportState.NEEDS_PERMISSION,
+    TransportState.UNAVAILABLE,
+    TransportState.NO_ADAPTER,
+    TransportState.REGISTER_FAILED,
+    -> palette.danger
+    else -> palette.muted.copy(alpha = 0.55f)
 }
 
 @Composable
@@ -539,6 +702,7 @@ private class DialGeometry(
     val goldBrush: Brush,
 ) {
     val dashRingRadius = radius * 0.7345f
+    val countdownRadius = radius * 0.515f
 }
 
 private fun buildDial(width: Float, height: Float, palette: HdPalette): DialGeometry {
@@ -580,8 +744,8 @@ private fun buildDial(width: Float, height: Float, palette: HdPalette): DialGeom
         dashes.segment(at(a, r * 0.7345f), at(a + 4.2, r * 0.7345f))
         i++
     }
-    // Keycap sectors: true annular fans at real radii (inner 62dp → outer
-    // 104dp on a 113dp dial), drawn once per size.
+    // Keycap sectors: true annular fans at real radii (inner 54.87% → outer
+    // 92.04% of dial radius), built once per size.
     val rIn = r * 0.5487f
     val rOut = r * 0.9204f
     val half = 24f
@@ -626,9 +790,11 @@ private fun DrawScope.drawDial(
     g: DialGeometry,
     palette: HdPalette,
     flareProvider: () -> Float,
+    countdownProvider: () -> Float,
     pressed: ArcDir?,
 ) {
     val flare = flareProvider()
+    val remain = countdownProvider()
     drawCircle(g.dome, g.radius, Offset(g.cx, g.cy))
     drawPath(g.majorRays, palette.primary.copy(alpha = 0.17f), style = Stroke(1.4f))
     drawPath(g.minorRays, palette.primary.copy(alpha = 0.07f), style = Stroke(1f))
@@ -655,10 +821,22 @@ private fun DrawScope.drawDial(
             style = Stroke(1.6f + (2.dp.toPx() - 1.6f) * flare),
         )
     }
+    if (remain > 0.005f) {
+        // Pending sequence countdown arc hugging the outer rim of the hub.
+        val cr = g.countdownRadius
+        drawArc(
+            color = palette.primary.copy(alpha = 0.72f),
+            startAngle = -90f,
+            sweepAngle = 360f * remain,
+            useCenter = false,
+            topLeft = Offset(g.cx - cr, g.cy - cr),
+            size = Size(cr * 2f, cr * 2f),
+            style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round),
+        )
+    }
     ArcDir.entries.forEach { dir ->
         val fan = g.fans.getValue(dir)
         if (pressed == dir) drawPath(fan, g.goldBrush) else drawPath(fan, g.panelBrush, alpha = 0.97f)
         drawPath(fan, g.rimBrush, style = Stroke(2f))
     }
 }
-

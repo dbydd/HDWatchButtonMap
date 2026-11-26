@@ -82,10 +82,12 @@ fun ActionButton(
         Text(
             text = text,
             color = tint,
-            fontSize = 11.sp,
+            fontSize = 10.5.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
         )
     }
 }
@@ -100,20 +102,24 @@ fun SwitchRow(
     hint: String = "",
 ) {
     val palette = LocalHdPalette.current
+    val haptics = LocalHaptics.current
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     HdPanel(
         modifier = modifier
-            .widthIn(min = 132.dp, max = 168.dp)
+            .widthIn(min = 124.dp, max = 176.dp)
             .fillMaxWidth()
-            .padding(vertical = 2.dp),
+            .padding(vertical = 2.5.dp),
         shape = RoundedCornerShape(8.dp),
         pressed = pressed,
         interactionSource = interaction,
-        onClick = { onCheckedChange(!checked) },
+        onClick = {
+            haptics.tick()
+            onCheckedChange(!checked)
+        },
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
@@ -128,7 +134,7 @@ fun SwitchRow(
                     Text(
                         hint,
                         color = if (pressed) palette.onPrimary.copy(alpha = 0.7f) else palette.muted,
-                        fontSize = 9.sp,
+                        fontSize = 8.5.sp,
                         maxLines = 2,
                     )
                 }
@@ -194,32 +200,42 @@ fun MacroListScreen() {
         }
     }
 
-    ScreenScaffold(title = stringResource(R.string.scr_macro_title)) {
+    LazyScreenScaffold(title = stringResource(R.string.scr_macro_title)) {
         if (config.activeProfile.kind != ProfileKind.MACRO) {
+            item(key = "__mode_warn__") {
+                Text(
+                    text = stringResource(R.string.scr_macro_not_macro_mode),
+                    color = palette.primary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+                )
+            }
+        }
+        item(key = "__status__") {
             Text(
-                text = stringResource(R.string.scr_macro_not_macro_mode),
-                color = palette.primary,
+                text = status,
+                color = if (statusIsError) palette.danger else palette.muted,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 4.dp),
             )
         }
-        Text(
-            text = status,
-            color = if (statusIsError) palette.danger else palette.muted,
-            fontSize = 11.sp,
-            maxLines = 2,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp),
-        )
         if (config.activeProfile.macros.isEmpty()) {
-            Text(stringResource(R.string.scr_macro_empty), color = palette.muted, fontSize = 11.sp, maxLines = 2)
+            item(key = "__empty__") {
+                Text(stringResource(R.string.scr_macro_empty), color = palette.muted, fontSize = 11.sp, maxLines = 2)
+            }
         }
-        config.activeProfile.macros.forEach { macro ->
+        items(
+            count = config.activeProfile.macros.size,
+            key = { idx -> config.activeProfile.macros[idx].id },
+        ) { idx ->
+            val macro = config.activeProfile.macros[idx]
             MacroCard(
                 macro = macro,
                 confirming = pendingDelete == macro.id,

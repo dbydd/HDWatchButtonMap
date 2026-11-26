@@ -20,12 +20,13 @@ class ReportRing(private val capacity: Int = 300) {
     val recent: SharedFlow<String> = flow.asSharedFlow()
 
     fun log(text: String) {
-        val line = "${timeFormat.format(Date())}  $text"
-        Log.d("HDMAP", line)
-        synchronized(lines) {
-            lines.addLast(line)
+        val line = synchronized(lines) {
+            val formatted = "${timeFormat.format(Date())}  $text"
+            lines.addLast(formatted)
             while (lines.size > capacity) lines.removeFirst()
+            formatted
         }
+        runCatching { Log.d("HDMAP", line) }
         flow.tryEmit(line)
     }
 

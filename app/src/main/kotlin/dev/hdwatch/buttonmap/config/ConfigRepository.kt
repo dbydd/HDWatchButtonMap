@@ -66,6 +66,13 @@ class ConfigRepository(
     /** Reload canonical file (menu action). */
     fun reload() = loadFile("manual")
 
+    /** Restore factory default profiles & auto-detected watch rotary settings. */
+    fun resetToDefaults() {
+        seedFromAssets()
+        loadFile("reset")
+        setStatus(app.getString(R.string.set_status_reset_done))
+    }
+
     /** Import from a SAF-picked document; keeps no persistent URI (import is manual). */
     fun importFrom(uri: Uri) {
         val text = runCatching {
@@ -161,15 +168,35 @@ class ConfigRepository(
         cfg.copy(profiles = cfg.profiles.map { if (it.id == id) transform(it) else it })
     }
 
+    /** Add (or refresh) a built-in preset profile and switch to it immediately. */
+    fun installPreset(presetId: ProfilePresets.PresetId) {
+        val profile = ProfilePresets.build(app, presetId)
+        update { cfg ->
+            cfg.copy(
+                profiles = cfg.profiles.filterNot { it.id == profile.id } + profile,
+                activeProfileId = profile.id,
+            )
+        }
+        ring.log("CFG  installed preset ${profile.id}")
+    }
+
+    /** Remove a profile if more than one exists, falling back cleanly if active. */
+    fun deleteProfile(id: String) = update { cfg ->
+        if (cfg.profiles.size <= 1) return@update cfg
+        val remaining = cfg.profiles.filterNot { it.id == id }
+        val nextActive = if (cfg.activeProfileId == id) remaining.first().id else cfg.activeProfileId
+        cfg.copy(profiles = remaining, activeProfileId = nextActive)
+    }
+
     /**
      * Install a bundled profile pack (the five-tap easter egg): a profile with
      * the same id is replaced, and the pack becomes the active surface.
      */
     fun installBundledPack(assetName: String): Boolean = try {
         val text = app.assets.open(assetName).bufferedReader().use { it.readText() }
-        val profile = ConfigJson.decode(text).profiles.firstOrNull()
-            ?: throw IllegalStateException("pack has no profile")
         val packCfg = ConfigJson.decode(text)
+        val profile = packCfg.profiles.firstOrNull()
+            ?: throw IllegalStateException("pack has no profile")
         update { cfg ->
             cfg.copy(
                 profiles = cfg.profiles.filterNot { it.id == profile.id } + profile,
@@ -210,12 +237,18 @@ class ConfigRepository(
         val text = runCatching {
             app.assets.open(assetSeedName).bufferedReader().use { it.readText() }
         }.getOrNull() ?: return
-        // The seed carries language-neutral names for its two built-in
-        // profiles; give them the local names before they ever reach the UI.
+        // Apply detected watch rotary defaults (bezel vs digital crown) and
+        // localized names for the built-in profiles on first launch.
+        val hw = dev.hdwatch.buttonmap.input.WatchDefaults.detect()
         val localized = runCatching {
             val cfg = ConfigJson.decode(text)
             ConfigJson.encode(
                 cfg.copy(
+                    settings = cfg.settings.copy(
+                        invertRotation = hw.invertRotation,
+                        rotateThreshold = hw.rotateThreshold,
+                        rotaryScale = hw.rotaryScale,
+                    ),
                     profiles = cfg.profiles.map { p ->
                         when (p.id) {
                             "keys" -> p.copy(name = app.getString(R.string.app_profile_direct))
@@ -227,7 +260,7 @@ class ConfigRepository(
             )
         }.getOrDefault(text)
         runCatching { configFile.writeText(localized) }
-        ring.log("CFG  seeded defaults")
+        ring.log("CFG  seeded defaults (${hw.label}, invert=${hw.invertRotation}, scale=${hw.rotaryScale})")
     }
 
     private fun loadFile(source: String) {

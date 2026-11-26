@@ -3,4 +3,18 @@
 <resources>
     <string name="app_profile_direct">直控</string>
     <string name="app_profile_macro">宏</string>
+
+    <!-- 内置实用模式预设 -->
+    <string name="app_preset_media">演示 · 媒体</string>
+    <string name="app_preset_media_hint">翻页 / F5放映 / 表冠音量 / 播放</string>
+    <string name="app_preset_mouse">鼠标 · 浏览</string>
+    <string name="app_preset_mouse_hint">点击 / 前进后退 / 表冠滚轮</string>
+    <string name="app_preset_hotkeys">常用热键</string>
+    <string name="app_preset_hotkeys_hint">复制 / 粘贴 / 撤销 / 截图 / 锁屏</string>
+    <string name="app_macro_copy">复制</string>
+    <string name="app_macro_paste">粘贴</string>
+    <string name="app_macro_undo">撤销</string>
+    <string name="app_macro_redo">重做</string>
+    <string name="app_macro_screenshot">截图</string>
+    <string name="app_macro_lock">锁屏</string>
 </resources>

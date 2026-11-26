@@ -11,6 +11,10 @@
     <string name="hid_st_register_failed">注册失败（app需在前台）</string>
     <string name="hid_st_connected_label">已连接</string>
     <string name="hid_st_connected_detail">HID 主机在线</string>
+    <string name="hid_st_connecting_label">连接中…</string>
+    <string name="hid_st_connecting_detail">正在连接 %1$s</string>
+    <string name="hid_st_switching_label">切换主机中…</string>
+    <string name="hid_st_disconnected_manual">已手动断开（暂停自动回连）</string>
     <string name="hid_st_waiting_host">等待主机连接</string>
     <string name="hid_st_unavailable_label">不可用</string>
     <string name="hid_st_no_adapter">本机无蓝牙适配器</string>
@@ -30,4 +34,9 @@
     <string name="hid_cat_media">媒体键</string>
     <string name="hid_cat_function">功能键</string>
     <string name="hid_cat_numpad">小键盘</string>
+
+    <!-- 前台保活服务通知 -->
+    <string name="hid_notif_channel">HID 遥控</string>
+    <string name="hid_notif_title">HD 遥控运行中</string>
+    <string name="hid_notif_text">保持蓝牙 HID 注册与主机链路</string>
 </resources>

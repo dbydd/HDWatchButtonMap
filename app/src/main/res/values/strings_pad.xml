@@ -9,6 +9,7 @@
     <string name="pad_link_auth">LINK · AUTH</string>
     <string name="pad_link_down">LINK · DOWN</string>
     <string name="pad_link_idle">LINK · IDLE</string>
+    <string name="pad_hold_badge">HOLD %1$s</string>
 
     <!-- PadScreen: confirmation line under the hub, keys mode only -->
     <string name="pad_event_fired_macro">Macro &quot;%1$s&quot;</string>

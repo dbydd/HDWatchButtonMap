@@ -1,42 +1,54 @@
 package dev.hdwatch.buttonmap
 
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import dev.hdwatch.buttonmap.engine.InputSource
+import dev.hdwatch.buttonmap.input.RotaryAccumulator
 import dev.hdwatch.buttonmap.input.Symbol
+import dev.hdwatch.buttonmap.ui.AppNav
 import dev.hdwatch.buttonmap.ui.HDTheme
 import dev.hdwatch.buttonmap.ui.HidScreen
 import dev.hdwatch.buttonmap.ui.LocalAppNav
+import dev.hdwatch.buttonmap.ui.LocalHaptics
 import dev.hdwatch.buttonmap.ui.LocalPlatformActions
 import dev.hdwatch.buttonmap.ui.LogScreen
+import dev.hdwatch.buttonmap.ui.MacroListScreen
 import dev.hdwatch.buttonmap.ui.MappingEditScreen
 import dev.hdwatch.buttonmap.ui.MappingListScreen
-import dev.hdwatch.buttonmap.ui.MacroListScreen
 import dev.hdwatch.buttonmap.ui.MenuScreen
 import dev.hdwatch.buttonmap.ui.PadScreen
 import dev.hdwatch.buttonmap.ui.PlatformActions
 import dev.hdwatch.buttonmap.ui.Route
+import dev.hdwatch.buttonmap.ui.SettingsDetailScreen
 import dev.hdwatch.buttonmap.ui.SettingsScreen
-import dev.hdwatch.buttonmap.ui.AppNav
 
 /**
- * Single activity: routes raw input (keys, rotary) into the sequence engine
- * while on the pad screen, and hands platform capabilities (SAF, BT intents,
- * permission prompts) down through CompositionLocals.
+ * Single activity: routes raw input (keys, multi-stem hardware buttons, rotary
+ * crown/bezel) into the sequence engine while on the pad screen, lets rotary
+ * scroll menus when off-pad, manages screen wake-lock on the pad, and hands
+ * platform capabilities + haptics down through CompositionLocals.
  */
 class MainActivity : ComponentActivity() {
 
     private val app get() = HdApp.instance
     private val nav = AppNav()
-    private val rotary = dev.hdwatch.buttonmap.input.RotaryAccumulator()
+    private val rotary = RotaryAccumulator()
 
-    private var stemDownAt = 0L
+    private val stemDownAt = HashMap<Int, Long>()
 
     private val btPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
@@ -58,9 +70,19 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         requestBluetoothPermissions()
         setContent {
-            HDTheme {
+            val config by app.configRepo.config.collectAsState()
+            val keepAwake = nav.current == Route.Pad && config.settings.keepScreenOn
+            LaunchedEffect(keepAwake) {
+                if (keepAwake) {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+            }
+            HDTheme(preset = config.settings.theme) {
                 CompositionLocalProvider(
                     LocalAppNav provides nav,
+                    LocalHaptics provides app.haptics,
                     LocalPlatformActions provides PlatformActions(
                         importFile = { openDocumentLauncher.launch(arrayOf("*/*")) },
                         exportFile = { createDocumentLauncher.launch("hdmap-export.json") },
@@ -84,6 +106,7 @@ class MainActivity : ComponentActivity() {
             Route.MacroList -> MacroListScreen()
             Route.Hid -> HidScreen()
             Route.Settings -> SettingsScreen()
+            is Route.SettingsDetail -> SettingsDetailScreen(route.section)
             Route.Log -> LogScreen()
         }
     }
@@ -98,6 +121,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         app.gestures.stop()
+        stemDownAt.clear()
+        rotary.reset()
         // A hold slot (CTRL) must never survive the pad going away.
         app.runner.emergencyRelease()
         app.engine.reset()
@@ -118,9 +143,9 @@ class MainActivity : ComponentActivity() {
             return super.dispatchKeyEvent(event)
         }
 
-        // Off the pad, the stem/home key means "back".
+        // Off the pad, the primary stem/side key acts as "back".
         if (nav.current != Route.Pad) {
-            if (isStemKey(event.keyCode) && event.action == KeyEvent.ACTION_UP) {
+            if (isPrimaryStemKey(event.keyCode) && event.action == KeyEvent.ACTION_UP) {
                 nav.pop()
                 return true
             }
@@ -129,12 +154,14 @@ class MainActivity : ComponentActivity() {
         }
 
         val isDown = event.action == KeyEvent.ACTION_DOWN
-        if (isStemKey(event.keyCode)) {
+        val stemPair = stemSymbolsFor(event.keyCode)
+        if (stemPair != null) {
             if (isDown && event.repeatCount == 0) {
-                stemDownAt = event.eventTime
-            } else if (!isDown) {
-                val held = event.eventTime - stemDownAt
-                app.engine.feed(if (held >= LONG_PRESS_MS) Symbol.STEM_LONG else Symbol.STEM)
+                stemDownAt[event.keyCode] = event.eventTime
+            } else if (event.action == KeyEvent.ACTION_UP) {
+                val started = stemDownAt.remove(event.keyCode) ?: event.eventTime
+                val held = event.eventTime - started
+                app.engine.feed(if (held >= LONG_PRESS_MS) stemPair.second else stemPair.first)
             }
             return true
         }
@@ -165,34 +192,48 @@ class MainActivity : ComponentActivity() {
         app.ring.log("KEY  ${KeyEvent.keyCodeToString(event.keyCode)} (power/voice keys usually never reach apps)")
     }
 
-    private fun isStemKey(code: Int): Boolean =
-        code == KeyEvent.KEYCODE_STEM_1 || code == KeyEvent.KEYCODE_STEM_2 ||
-            code == KeyEvent.KEYCODE_STEM_3
+    private fun isPrimaryStemKey(code: Int): Boolean =
+        code == KeyEvent.KEYCODE_STEM_PRIMARY || code == KeyEvent.KEYCODE_STEM_1
+
+    /**
+     * Multi-button watch mapping (Wear OS 3–6):
+     *  - Primary / Stem 1 → S / SL
+     *  - Secondary Stem 2 (TicWatch, OnePlus, GW Ultra action key, etc.) → G1 / G2
+     *  - Tertiary Stem 3 → G3 / G4
+     */
+    private fun stemSymbolsFor(code: Int): Pair<Symbol, Symbol>? = when (code) {
+        KeyEvent.KEYCODE_STEM_PRIMARY, KeyEvent.KEYCODE_STEM_1 -> Symbol.STEM to Symbol.STEM_LONG
+        KeyEvent.KEYCODE_STEM_2 -> Symbol.GESTURE_1 to Symbol.GESTURE_2
+        KeyEvent.KEYCODE_STEM_3 -> Symbol.GESTURE_3 to Symbol.GESTURE_4
+        else -> null
+    }
 
     // ---------------------------------------------------------- rotary input
 
-    override fun dispatchGenericMotionEvent(event: android.view.MotionEvent): Boolean {
-        val deltaRaw = dev.hdwatch.buttonmap.input.RotaryAccumulator.rotaryDelta(event)
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        val deltaRaw = RotaryAccumulator.rotaryDelta(event)
         if (app.configRepo.config.value.settings.captureUnknownInput && deltaRaw != 0f) {
             app.ring.log(
-                "GEN  act=${android.view.MotionEvent.actionToString(event.action)} " +
+                "GEN  act=${MotionEvent.actionToString(event.action)} " +
                     "src=0x${Integer.toHexString(event.source)} " +
-                    "scroll=${event.getAxisValue(android.view.MotionEvent.AXIS_SCROLL)} " +
-                    "v=${event.getAxisValue(android.view.MotionEvent.AXIS_VSCROLL)} " +
-                    "h=${event.getAxisValue(android.view.MotionEvent.AXIS_HSCROLL)}",
+                    "scroll=${event.getAxisValue(MotionEvent.AXIS_SCROLL)} " +
+                    "v=${event.getAxisValue(MotionEvent.AXIS_VSCROLL)} " +
+                    "h=${event.getAxisValue(MotionEvent.AXIS_HSCROLL)}",
             )
         }
-        if (nav.current == Route.Pad) {
-            val delta = deltaRaw
-            if (delta != 0f) {
-                val s = app.configRepo.config.value.settings
-                val cfg = app.configRepo.config.value
-                rotary.feed(event, cfg.effectiveRotateThreshold(), s.invertRotation).forEach { sym ->
-                    app.ring.log("ROT  ${sym.code}")
-                    app.engine.feed(sym, dev.hdwatch.buttonmap.engine.InputSource.ROTARY)
-                }
-                return true
+        if (nav.current == Route.Pad && deltaRaw != 0f) {
+            val cfg = app.configRepo.config.value
+            val s = cfg.settings
+            rotary.feed(
+                event = event,
+                threshold = cfg.effectiveRotateThreshold(),
+                invert = s.invertRotation,
+                scale = s.rotaryScale,
+            ).forEach { sym ->
+                app.ring.log("ROT  ${sym.code}")
+                app.engine.feed(sym, InputSource.ROTARY)
             }
+            return true
         }
         return super.dispatchGenericMotionEvent(event)
     }
@@ -200,15 +241,18 @@ class MainActivity : ComponentActivity() {
     // ------------------------------------------------------- platform actions
 
     private fun requestBluetoothPermissions() {
-        runCatching {
-            btPermissionLauncher.launch(
-                arrayOf(
-                    android.Manifest.permission.BLUETOOTH_CONNECT,
-                    android.Manifest.permission.BLUETOOTH_ADVERTISE,
-                    android.Manifest.permission.BLUETOOTH_SCAN,
-                ),
-            )
+        val perms = buildList {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                add(Manifest.permission.BLUETOOTH_CONNECT)
+                add(Manifest.permission.BLUETOOTH_ADVERTISE)
+                add(Manifest.permission.BLUETOOTH_SCAN)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
+        if (perms.isEmpty()) return
+        runCatching { btPermissionLauncher.launch(perms.toTypedArray()) }
     }
 
     private fun launchDiscoverable() {
