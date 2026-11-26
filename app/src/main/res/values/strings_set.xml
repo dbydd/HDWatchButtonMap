@@ -114,4 +114,43 @@
     <string name="set_step_rotary_scale">Crown sensitivity</string>
     <string name="set_step_latch_debounce">Latch debounce</string>
     <string name="set_action_auto_watch">Auto watch</string>
+
+    <!-- Refactored Settings Hub & Sub-pages -->
+    <string name="set_quick_vib">VIB</string>
+    <string name="set_quick_awake">AWAKE</string>
+    <string name="set_quick_alive">ALIVE</string>
+    <string name="set_cat_display">Dial &amp; Display</string>
+    <string name="set_cat_rotary">Crown &amp; Bezel</string>
+    <string name="set_cat_timing">Sequence &amp; Timing</string>
+    <string name="set_cat_gestures">Gesture Sensors</string>
+    <string name="set_cat_config">Config &amp; System</string>
+    <string name="set_hub_on">on</string>
+    <string name="set_hub_off">off</string>
+    <string name="set_val_off">OFF</string>
+    <string name="set_hub_sum_display">%1$s · legends %2$s</string>
+    <string name="set_hub_sum_rotary">%1$s · %2$s</string>
+    <string name="set_hub_sum_rotary_inv">%1$s · %2$s · inv</string>
+    <string name="set_hub_sum_timing">timeout %1$s · jitter %2$s</string>
+    <string name="set_hub_sum_gestures_off">Off · tap to configure</string>
+    <string name="set_hub_sum_gestures_on">On · %1$d/%2$d bound</string>
+    <string name="set_theme_orokin_desc">Deep teal &amp; antique gold</string>
+    <string name="set_theme_tactical_desc">Obsidian slate &amp; signal gold</string>
+    <string name="set_theme_phosphor_desc">True-black OLED &amp; radar mint</string>
+    <string name="set_section_display_haptics">DISPLAY &amp; HAPTICS</string>
+    <string name="set_action_auto_watch_done">✓ Watch defaults applied</string>
+    <string name="set_switch_profile_override">Profile threshold override</string>
+    <string name="set_profile_override_on">Custom threshold for %1$s</string>
+    <string name="set_profile_override_off">%1$s follows global (%2$d)</string>
+    <string name="set_step_rotary_scale_hint">Higher for fine digital crowns (Pixel / TicWatch)</string>
+    <string name="set_step_latch_debounce_hint">Prevents double-toggle when twisting a Hold slot</string>
+    <string name="set_step_sequence_timeout_hint">Idle time before a partial code clears</string>
+    <string name="set_step_key_jitter_hint">Random pause between macro steps (0 = off)</string>
+    <string name="set_step_text_delay_hint">Key-down hold and typed-character spacing</string>
+    <string name="set_section_gesture_slots">SENSOR SLOTS (TAP TO BIND)</string>
+    <string name="set_action_rescan_sensors">Rescan sensors</string>
+    <string name="set_section_system">SYSTEM &amp; DEBUG</string>
+    <string name="set_action_reset_defaults">Reset to defaults</string>
+    <string name="set_action_reset_confirm">Tap again to reset</string>
+    <string name="set_status_reset_done">Restored default config</string>
+    <string name="set_easter_unlocked">★ HD2 PACK UNLOCKED ★</string>
 </resources>

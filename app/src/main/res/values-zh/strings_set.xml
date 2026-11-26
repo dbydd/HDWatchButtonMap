@@ -113,4 +113,43 @@
     <string name="set_step_rotary_scale">表冠灵敏度</string>
     <string name="set_step_latch_debounce">锁存去抖</string>
     <string name="set_action_auto_watch">自动匹配机型</string>
+
+    <!-- 重构版设置总览与子页 -->
+    <string name="set_quick_vib">振动</string>
+    <string name="set_quick_awake">常亮</string>
+    <string name="set_quick_alive">保活</string>
+    <string name="set_cat_display">表盘与外观</string>
+    <string name="set_cat_rotary">表冠与旋转</string>
+    <string name="set_cat_timing">序列与时序</string>
+    <string name="set_cat_gestures">手势传感器</string>
+    <string name="set_cat_config">配置与系统</string>
+    <string name="set_hub_on">开</string>
+    <string name="set_hub_off">关</string>
+    <string name="set_val_off">关闭</string>
+    <string name="set_hub_sum_display">%1$s · 角标%2$s</string>
+    <string name="set_hub_sum_rotary">%1$s · %2$s</string>
+    <string name="set_hub_sum_rotary_inv">%1$s · %2$s · 反转</string>
+    <string name="set_hub_sum_timing">超时 %1$s · 抖动 %2$s</string>
+    <string name="set_hub_sum_gestures_off">已关闭 · 点此配置</string>
+    <string name="set_hub_sum_gestures_on">已开启 · %1$d/%2$d 已绑</string>
+    <string name="set_theme_orokin_desc">深青黑底 · 经典古金</string>
+    <string name="set_theme_tactical_desc">黑曜石灰 · 战术信号黄</string>
+    <string name="set_theme_phosphor_desc">纯黑省电 · 雷达荧光青</string>
+    <string name="set_section_display_haptics">显示与触感</string>
+    <string name="set_action_auto_watch_done">✓ 已匹配当前手表参数</string>
+    <string name="set_switch_profile_override">本模式独立阈值</string>
+    <string name="set_profile_override_on">当前「%1$s」使用独立格数</string>
+    <string name="set_profile_override_off">「%1$s」跟随全局（%2$d 格）</string>
+    <string name="set_step_rotary_scale_hint">Pixel/TicWatch 等细腻数字表冠建议调高</string>
+    <string name="set_step_latch_debounce_hint">防旋转锁存槽时连续触发开/关</string>
+    <string name="set_step_sequence_timeout_hint">半截序列静置超时自动清空</string>
+    <string name="set_step_key_jitter_hint">宏步间随机抖动，避免机械节奏（0 关闭）</string>
+    <string name="set_step_text_delay_hint">单键按压时长与打字字符间距</string>
+    <string name="set_section_gesture_slots">传感器槽位（点按循环绑定）</string>
+    <string name="set_action_rescan_sensors">重新扫描传感器</string>
+    <string name="set_section_system">系统与调试</string>
+    <string name="set_action_reset_defaults">恢复默认配置</string>
+    <string name="set_action_reset_confirm">再点一次确认重置</string>
+    <string name="set_status_reset_done">已恢复默认配置</string>
+    <string name="set_easter_unlocked">★ 已解锁 HD2 呼叫大全 ★</string>
 </resources>

@@ -1,5 +1,6 @@
 package dev.hdwatch.buttonmap.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -27,12 +28,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +45,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalConfiguration
@@ -60,7 +68,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Shared screen chrome adapted for both round (40mm–47mm+) and square watches,
- * with built-in rotary crown/bezel scrolling and a safely inset back button.
+ * with rotary crown/bezel scrolling, edge vignettes, a subtle curved scroll
+ * progress arc, and a tactile inset back button.
  */
 @Composable
 fun ScreenScaffold(
@@ -88,10 +97,10 @@ fun ScreenScaffold(
             ),
     ) {
         val horizPad: Dp = if (isRound) (maxWidth * 0.08f).coerceIn(10.dp, 20.dp) else 8.dp
-        val topBand: Dp = if (isRound) (maxHeight * 0.19f).coerceIn(36.dp, 48.dp) else 34.dp
-        val bottomPad: Dp = if (isRound) (maxHeight * 0.20f).coerceIn(34.dp, 52.dp) else 16.dp
-        val backStart: Dp = if (isRound) (maxWidth * 0.22f).coerceIn(36.dp, 56.dp) else 8.dp
-        val backTop: Dp = if (isRound) (maxHeight * 0.085f).coerceIn(14.dp, 22.dp) else 6.dp
+        val topBand: Dp = if (isRound) (maxHeight * 0.185f).coerceIn(34.dp, 46.dp) else 32.dp
+        val bottomPad: Dp = if (isRound) (maxHeight * 0.21f).coerceIn(34.dp, 52.dp) else 16.dp
+        val backStart: Dp = if (isRound) (maxWidth * 0.21f).coerceIn(34.dp, 52.dp) else 8.dp
+        val backTop: Dp = if (isRound) (maxHeight * 0.075f).coerceIn(12.dp, 20.dp) else 5.dp
 
         Column(
             modifier = Modifier
@@ -102,17 +111,32 @@ fun ScreenScaffold(
                 }
                 .focusRequester(focusRequester)
                 .focusable()
-                .padding(start = horizPad, end = horizPad, top = topBand, bottom = 6.dp)
+                .padding(start = horizPad, end = horizPad, top = topBand, bottom = 0.dp)
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             MicroLabel(
                 text = title,
                 color = palette.primary.copy(alpha = 0.9f),
-                modifier = Modifier.padding(top = 6.dp, bottom = 10.dp),
+                modifier = Modifier.padding(top = 4.dp, bottom = 10.dp),
             )
             content()
             Spacer(Modifier.height(bottomPad))
+        }
+
+        ScrollEdgeVignettes(
+            edgeColor = palette.edge,
+            topHeight = topBand + 14.dp,
+            bottomHeight = if (isRound) 28.dp else 14.dp,
+        )
+
+        if (scrollState.maxValue > 0) {
+            val total = (scrollState.maxValue + scrollState.viewportSize).coerceAtLeast(1)
+            ScrollRimIndicator(
+                isRound = isRound,
+                progress = (scrollState.value.toFloat() / scrollState.maxValue).coerceIn(0f, 1f),
+                thumbFraction = (scrollState.viewportSize.toFloat() / total).coerceIn(0.18f, 0.72f),
+            )
         }
 
         BackAffordance(
@@ -144,6 +168,22 @@ fun LazyScreenScaffold(
         runCatching { focusRequester.requestFocus() }
     }
 
+    val scrollMetrics by remember(listState) {
+        derivedStateOf {
+            val info = listState.layoutInfo
+            val total = info.totalItemsCount
+            val visible = info.visibleItemsInfo.size
+            if (total <= visible || visible == 0) {
+                null
+            } else {
+                val progress = (listState.firstVisibleItemIndex.toFloat() / (total - visible).coerceAtLeast(1))
+                    .coerceIn(0f, 1f)
+                val thumb = (visible.toFloat() / total).coerceIn(0.16f, 0.72f)
+                progress to thumb
+            }
+        }
+    }
+
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
@@ -154,10 +194,10 @@ fun LazyScreenScaffold(
             ),
     ) {
         val horizPad: Dp = if (isRound) (maxWidth * 0.08f).coerceIn(10.dp, 20.dp) else 8.dp
-        val topBand: Dp = if (isRound) (maxHeight * 0.19f).coerceIn(36.dp, 48.dp) else 34.dp
+        val topBand: Dp = if (isRound) (maxHeight * 0.185f).coerceIn(34.dp, 46.dp) else 32.dp
         val bottomPad: Dp = if (isRound) (maxHeight * 0.22f).coerceIn(36.dp, 54.dp) else 18.dp
-        val backStart: Dp = if (isRound) (maxWidth * 0.22f).coerceIn(36.dp, 56.dp) else 8.dp
-        val backTop: Dp = if (isRound) (maxHeight * 0.085f).coerceIn(14.dp, 22.dp) else 6.dp
+        val backStart: Dp = if (isRound) (maxWidth * 0.21f).coerceIn(34.dp, 52.dp) else 8.dp
+        val backTop: Dp = if (isRound) (maxHeight * 0.075f).coerceIn(12.dp, 20.dp) else 5.dp
 
         LazyColumn(
             state = listState,
@@ -181,10 +221,24 @@ fun LazyScreenScaffold(
                 MicroLabel(
                     text = title,
                     color = palette.primary.copy(alpha = 0.9f),
-                    modifier = Modifier.padding(top = 6.dp, bottom = 10.dp),
+                    modifier = Modifier.padding(top = 4.dp, bottom = 10.dp),
                 )
             }
             content()
+        }
+
+        ScrollEdgeVignettes(
+            edgeColor = palette.edge,
+            topHeight = topBand + 14.dp,
+            bottomHeight = if (isRound) 28.dp else 14.dp,
+        )
+
+        scrollMetrics?.let { (progress, thumb) ->
+            ScrollRimIndicator(
+                isRound = isRound,
+                progress = progress,
+                thumbFraction = thumb,
+            )
         }
 
         BackAffordance(
@@ -196,29 +250,135 @@ fun LazyScreenScaffold(
     }
 }
 
+/** Soft top/bottom fade masks so scrolling cards dissolve smoothly into the rim. */
+@Composable
+private fun ScrollEdgeVignettes(
+    edgeColor: Color,
+    topHeight: Dp,
+    bottomHeight: Dp,
+) {
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(topHeight)
+                .background(
+                    Brush.verticalGradient(
+                        0.0f to edgeColor.copy(alpha = 0.88f),
+                        0.62f to edgeColor.copy(alpha = 0.45f),
+                        1.0f to Color.Transparent,
+                    ),
+                ),
+        )
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(bottomHeight)
+                .background(
+                    Brush.verticalGradient(
+                        0.0f to Color.Transparent,
+                        1.0f to edgeColor.copy(alpha = 0.82f),
+                    ),
+                ),
+        )
+    }
+}
+
+/** Delicate curved scroll indicator along the right rim (straight on square watches). */
+@Composable
+private fun ScrollRimIndicator(
+    isRound: Boolean,
+    progress: Float,
+    thumbFraction: Float,
+) {
+    val palette = LocalHdPalette.current
+    Canvas(Modifier.fillMaxSize()) {
+        val strokePx = 2.dp.toPx()
+        val insetPx = 4.5.dp.toPx()
+        if (isRound) {
+            val r = minOf(size.width, size.height) / 2f - insetPx
+            val topLeft = Offset(size.width / 2f - r, size.height / 2f - r)
+            val arcSize = Size(r * 2f, r * 2f)
+            val totalSweep = 52f
+            val startAngle = -totalSweep / 2f
+            drawArc(
+                color = palette.primary.copy(alpha = 0.14f),
+                startAngle = startAngle,
+                sweepAngle = totalSweep,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = strokePx, cap = StrokeCap.Round),
+            )
+            val thumbSweep = totalSweep * thumbFraction
+            val thumbStart = startAngle + (totalSweep - thumbSweep) * progress
+            drawArc(
+                color = palette.primary.copy(alpha = 0.72f),
+                startAngle = thumbStart,
+                sweepAngle = thumbSweep,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = strokePx, cap = StrokeCap.Round),
+            )
+        } else {
+            val x = size.width - insetPx
+            val trackTop = size.height * 0.26f
+            val trackLen = size.height * 0.48f
+            drawLine(
+                color = palette.primary.copy(alpha = 0.14f),
+                start = Offset(x, trackTop),
+                end = Offset(x, trackTop + trackLen),
+                strokeWidth = strokePx,
+                cap = StrokeCap.Round,
+            )
+            val thumbLen = trackLen * thumbFraction
+            val thumbTop = trackTop + (trackLen - thumbLen) * progress
+            drawLine(
+                color = palette.primary.copy(alpha = 0.72f),
+                start = Offset(x, thumbTop),
+                end = Offset(x, thumbTop + thumbLen),
+                strokeWidth = strokePx,
+                cap = StrokeCap.Round,
+            )
+        }
+    }
+}
+
 @Composable
 private fun BackAffordance(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalHdPalette.current
+    val haptics = LocalHaptics.current
+    var pressed by remember { mutableStateOf(false) }
     // Edge-swipe back exits the whole app on some watches, so every config
     // screen carries a reliable top-inset back affordance.
     Box(
         modifier = modifier
             .size(34.dp)
+            .background(
+                color = if (pressed) palette.primary.copy(alpha = 0.24f) else Color.Transparent,
+                shape = CircleShape,
+            )
             .pointerInput(Unit) {
                 awaitEachGesture {
                     awaitFirstDown(requireUnconsumed = false)
+                    pressed = true
+                    haptics.tick()
                     onBack()
                     waitForUpOrCancellation()
+                    pressed = false
                 }
             },
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = "‹",
-            color = palette.secondary.copy(alpha = 0.8f),
+            color = if (pressed) palette.primary else palette.secondary.copy(alpha = 0.85f),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,

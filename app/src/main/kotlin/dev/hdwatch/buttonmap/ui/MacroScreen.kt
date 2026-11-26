@@ -82,10 +82,12 @@ fun ActionButton(
         Text(
             text = text,
             color = tint,
-            fontSize = 11.sp,
+            fontSize = 10.5.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
         )
     }
 }
@@ -100,20 +102,24 @@ fun SwitchRow(
     hint: String = "",
 ) {
     val palette = LocalHdPalette.current
+    val haptics = LocalHaptics.current
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     HdPanel(
         modifier = modifier
-            .widthIn(min = 132.dp, max = 168.dp)
+            .widthIn(min = 124.dp, max = 176.dp)
             .fillMaxWidth()
-            .padding(vertical = 2.dp),
+            .padding(vertical = 2.5.dp),
         shape = RoundedCornerShape(8.dp),
         pressed = pressed,
         interactionSource = interaction,
-        onClick = { onCheckedChange(!checked) },
+        onClick = {
+            haptics.tick()
+            onCheckedChange(!checked)
+        },
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
@@ -128,7 +134,7 @@ fun SwitchRow(
                     Text(
                         hint,
                         color = if (pressed) palette.onPrimary.copy(alpha = 0.7f) else palette.muted,
-                        fontSize = 9.sp,
+                        fontSize = 8.5.sp,
                         maxLines = 2,
                     )
                 }

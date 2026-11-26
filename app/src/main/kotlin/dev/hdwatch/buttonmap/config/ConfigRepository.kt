@@ -66,6 +66,13 @@ class ConfigRepository(
     /** Reload canonical file (menu action). */
     fun reload() = loadFile("manual")
 
+    /** Restore factory default profiles & auto-detected watch rotary settings. */
+    fun resetToDefaults() {
+        seedFromAssets()
+        loadFile("reset")
+        setStatus(app.getString(R.string.set_status_reset_done))
+    }
+
     /** Import from a SAF-picked document; keeps no persistent URI (import is manual). */
     fun importFrom(uri: Uri) {
         val text = runCatching {

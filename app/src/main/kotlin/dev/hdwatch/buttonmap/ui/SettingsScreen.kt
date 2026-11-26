@@ -1,7 +1,6 @@
 package dev.hdwatch.buttonmap.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -9,19 +8,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,8 +29,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
@@ -43,58 +39,192 @@ import dev.hdwatch.buttonmap.input.CapStatus
 import dev.hdwatch.buttonmap.input.GestureBackend
 import dev.hdwatch.buttonmap.input.Symbol
 import dev.hdwatch.buttonmap.input.WatchDefaults
+import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 /**
- * Settings screen: dial appearance & screen wake-lock, crown/bezel calibration
- * (global + per-profile thresholds, sensitivity scale, latch debounce, invert),
- * sequence & typing timing, gesture sensor capability rows, haptics, keep-alive,
- * config file management, and the 5-tap version easter egg.
+ * Refactored 2-level Settings architecture for small watch displays:
+ *  - [SettingsScreen]: scannable Hub with a 3-button quick-toggle dock
+ *    (Vibration / Keep Awake / Keep-Alive), 5 category cards with live value
+ *    summaries, and the 5-tap version easter egg.
+ *  - [SettingsDetailScreen]: 5 focused sub-pages (Display, Crown & Bezel,
+ *    Sequence & Timing, Gesture Sensors, Config & System) so every screen stays
+ *    compact and effortless to navigate on a wrist.
  */
 
-private val GESTURE_SLOTS = listOf("G1", "G2", "G3", "G4")
+private val GESTURE_SLOTS = listOf(
+    Symbol.GESTURE_1,
+    Symbol.GESTURE_2,
+    Symbol.GESTURE_3,
+    Symbol.GESTURE_4,
+)
 
 @Composable
 fun SettingsScreen() {
     val app = HdApp.instance
+    val nav = LocalAppNav.current
     val palette = LocalHdPalette.current
-    val actions = LocalPlatformActions.current
-    val haptics = LocalHaptics.current
     val config by app.configRepo.config.collectAsState()
     val settings = config.settings
-    val status by app.configRepo.status.collectAsState()
-    val statusIsError by app.configRepo.statusIsError.collectAsState()
+    val repoStatus by app.configRepo.status.collectAsState()
     val gestures = app.gestures as GestureBackend
-    val hwProfile = remember { WatchDefaults.detect() }
-    var caps by remember { mutableStateOf(gestures.capabilities()) }
-    val boundSlots = remember { mutableStateMapOf<String, Symbol?>() }
-    LaunchedEffect(settings.gestureSensorsEnabled) {
+    val caps = remember(settings.gestureSensorsEnabled) {
         gestures.refresh()
-        caps = gestures.capabilities()
+        gestures.capabilities()
     }
 
-    // Leaving this screen is the natural moment to re-read everything the
-    // five-tap easter egg may have changed: the new profile and its gesture
-    // wiring should be live by the time the pad comes back.
-    DisposableEffect(Unit) {
-        onDispose {
-            app.configRepo.reload()
-            app.gestures.refresh()
-            app.gestures.stop()
-            app.gestures.start()
-        }
+    val themeName = themeTitle(settings.theme)
+    val displaySummary = stringResource(
+        R.string.set_hub_sum_display,
+        themeName,
+        stringResource(if (settings.showDirectKeyLabels) R.string.set_hub_on else R.string.set_hub_off),
+    )
+
+    val effectiveThreshold = config.effectiveRotateThreshold()
+    val clickStr = pluralStringResource(R.plurals.set_step_value_clicks, effectiveThreshold, effectiveThreshold)
+    val scaleStr = String.format(Locale.US, "%.2g×", settings.rotaryScale)
+    val rotarySummary = if (settings.invertRotation) {
+        stringResource(R.string.set_hub_sum_rotary_inv, clickStr, scaleStr)
+    } else {
+        stringResource(R.string.set_hub_sum_rotary, clickStr, scaleStr)
+    }
+
+    val timeoutSec = String.format(Locale.US, "%.1fs", settings.sequenceTimeoutMs / 1000f)
+    val jitterStr = if (settings.keyJitterMs == 0L) {
+        stringResource(R.string.set_val_off)
+    } else {
+        "${settings.keyJitterMs}ms"
+    }
+    val timingSummary = stringResource(R.string.set_hub_sum_timing, timeoutSec, jitterStr)
+
+    val boundCount = caps.count { cap ->
+        settings.sensorToSymbol[cap.id]?.let { Symbol.fromCode(it) } != null
+    }
+    val gestureSummary = if (!settings.gestureSensorsEnabled) {
+        stringResource(R.string.set_hub_sum_gestures_off)
+    } else {
+        stringResource(R.string.set_hub_sum_gestures_on, boundCount, caps.size)
     }
 
     ScreenScaffold(title = stringResource(R.string.set_title)) {
-        SectionLabel(stringResource(R.string.set_section_appearance))
-        ThemeSelectorRow(
-            current = settings.theme,
-            onSelect = { preset ->
+        QuickToggleDock(
+            items = listOf(
+                QuickToggleItem(
+                    label = stringResource(R.string.set_quick_vib),
+                    checked = settings.vibrationEnabled,
+                    onToggle = {
+                        app.configRepo.updateSettings { it.copy(vibrationEnabled = !it.vibrationEnabled) }
+                    },
+                ),
+                QuickToggleItem(
+                    label = stringResource(R.string.set_quick_awake),
+                    checked = settings.keepScreenOn,
+                    onToggle = {
+                        app.configRepo.updateSettings { it.copy(keepScreenOn = !it.keepScreenOn) }
+                    },
+                ),
+                QuickToggleItem(
+                    label = stringResource(R.string.set_quick_alive),
+                    checked = settings.keepAliveService,
+                    onToggle = {
+                        app.configRepo.updateSettings { it.copy(keepAliveService = !it.keepAliveService) }
+                    },
+                ),
+            ),
+        )
+
+        SettingsCategoryRow(
+            glyph = "◆",
+            title = stringResource(R.string.set_cat_display),
+            summary = displaySummary,
+        ) { nav.push(Route.SettingsDetail(SettingsSection.DISPLAY)) }
+
+        SettingsCategoryRow(
+            glyph = "↻",
+            title = stringResource(R.string.set_cat_rotary),
+            summary = rotarySummary,
+            accent = config.activeProfile.rotateThreshold != null,
+        ) { nav.push(Route.SettingsDetail(SettingsSection.ROTARY)) }
+
+        SettingsCategoryRow(
+            glyph = "»",
+            title = stringResource(R.string.set_cat_timing),
+            summary = timingSummary,
+        ) { nav.push(Route.SettingsDetail(SettingsSection.TIMING)) }
+
+        SettingsCategoryRow(
+            glyph = "◎",
+            title = stringResource(R.string.set_cat_gestures),
+            summary = gestureSummary,
+            accent = settings.gestureSensorsEnabled,
+        ) { nav.push(Route.SettingsDetail(SettingsSection.GESTURES)) }
+
+        SettingsCategoryRow(
+            glyph = "≡",
+            title = stringResource(R.string.set_cat_config),
+            summary = repoStatus,
+        ) { nav.push(Route.SettingsDetail(SettingsSection.CONFIG)) }
+
+        // ---- easter egg: five taps on the build label unlock the HD2 pack ----
+        VersionEasterEgg(palette = palette)
+    }
+}
+
+@Composable
+fun SettingsDetailScreen(section: SettingsSection) {
+    when (section) {
+        SettingsSection.DISPLAY -> DisplaySettingsPage()
+        SettingsSection.ROTARY -> RotarySettingsPage()
+        SettingsSection.TIMING -> TimingSettingsPage()
+        SettingsSection.GESTURES -> GestureSettingsPage()
+        SettingsSection.CONFIG -> ConfigSettingsPage()
+    }
+}
+
+// ------------------------------------------------------------------ Sub-pages
+
+@Composable
+private fun DisplaySettingsPage() {
+    val app = HdApp.instance
+    val haptics = LocalHaptics.current
+    val config by app.configRepo.config.collectAsState()
+    val settings = config.settings
+
+    ScreenScaffold(title = stringResource(R.string.set_cat_display)) {
+        SectionLabel(stringResource(R.string.set_theme_label))
+        PaletteCard(
+            preset = ThemePreset.OROKIN,
+            title = stringResource(R.string.set_theme_orokin),
+            subtitle = stringResource(R.string.set_theme_orokin_desc),
+            selected = settings.theme == ThemePreset.OROKIN,
+            onSelect = {
                 haptics.tick()
-                app.configRepo.updateSettings { it.copy(theme = preset) }
+                app.configRepo.updateSettings { it.copy(theme = ThemePreset.OROKIN) }
             },
         )
+        PaletteCard(
+            preset = ThemePreset.TACTICAL,
+            title = stringResource(R.string.set_theme_tactical),
+            subtitle = stringResource(R.string.set_theme_tactical_desc),
+            selected = settings.theme == ThemePreset.TACTICAL,
+            onSelect = {
+                haptics.tick()
+                app.configRepo.updateSettings { it.copy(theme = ThemePreset.TACTICAL) }
+            },
+        )
+        PaletteCard(
+            preset = ThemePreset.PHOSPHOR,
+            title = stringResource(R.string.set_theme_phosphor),
+            subtitle = stringResource(R.string.set_theme_phosphor_desc),
+            selected = settings.theme == ThemePreset.PHOSPHOR,
+            onSelect = {
+                haptics.tick()
+                app.configRepo.updateSettings { it.copy(theme = ThemePreset.PHOSPHOR) }
+            },
+        )
+
+        SectionLabel(stringResource(R.string.set_section_display_haptics))
         SwitchRow(
             label = stringResource(R.string.set_switch_keep_screen_on),
             checked = settings.keepScreenOn,
@@ -107,98 +237,77 @@ fun SettingsScreen() {
             onCheckedChange = { on -> app.configRepo.updateSettings { it.copy(showDirectKeyLabels = on) } },
             hint = stringResource(R.string.set_switch_direct_labels_hint),
         )
+        SwitchRow(
+            label = stringResource(R.string.set_switch_vibration),
+            checked = settings.vibrationEnabled,
+            onCheckedChange = { on -> app.configRepo.updateSettings { it.copy(vibrationEnabled = on) } },
+            hint = stringResource(R.string.set_switch_vibration_hint),
+        )
+    }
+}
+
+@Composable
+private fun RotarySettingsPage() {
+    val app = HdApp.instance
+    val palette = LocalHdPalette.current
+    val haptics = LocalHaptics.current
+    val config by app.configRepo.config.collectAsState()
+    val settings = config.settings
+    val profile = config.activeProfile
+    val hwProfile = remember { WatchDefaults.detect() }
+    var calibratedFlash by remember { mutableStateOf(false) }
+
+    LaunchedEffect(calibratedFlash) {
+        if (calibratedFlash) {
+            delay(1400)
+            calibratedFlash = false
+        }
+    }
+
+    ScreenScaffold(title = stringResource(R.string.set_cat_rotary)) {
+        // Detected watch banner + one-tap auto-calibration
+        HdPanel(
+            modifier = Modifier
+                .settingsCardWidth()
+                .padding(vertical = 2.5.dp),
+            shape = RoundedCornerShape(8.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.set_watch_detected, hwProfile.label),
+                    fontFamily = FontFamily.Monospace,
+                    color = palette.primary,
+                    fontSize = 8.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(5.dp))
+                ActionButton(
+                    text = stringResource(
+                        if (calibratedFlash) R.string.set_action_auto_watch_done else R.string.set_action_auto_watch,
+                    ),
+                    tone = HdTone.Accent,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        haptics.tick()
+                        app.configRepo.updateSettings {
+                            it.copy(
+                                invertRotation = hwProfile.invertRotation,
+                                rotateThreshold = hwProfile.rotateThreshold,
+                                rotaryScale = hwProfile.rotaryScale,
+                            )
+                        }
+                        calibratedFlash = true
+                    },
+                )
+            }
+        }
 
         SectionLabel(stringResource(R.string.set_section_rotation))
-        Text(
-            text = stringResource(R.string.set_watch_detected, hwProfile.label),
-            fontFamily = FontFamily.Monospace,
-            color = palette.muted,
-            fontSize = 8.5.sp,
-            maxLines = 1,
-            modifier = Modifier.padding(bottom = 3.dp),
-        )
-        StepperRow(
-            label = stringResource(R.string.set_step_rotate_threshold),
-            value = settings.rotateThreshold.toLong(),
-            pluralRes = R.plurals.set_step_value_clicks,
-            min = 1,
-            max = 15,
-            step = 1,
-            onChange = { v -> app.configRepo.updateSettings { it.copy(rotateThreshold = v.toInt()) } },
-        )
-        StepperRow(
-            label = stringResource(R.string.set_step_profile_threshold),
-            value = config.effectiveRotateThreshold().toLong(),
-            pluralRes = R.plurals.set_step_value_clicks,
-            min = 1,
-            max = 15,
-            step = 1,
-            onChange = { v ->
-                app.configRepo.updateProfile(config.activeProfileId) {
-                    it.copy(rotateThreshold = v.toInt())
-                }
-            },
-        )
-        // Crown sensitivity multiplier stored as 0.25x steps (25..400 -> 0.25..4.00)
-        val scalePct = (settings.rotaryScale * 100f).roundToInt().toLong().coerceIn(25L, 400L)
-        StepperRow(
-            label = stringResource(R.string.set_step_rotary_scale),
-            value = scalePct,
-            formattedValue = String.format(java.util.Locale.US, "%.2f×", scalePct / 100f),
-            min = 25,
-            max = 400,
-            step = 25,
-            onChange = { v ->
-                app.configRepo.updateSettings { it.copy(rotaryScale = v / 100f) }
-            },
-        )
-        StepperRow(
-            label = stringResource(R.string.set_step_latch_debounce),
-            value = settings.rotaryLatchDebounceMs,
-            valueRes = R.string.set_step_value_ms,
-            min = 0,
-            max = 1500,
-            step = 100,
-            onChange = { v -> app.configRepo.updateSettings { it.copy(rotaryLatchDebounceMs = v) } },
-        )
-        Row(
-            modifier = Modifier.padding(top = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            ActionButton(
-                text = stringResource(R.string.set_action_follow_global),
-                tone = HdTone.Accent,
-                onClick = {
-                    app.configRepo.updateProfile(config.activeProfileId) {
-                        it.copy(rotateThreshold = null)
-                    }
-                },
-            )
-            ActionButton(
-                text = stringResource(R.string.set_action_auto_watch),
-                onClick = {
-                    haptics.tick()
-                    app.configRepo.updateSettings {
-                        it.copy(
-                            invertRotation = hwProfile.invertRotation,
-                            rotateThreshold = hwProfile.rotateThreshold,
-                            rotaryScale = hwProfile.rotaryScale,
-                        )
-                    }
-                },
-            )
-        }
-        Text(
-            text = if (config.activeProfile.rotateThreshold == null) {
-                stringResource(R.string.set_rotate_follow_global, settings.rotateThreshold)
-            } else {
-                stringResource(R.string.set_rotate_override_global, settings.rotateThreshold)
-            },
-            color = palette.muted,
-            fontSize = 9.sp,
-            maxLines = 2,
-            modifier = Modifier.padding(top = 2.dp),
-        )
         SwitchRow(
             label = stringResource(R.string.set_switch_invert),
             checked = settings.invertRotation,
@@ -210,366 +319,369 @@ fun SettingsScreen() {
             },
         )
 
-        SectionLabel(stringResource(R.string.set_section_sequence))
-        StepperRow(
+        StepperCard(
+            label = stringResource(R.string.set_step_rotate_threshold),
+            value = settings.rotateThreshold.toLong(),
+            displayValue = pluralStringResource(
+                R.plurals.set_step_value_clicks,
+                settings.rotateThreshold,
+                settings.rotateThreshold,
+            ),
+            min = 1,
+            max = 15,
+            step = 1,
+            onChange = { v -> app.configRepo.updateSettings { it.copy(rotateThreshold = v.toInt()) } },
+        )
+
+        // Single clean toggle replaces two confusingly stacked threshold steppers.
+        val profileOverride = profile.rotateThreshold
+        val hasOverride = profileOverride != null
+        SwitchRow(
+            label = stringResource(R.string.set_switch_profile_override),
+            checked = hasOverride,
+            onCheckedChange = { enable ->
+                app.configRepo.updateProfile(profile.id) {
+                    it.copy(rotateThreshold = if (enable) settings.rotateThreshold else null)
+                }
+            },
+            hint = if (hasOverride) {
+                stringResource(R.string.set_profile_override_on, profile.name)
+            } else {
+                stringResource(R.string.set_profile_override_off, profile.name, settings.rotateThreshold)
+            },
+        )
+        if (profileOverride != null) {
+            StepperCard(
+                label = stringResource(R.string.set_step_profile_threshold),
+                value = profileOverride.toLong(),
+                displayValue = pluralStringResource(R.plurals.set_step_value_clicks, profileOverride, profileOverride),
+                min = 1,
+                max = 15,
+                step = 1,
+                onChange = { v ->
+                    app.configRepo.updateProfile(profile.id) { it.copy(rotateThreshold = v.toInt()) }
+                },
+            )
+        }
+
+        val scalePct = (settings.rotaryScale * 100f).roundToInt().toLong().coerceIn(25L, 400L)
+        StepperCard(
+            label = stringResource(R.string.set_step_rotary_scale),
+            value = scalePct,
+            displayValue = String.format(Locale.US, "%.2f×", scalePct / 100f),
+            min = 25,
+            max = 400,
+            step = 25,
+            hint = stringResource(R.string.set_step_rotary_scale_hint),
+            onChange = { v -> app.configRepo.updateSettings { it.copy(rotaryScale = v / 100f) } },
+        )
+
+        StepperCard(
+            label = stringResource(R.string.set_step_latch_debounce),
+            value = settings.rotaryLatchDebounceMs,
+            displayValue = if (settings.rotaryLatchDebounceMs == 0L) {
+                stringResource(R.string.set_val_off)
+            } else {
+                stringResource(R.string.set_step_value_ms, settings.rotaryLatchDebounceMs)
+            },
+            min = 0,
+            max = 1500,
+            step = 100,
+            hint = stringResource(R.string.set_step_latch_debounce_hint),
+            onChange = { v -> app.configRepo.updateSettings { it.copy(rotaryLatchDebounceMs = v) } },
+        )
+    }
+}
+
+@Composable
+private fun TimingSettingsPage() {
+    val app = HdApp.instance
+    val config by app.configRepo.config.collectAsState()
+    val settings = config.settings
+
+    ScreenScaffold(title = stringResource(R.string.set_cat_timing)) {
+        StepperCard(
             label = stringResource(R.string.set_step_sequence_timeout),
             value = settings.sequenceTimeoutMs,
-            valueRes = R.string.set_step_value_ms,
+            displayValue = String.format(Locale.US, "%.1f s", settings.sequenceTimeoutMs / 1000f),
             min = 1000,
             max = 8000,
             step = 500,
+            hint = stringResource(R.string.set_step_sequence_timeout_hint),
             onChange = { v -> app.configRepo.updateSettings { it.copy(sequenceTimeoutMs = v) } },
         )
-        SwitchRow(
-            label = stringResource(R.string.set_switch_capture_unknown),
-            checked = settings.captureUnknownInput,
-            onCheckedChange = { on ->
-                app.configRepo.updateSettings { it.copy(captureUnknownInput = on) }
-            },
-            hint = stringResource(R.string.set_switch_capture_unknown_hint),
-        )
-
-        SectionLabel(stringResource(R.string.set_section_typing))
-        StepperRow(
+        StepperCard(
             label = stringResource(R.string.set_step_key_jitter),
             value = settings.keyJitterMs,
-            valueRes = R.string.set_step_value_ms,
+            displayValue = if (settings.keyJitterMs == 0L) {
+                stringResource(R.string.set_val_off)
+            } else {
+                stringResource(R.string.set_step_value_ms, settings.keyJitterMs)
+            },
             min = 0,
             max = 100,
             step = 5,
+            hint = stringResource(R.string.set_step_key_jitter_hint),
             onChange = { v -> app.configRepo.updateSettings { it.copy(keyJitterMs = v) } },
         )
-        StepperRow(
+        StepperCard(
             label = stringResource(R.string.set_step_text_delay),
             value = settings.textDelayMs,
-            valueRes = R.string.set_step_value_ms,
+            displayValue = stringResource(R.string.set_step_value_ms, settings.textDelayMs),
             min = 10,
             max = 200,
             step = 10,
+            hint = stringResource(R.string.set_step_text_delay_hint),
             onChange = { v -> app.configRepo.updateSettings { it.copy(textDelayMs = v) } },
         )
+    }
+}
 
-        SectionLabel(stringResource(R.string.set_section_gestures))
+@Composable
+private fun GestureSettingsPage() {
+    val app = HdApp.instance
+    val palette = LocalHdPalette.current
+    val haptics = LocalHaptics.current
+    val config by app.configRepo.config.collectAsState()
+    val settings = config.settings
+    val gestures = app.gestures as GestureBackend
+    var scanNonce by remember { mutableStateOf(0) }
+    val caps = remember(settings.gestureSensorsEnabled, scanNonce) {
+        gestures.refresh()
+        gestures.capabilities()
+    }
+
+    ScreenScaffold(title = stringResource(R.string.set_cat_gestures)) {
         SwitchRow(
             label = stringResource(R.string.set_switch_gestures),
             checked = settings.gestureSensorsEnabled,
             onCheckedChange = { on ->
                 app.configRepo.updateSettings { it.copy(gestureSensorsEnabled = on) }
+                // Apply immediately instead of waiting until the user leaves settings.
+                app.gestures.refresh()
+                app.gestures.stop()
+                if (on) app.gestures.start()
             },
             hint = stringResource(R.string.set_switch_gestures_hint),
         )
+
+        SectionLabel(stringResource(R.string.set_section_gesture_slots))
         if (caps.isEmpty()) {
             Text(
-                stringResource(R.string.set_gestures_none),
+                text = stringResource(R.string.set_gestures_none),
                 color = palette.muted,
                 fontSize = 9.sp,
                 maxLines = 2,
-                modifier = Modifier.padding(top = 2.dp),
+                modifier = Modifier.padding(top = 4.dp),
             )
         }
         caps.forEach { cap ->
-            val bound = boundSlots[cap.id]
-                ?: settings.sensorToSymbol[cap.id]?.let { Symbol.fromCode(it) }
+            // Read directly from settings StateFlow so bindings never drift out of sync.
+            val bound = settings.sensorToSymbol[cap.id]?.let { Symbol.fromCode(it) }
             GestureCapabilityRow(
                 label = cap.label,
-                detail = cap.detail,
                 status = cap.status,
                 bound = bound,
                 onClick = {
-                    if (cap.status == CapStatus.AVAILABLE) {
-                        val order = GESTURE_SLOTS.map { Symbol.fromCode(it) } + listOf(null)
-                        val next = order[(order.indexOf(bound) + 1) % order.size]
-                        gestures.bind(cap.id, next)
-                        boundSlots[cap.id] = next
-                    }
+                    val order = GESTURE_SLOTS + listOf<Symbol?>(null)
+                    val next = order[(order.indexOf(bound) + 1) % order.size]
+                    gestures.bind(cap.id, next)
                 },
             )
         }
 
-        SectionLabel(stringResource(R.string.set_section_feedback))
-        SwitchRow(
-            label = stringResource(R.string.set_switch_vibration),
-            checked = settings.vibrationEnabled,
-            onCheckedChange = { on -> app.configRepo.updateSettings { it.copy(vibrationEnabled = on) } },
-            hint = stringResource(R.string.set_switch_vibration_hint),
+        Spacer(Modifier.height(6.dp))
+        ActionButton(
+            text = stringResource(R.string.set_action_rescan_sensors),
+            modifier = Modifier.settingsCardWidth(),
+            onClick = {
+                haptics.tick()
+                app.gestures.refresh()
+                if (settings.gestureSensorsEnabled) {
+                    app.gestures.stop()
+                    app.gestures.start()
+                }
+                scanNonce++
+            },
         )
+    }
+}
 
-        SectionLabel(stringResource(R.string.set_label_keep_alive))
+@Composable
+private fun ConfigSettingsPage() {
+    val app = HdApp.instance
+    val palette = LocalHdPalette.current
+    val actions = LocalPlatformActions.current
+    val haptics = LocalHaptics.current
+    val config by app.configRepo.config.collectAsState()
+    val settings = config.settings
+    val status by app.configRepo.status.collectAsState()
+    val statusIsError by app.configRepo.statusIsError.collectAsState()
+    var confirmReset by remember { mutableStateOf(false) }
+
+    LaunchedEffect(confirmReset) {
+        if (confirmReset) {
+            delay(3500)
+            confirmReset = false
+        }
+    }
+
+    ScreenScaffold(title = stringResource(R.string.set_cat_config)) {
+        SectionLabel(stringResource(R.string.set_section_system))
         SwitchRow(
             label = stringResource(R.string.set_switch_keep_alive),
             checked = settings.keepAliveService,
-            onCheckedChange = { on ->
-                app.configRepo.updateSettings { it.copy(keepAliveService = on) }
-            },
+            onCheckedChange = { on -> app.configRepo.updateSettings { it.copy(keepAliveService = on) } },
             hint = stringResource(R.string.set_switch_keep_alive_hint),
+        )
+        SwitchRow(
+            label = stringResource(R.string.set_switch_capture_unknown),
+            checked = settings.captureUnknownInput,
+            onCheckedChange = { on -> app.configRepo.updateSettings { it.copy(captureUnknownInput = on) } },
+            hint = stringResource(R.string.set_switch_capture_unknown_hint),
         )
 
         SectionLabel(stringResource(R.string.set_section_config))
-        Row(
+        HdPanel(
             modifier = Modifier
-                .padding(top = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                .settingsCardWidth()
+                .padding(vertical = 2.5.dp),
+            shape = RoundedCornerShape(8.dp),
         ) {
-            ActionButton(stringResource(R.string.set_action_reload), { app.configRepo.reload() })
-            ActionButton(stringResource(R.string.set_action_import), { actions.importFile() })
-        }
-        Row(
-            modifier = Modifier
-                .padding(top = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            ActionButton(stringResource(R.string.set_action_export), { actions.exportFile() })
-            ActionButton(stringResource(R.string.set_action_write_external), { app.configRepo.copyToExternal() })
-        }
-        Text(
-            text = status,
-            color = if (statusIsError) palette.danger else palette.muted,
-            fontSize = 10.sp,
-            maxLines = 2,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp),
-        )
-        // ---- easter egg: five taps on the build label unlock the HD2 pack ----
-        val version = remember {
-            runCatching {
-                app.packageManager.getPackageInfo(app.packageName, 0).versionName
-            }.getOrNull() ?: "?"
-        }
-        var taps by remember { mutableStateOf(0) }
-        LaunchedEffect(taps) {
-            if (taps in 1..4) {
-                delay(1600)
-                taps = 0
-            }
-        }
-        Text(
-            text = stringResource(R.string.set_version_line, version),
-            color = palette.muted.copy(alpha = 0.55f),
-            fontFamily = FontFamily.Monospace,
-            fontSize = 8.sp,
-            maxLines = 1,
-            modifier = Modifier
-                .padding(top = 10.dp)
-                .pointerInput(Unit) {
-                    awaitEachGesture {
-                        awaitFirstDown(requireUnconsumed = false)
-                        taps += 1
-                        if (taps >= 5) {
-                            taps = 0
-                            if (app.configRepo.installBundledPack("hd2_pack.json")) {
-                                app.haptics.macro()
-                            } else {
-                                app.haptics.error()
-                            }
-                        }
-                        waitForUpOrCancellation()
-                    }
-                },
-        )
-    }
-}
-
-/** Three curated console palettes with live color swatches. */
-@Composable
-private fun ThemeSelectorRow(
-    current: ThemePreset,
-    onSelect: (ThemePreset) -> Unit,
-) {
-    val palette = LocalHdPalette.current
-    HdPanel(
-        modifier = Modifier
-            .widthIn(min = 132.dp, max = 168.dp)
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        shape = RoundedCornerShape(8.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(R.string.set_theme_label),
-                color = palette.text,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-            )
             Row(
-                modifier = Modifier.padding(top = 5.dp),
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-            ) {
-                ThemePreset.entries.forEach { preset ->
-                    val preview = paletteFor(preset)
-                    val selected = preset == current
-                    val label = when (preset) {
-                        ThemePreset.OROKIN -> stringResource(R.string.set_theme_orokin)
-                        ThemePreset.TACTICAL -> stringResource(R.string.set_theme_tactical)
-                        ThemePreset.PHOSPHOR -> stringResource(R.string.set_theme_phosphor)
-                    }
-                    HdPanel(
-                        shape = RoundedCornerShape(6.dp),
-                        pressed = selected,
-                        onClick = { onSelect(preset) },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        ) {
-                            Box(
-                                Modifier
-                                    .size(6.dp)
-                                    .background(
-                                        if (selected) preview.onPrimary else preview.primary,
-                                        CircleShape,
-                                    ),
-                            )
-                            Text(
-                                text = label,
-                                fontSize = 9.sp,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (selected) palette.onPrimary else palette.secondary,
-                                maxLines = 1,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Gesture capability row: status pip + label + binding cycle (G1→G2→G3→G4→none).
- */
-@Composable
-private fun GestureCapabilityRow(
-    label: String,
-    detail: String,
-    status: CapStatus,
-    bound: Symbol?,
-    onClick: () -> Unit,
-) {
-    val palette = LocalHdPalette.current
-    val bindable = status == CapStatus.AVAILABLE
-    val capColor = when (status) {
-        CapStatus.AVAILABLE -> palette.primary
-        CapStatus.GATED -> palette.muted
-        CapStatus.NEEDS_PERMISSION -> palette.danger
-        CapStatus.BROKEN -> palette.muted
-    }
-    val statusText = when (status) {
-        CapStatus.AVAILABLE -> stringResource(R.string.set_gesture_available)
-        CapStatus.GATED -> stringResource(R.string.set_gesture_gated)
-        CapStatus.NEEDS_PERMISSION -> stringResource(R.string.set_gesture_needs_permission)
-        CapStatus.BROKEN -> stringResource(R.string.set_gesture_broken)
-    }
-    HdPanel(
-        modifier = Modifier
-            .widthIn(min = 132.dp, max = 168.dp)
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        shape = RoundedCornerShape(8.dp),
-        onClick = if (bindable) onClick else null,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
                 modifier = Modifier
-                    .size(7.dp)
-                    .background(capColor, RoundedCornerShape(1.5.dp))
-                    .border(1.dp, palette.hairline, RoundedCornerShape(1.5.dp)),
-            )
-            Column(modifier = Modifier.padding(start = 7.dp)) {
-                Text(
-                    text = label,
-                    color = if (status == CapStatus.BROKEN) palette.muted else palette.text,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    textDecoration = if (status == CapStatus.BROKEN) TextDecoration.LineThrough else null,
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier
+                        .width(2.5.dp)
+                        .height(18.dp)
+                        .background(
+                            if (statusIsError) palette.danger else palette.primary.copy(alpha = 0.7f),
+                            RoundedCornerShape(1.5.dp),
+                        ),
                 )
                 Text(
-                    text = stringResource(
-                        R.string.set_gesture_row,
-                        statusText,
-                        bound?.display ?: stringResource(R.string.set_gesture_unbound),
-                    ),
-                    color = palette.muted,
-                    fontSize = 9.sp,
-                    maxLines = 2,
+                    text = status,
+                    color = if (statusIsError) palette.danger else palette.secondary,
+                    fontSize = 9.5.sp,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = 8.dp),
                 )
             }
         }
+
+        ActionGridRow(
+            leftText = stringResource(R.string.set_action_reload),
+            onLeft = {
+                haptics.tick()
+                app.configRepo.reload()
+            },
+            rightText = stringResource(R.string.set_action_import),
+            onRight = { actions.importFile() },
+        )
+        ActionGridRow(
+            leftText = stringResource(R.string.set_action_export),
+            onLeft = { actions.exportFile() },
+            rightText = stringResource(R.string.set_action_write_external),
+            onRight = {
+                haptics.tick()
+                app.configRepo.copyToExternal()
+            },
+        )
+
+        Spacer(Modifier.height(6.dp))
+        ActionButton(
+            text = stringResource(
+                if (confirmReset) R.string.set_action_reset_confirm else R.string.set_action_reset_defaults,
+            ),
+            tone = HdTone.Danger,
+            modifier = Modifier.settingsCardWidth(),
+            onClick = {
+                if (confirmReset) {
+                    confirmReset = false
+                    app.configRepo.resetToDefaults()
+                    app.gestures.refresh()
+                    app.gestures.stop()
+                    app.gestures.start()
+                    haptics.macro()
+                } else {
+                    confirmReset = true
+                    haptics.tick()
+                }
+            },
+        )
     }
 }
 
-/** Numeric ± stepper row clamped to [min, max]. */
+// ------------------------------------------------------------------ Helpers
+
 @Composable
-private fun StepperRow(
-    label: String,
-    value: Long,
-    valueRes: Int? = null,
-    pluralRes: Int? = null,
-    formattedValue: String? = null,
-    min: Long,
-    max: Long,
-    step: Long,
-    onChange: (Long) -> Unit,
-) {
-    val palette = LocalHdPalette.current
-    HdPanel(
-        modifier = Modifier
-            .widthIn(min = 132.dp, max = 168.dp)
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        shape = RoundedCornerShape(8.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                label,
-                color = palette.text,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                ActionButton(
-                    text = "-",
-                    onClick = { onChange((value - step).coerceIn(min, max)) },
-                    enabled = value > min,
-                )
-                Text(
-                    text = when {
-                        formattedValue != null -> formattedValue
-                        pluralRes != null -> pluralStringResource(pluralRes, value.toInt(), value)
-                        valueRes != null -> stringResource(valueRes, value)
-                        else -> value.toString()
-                    },
-                    color = palette.primary,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    modifier = Modifier.padding(horizontal = 4.dp),
-                )
-                ActionButton(
-                    text = "+",
-                    onClick = { onChange((value + step).coerceIn(min, max)) },
-                    enabled = value < max,
-                )
-            }
+private fun VersionEasterEgg(palette: HdPalette) {
+    val app = HdApp.instance
+    val version = remember {
+        runCatching {
+            app.packageManager.getPackageInfo(app.packageName, 0).versionName
+        }.getOrNull() ?: "?"
+    }
+    var taps by remember { mutableStateOf(0) }
+    var unlockedMsg by remember { mutableStateOf(false) }
+
+    LaunchedEffect(taps) {
+        if (taps in 1..4) {
+            delay(1600)
+            taps = 0
         }
     }
+    LaunchedEffect(unlockedMsg) {
+        if (unlockedMsg) {
+            delay(2200)
+            unlockedMsg = false
+        }
+    }
+
+    val dots = if (taps >= 2) "  " + "·".repeat(taps) else ""
+    Text(
+        text = if (unlockedMsg) {
+            stringResource(R.string.set_easter_unlocked)
+        } else {
+            stringResource(R.string.set_version_line, version) + dots
+        },
+        color = if (unlockedMsg || taps >= 2) palette.primary else palette.muted.copy(alpha = 0.6f),
+        fontFamily = FontFamily.Monospace,
+        fontSize = 8.5.sp,
+        maxLines = 1,
+        modifier = Modifier
+            .padding(top = 12.dp, bottom = 2.dp)
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false)
+                    taps += 1
+                    if (taps >= 5) {
+                        taps = 0
+                        if (app.configRepo.installBundledPack("hd2_pack.json")) {
+                            // Activate pack's gesture wiring immediately.
+                            app.gestures.refresh()
+                            app.gestures.stop()
+                            app.gestures.start()
+                            app.haptics.macro()
+                            unlockedMsg = true
+                        } else {
+                            app.haptics.error()
+                        }
+                    }
+                    waitForUpOrCancellation()
+                }
+            },
+    )
+}
+
+@Composable
+private fun themeTitle(preset: ThemePreset): String = when (preset) {
+    ThemePreset.OROKIN -> stringResource(R.string.set_theme_orokin)
+    ThemePreset.TACTICAL -> stringResource(R.string.set_theme_tactical)
+    ThemePreset.PHOSPHOR -> stringResource(R.string.set_theme_phosphor)
 }

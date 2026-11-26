@@ -33,6 +33,7 @@ import dev.hdwatch.buttonmap.ui.MenuScreen
 import dev.hdwatch.buttonmap.ui.PadScreen
 import dev.hdwatch.buttonmap.ui.PlatformActions
 import dev.hdwatch.buttonmap.ui.Route
+import dev.hdwatch.buttonmap.ui.SettingsDetailScreen
 import dev.hdwatch.buttonmap.ui.SettingsScreen
 
 /**
@@ -105,6 +106,7 @@ class MainActivity : ComponentActivity() {
             Route.MacroList -> MacroListScreen()
             Route.Hid -> HidScreen()
             Route.Settings -> SettingsScreen()
+            is Route.SettingsDetail -> SettingsDetailScreen(route.section)
             Route.Log -> LogScreen()
         }
     }

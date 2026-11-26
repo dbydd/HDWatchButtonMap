@@ -5,6 +5,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.hdwatch.buttonmap.input.Symbol
 
+/** Focused sub-pages reached from the Settings hub. */
+enum class SettingsSection {
+    DISPLAY,
+    ROTARY,
+    TIMING,
+    GESTURES,
+    CONFIG,
+}
+
 sealed interface Route {
     data object Pad : Route
     data object Menu : Route
@@ -13,6 +22,7 @@ sealed interface Route {
     data object MacroList : Route
     data object Hid : Route
     data object Settings : Route
+    data class SettingsDetail(val section: SettingsSection) : Route
     data object Log : Route
 }
 
