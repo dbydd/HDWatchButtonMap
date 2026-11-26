@@ -152,4 +152,11 @@
     <string name="set_action_reset_confirm">再点一次确认重置</string>
     <string name="set_status_reset_done">已恢复默认配置</string>
     <string name="set_easter_unlocked">★ 已解锁 HD2 呼叫大全 ★</string>
+
+    <!-- 蓝牙 HID 解除锁定与主机切换 -->
+    <string name="set_hid_clear_lock">清除锁定</string>
+    <string name="set_hid_host_connected">已连接 · 当前活动主机</string>
+    <string name="set_hid_host_switching">正在切换到此主机…</string>
+    <string name="set_hid_tap_switch">点击切换到此主机</string>
+    <string name="set_hid_refresh_hosts">刷新已配对列表</string>
 </resources>

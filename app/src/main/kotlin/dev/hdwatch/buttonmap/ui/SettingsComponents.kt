@@ -483,6 +483,8 @@ internal fun ActionGridRow(
     onRight: () -> Unit,
     leftTone: HdTone = HdTone.Neutral,
     rightTone: HdTone = HdTone.Neutral,
+    leftEnabled: Boolean = true,
+    rightEnabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -495,12 +497,14 @@ internal fun ActionGridRow(
             text = leftText,
             onClick = onLeft,
             tone = leftTone,
+            enabled = leftEnabled,
             modifier = Modifier.weight(1f),
         )
         ActionButton(
             text = rightText,
             onClick = onRight,
             tone = rightTone,
+            enabled = rightEnabled,
             modifier = Modifier.weight(1f),
         )
     }

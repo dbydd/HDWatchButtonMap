@@ -153,4 +153,11 @@
     <string name="set_action_reset_confirm">Tap again to reset</string>
     <string name="set_status_reset_done">Restored default config</string>
     <string name="set_easter_unlocked">★ HD2 PACK UNLOCKED ★</string>
+
+    <!-- Bluetooth HID cache-lock fix & host switcher -->
+    <string name="set_hid_clear_lock">Clear lock</string>
+    <string name="set_hid_host_connected">Connected · tap to re-link</string>
+    <string name="set_hid_host_switching">Switching to this host…</string>
+    <string name="set_hid_tap_switch">Tap to switch host</string>
+    <string name="set_hid_refresh_hosts">Refresh paired hosts</string>
 </resources>

@@ -39,9 +39,11 @@ fun summarize(step: Step?): String = when (step) {
             parts += stringResource(R.string.pad_step_mouse_move, step.dx, step.dy)
         }
         if (step.wheel != 0) {
-            parts += stringResource(
+            val dir = stringResource(
                 if (step.wheel > 0) R.string.pad_step_wheel_up else R.string.pad_step_wheel_down,
             )
+            val mag = kotlin.math.abs(step.wheel)
+            parts += if (mag > 1) "$dir×$mag" else dir
         }
         stringResource(R.string.pad_step_mouse) + " " + parts.joinToString(" ")
     }

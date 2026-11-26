@@ -66,4 +66,32 @@
     <string name="scr_macro_run">试跑</string>
     <string name="scr_macro_delete">删除</string>
     <string name="scr_macro_confirm_delete">确认删除</string>
+
+    <!-- 单键映射编辑页 v2 -->
+    <string name="scr_map_group_dial">四向键帽</string>
+    <string name="scr_map_group_crown">表冠与侧键</string>
+    <string name="scr_map_group_slots">扩展与手势槽</string>
+    <string name="scr_map_test">试发</string>
+    <string name="scr_map_tab_key">键盘</string>
+    <string name="scr_map_tab_hold">锁存</string>
+    <string name="scr_map_tab_mouse">鼠标</string>
+    <string name="scr_map_tab_media">媒体</string>
+    <string name="scr_map_section_quick_keys">常用快捷键</string>
+    <string name="scr_map_hold_hint">按一次持续按住，再按或宏完成时自动松开</string>
+    <string name="scr_map_section_hold_presets">常用锁存键</string>
+    <string name="scr_map_section_more_keys">更多按键（锁存）</string>
+    <string name="scr_map_section_mouse_btn">鼠标按键</string>
+    <string name="scr_map_mouse_back">后退</string>
+    <string name="scr_map_mouse_forward">前进</string>
+    <string name="scr_map_click_single">单击 ×1</string>
+    <string name="scr_map_click_double">双击 ×2</string>
+    <string name="scr_map_section_mouse_wheel">滚轮动作</string>
+    <string name="scr_map_wheel_up_fast">快滚 ↑3</string>
+    <string name="scr_map_wheel_down_fast">快滚 ↓3</string>
+    <string name="scr_map_section_media">媒体与系统</string>
+    <string name="scr_map_media_stop">停止</string>
+    <string name="scr_map_media_bright_up">亮度 +</string>
+    <string name="scr_map_media_bright_down">亮度 −</string>
+    <string name="scr_map_media_home">主页</string>
+    <string name="scr_map_media_back">返回</string>
 </resources>
