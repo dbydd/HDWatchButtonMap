@@ -16,6 +16,11 @@
     <string name="scr_menu_log">Input log</string>
     <string name="scr_menu_reload">Reload config</string>
     <string name="scr_menu_import">Import JSON from file</string>
+    <string name="scr_menu_profile_hint">%1$s · long-press to remove</string>
+    <string name="scr_menu_confirm_delete_profile">Tap again to remove %1$s</string>
+    <string name="scr_menu_presets_add">+ Add preset</string>
+    <string name="scr_menu_presets_hide">Hide presets</string>
+    <string name="scr_menu_preset_refresh">Installed · tap to reset (%1$s)</string>
 
     <!-- MappingScreens: list -->
     <string name="scr_map_list_title">Key map · mode %1$s</string>
@@ -41,6 +46,7 @@
     <string name="scr_map_media_next">Next</string>
     <string name="scr_map_media_prev">Prev</string>
     <string name="scr_map_section_modifiers">Modifiers</string>
+    <string name="scr_map_latch_toggle">Hold (Latch)</string>
     <string name="scr_map_section_pick_key">Keys · pick a category</string>
     <string name="scr_map_section_pick_key_in">Keys · %1$s</string>
     <string name="scr_map_key_count">%1$d keys</string>

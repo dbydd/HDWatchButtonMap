@@ -97,13 +97,24 @@ fun MappingEditScreen(symbol: Symbol) {
 
     var pending by remember(symbol) { mutableStateOf(config.activeProfile.single[symbol]) }
     var mods by remember(symbol) {
-        mutableStateOf((config.activeProfile.single[symbol] as? Step.TapKey)?.mods ?: emptySet())
+        val init = config.activeProfile.single[symbol]
+        mutableStateOf(
+            when (init) {
+                is Step.TapKey -> init.mods
+                is Step.Hold -> init.mods
+                else -> emptySet()
+            },
+        )
     }
+    var latchMode by remember(symbol) { mutableStateOf(config.activeProfile.single[symbol] is Step.Hold) }
     var openCategory by remember(symbol) { mutableStateOf<KeyCategory?>(null) }
 
     fun pickKey(key: HidKey) {
         pending = if (key.page == HidPage.CONSUMER) {
+            latchMode = false
             Step.ConsumerKey(key.name)
+        } else if (latchMode) {
+            Step.Hold(key.name, mods)
         } else {
             Step.TapKey(key.name, mods)
         }
@@ -111,8 +122,20 @@ fun MappingEditScreen(symbol: Symbol) {
 
     fun toggleMod(mod: KeyMod) {
         mods = if (mod in mods) mods - mod else mods + mod
-        val tap = pending as? Step.TapKey
-        if (tap != null) pending = tap.copy(mods = mods)
+        when (val cur = pending) {
+            is Step.TapKey -> pending = cur.copy(mods = mods)
+            is Step.Hold -> pending = cur.copy(mods = mods)
+            else -> Unit
+        }
+    }
+
+    fun toggleLatch() {
+        latchMode = !latchMode
+        when (val cur = pending) {
+            is Step.TapKey -> if (latchMode) pending = Step.Hold(cur.key, cur.mods)
+            is Step.Hold -> if (!latchMode) pending = Step.TapKey(cur.key, cur.mods)
+            else -> Unit
+        }
     }
 
     fun save() {
@@ -131,7 +154,12 @@ fun MappingEditScreen(symbol: Symbol) {
         return current != null && match(current)
     }
 
-    val activeKey = (pending as? Step.TapKey)?.key ?: (pending as? Step.ConsumerKey)?.usage
+    val activeKey = when (val cur = pending) {
+        is Step.TapKey -> cur.key
+        is Step.Hold -> cur.key
+        is Step.ConsumerKey -> cur.usage
+        else -> null
+    }
     val category = openCategory
     val categoryKeys = KeyTable.categories.firstOrNull { it.first == category }?.second.orEmpty()
 
@@ -192,32 +220,32 @@ fun MappingEditScreen(symbol: Symbol) {
             modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Chip(stringResource(R.string.scr_map_mouse_left), active = pendingMatches { it is Step.MouseClick && it.button == "left" }) { pending = Step.MouseClick("left") }
-            Chip(stringResource(R.string.scr_map_mouse_right), active = pendingMatches { it is Step.MouseClick && it.button == "right" }) { pending = Step.MouseClick("right") }
-            Chip(stringResource(R.string.scr_map_mouse_middle), active = pendingMatches { it is Step.MouseClick && it.button == "middle" }) { pending = Step.MouseClick("middle") }
+            Chip(stringResource(R.string.scr_map_mouse_left), active = pendingMatches { it is Step.MouseClick && it.button == "left" }) { latchMode = false; pending = Step.MouseClick("left") }
+            Chip(stringResource(R.string.scr_map_mouse_right), active = pendingMatches { it is Step.MouseClick && it.button == "right" }) { latchMode = false; pending = Step.MouseClick("right") }
+            Chip(stringResource(R.string.scr_map_mouse_middle), active = pendingMatches { it is Step.MouseClick && it.button == "middle" }) { latchMode = false; pending = Step.MouseClick("middle") }
         }
         Row(
             modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Chip(stringResource(R.string.scr_map_wheel_up), active = pendingMatches { it is Step.Mouse && it.wheel > 0 }) { pending = Step.Mouse(wheel = 1) }
-            Chip(stringResource(R.string.scr_map_wheel_down), active = pendingMatches { it is Step.Mouse && it.wheel < 0 }) { pending = Step.Mouse(wheel = -1) }
+            Chip(stringResource(R.string.scr_map_wheel_up), active = pendingMatches { it is Step.Mouse && it.wheel > 0 }) { latchMode = false; pending = Step.Mouse(wheel = 1) }
+            Chip(stringResource(R.string.scr_map_wheel_down), active = pendingMatches { it is Step.Mouse && it.wheel < 0 }) { latchMode = false; pending = Step.Mouse(wheel = -1) }
         }
         Row(
             modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Chip(stringResource(R.string.scr_map_media_play), active = pendingMatches { it is Step.ConsumerKey && it.usage == "PLAY_PAUSE" }) { pending = Step.ConsumerKey("PLAY_PAUSE") }
-            Chip(stringResource(R.string.scr_map_media_vol_up), active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_UP" }) { pending = Step.ConsumerKey("VOL_UP") }
-            Chip(stringResource(R.string.scr_map_media_vol_down), active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_DOWN" }) { pending = Step.ConsumerKey("VOL_DOWN") }
+            Chip(stringResource(R.string.scr_map_media_play), active = pendingMatches { it is Step.ConsumerKey && it.usage == "PLAY_PAUSE" }) { latchMode = false; pending = Step.ConsumerKey("PLAY_PAUSE") }
+            Chip(stringResource(R.string.scr_map_media_vol_up), active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_UP" }) { latchMode = false; pending = Step.ConsumerKey("VOL_UP") }
+            Chip(stringResource(R.string.scr_map_media_vol_down), active = pendingMatches { it is Step.ConsumerKey && it.usage == "VOL_DOWN" }) { latchMode = false; pending = Step.ConsumerKey("VOL_DOWN") }
         }
         Row(
             modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Chip(stringResource(R.string.scr_map_media_mute), active = pendingMatches { it is Step.ConsumerKey && it.usage == "MUTE" }) { pending = Step.ConsumerKey("MUTE") }
-            Chip(stringResource(R.string.scr_map_media_next), active = pendingMatches { it is Step.ConsumerKey && it.usage == "NEXT_TRACK" }) { pending = Step.ConsumerKey("NEXT_TRACK") }
-            Chip(stringResource(R.string.scr_map_media_prev), active = pendingMatches { it is Step.ConsumerKey && it.usage == "PREV_TRACK" }) { pending = Step.ConsumerKey("PREV_TRACK") }
+            Chip(stringResource(R.string.scr_map_media_mute), active = pendingMatches { it is Step.ConsumerKey && it.usage == "MUTE" }) { latchMode = false; pending = Step.ConsumerKey("MUTE") }
+            Chip(stringResource(R.string.scr_map_media_next), active = pendingMatches { it is Step.ConsumerKey && it.usage == "NEXT_TRACK" }) { latchMode = false; pending = Step.ConsumerKey("NEXT_TRACK") }
+            Chip(stringResource(R.string.scr_map_media_prev), active = pendingMatches { it is Step.ConsumerKey && it.usage == "PREV_TRACK" }) { latchMode = false; pending = Step.ConsumerKey("PREV_TRACK") }
         }
 
         SectionLabel(stringResource(R.string.scr_map_section_modifiers))
@@ -231,6 +259,15 @@ fun MappingEditScreen(symbol: Symbol) {
                     active = mod in mods,
                 ) { toggleMod(mod) }
             }
+        }
+        Row(
+            modifier = Modifier.padding(top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Chip(
+                label = stringResource(R.string.scr_map_latch_toggle),
+                active = latchMode,
+            ) { toggleLatch() }
         }
 
         SectionLabel(

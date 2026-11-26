@@ -1,19 +1,19 @@
 package dev.hdwatch.buttonmap.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,22 +30,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import kotlinx.coroutines.delay
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.hdwatch.buttonmap.HdApp
 import dev.hdwatch.buttonmap.R
+import dev.hdwatch.buttonmap.config.ThemePreset
 import dev.hdwatch.buttonmap.input.CapStatus
 import dev.hdwatch.buttonmap.input.GestureBackend
 import dev.hdwatch.buttonmap.input.Symbol
+import dev.hdwatch.buttonmap.input.WatchDefaults
+import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 /**
- * 设置屏：表冠全局阈值 / 本模式阈值 / 序列超时 / 打字延迟步进器，反转与未知输入捕获开关，
- * 保活开关，手势能力卡（探测式兼容层：状态点 + 绑定循环），以及配置的重载 / 导入 / 导出 / 写外部文件。
+ * Settings screen: dial appearance & screen wake-lock, crown/bezel calibration
+ * (global + per-profile thresholds, sensitivity scale, latch debounce, invert),
+ * sequence & typing timing, gesture sensor capability rows, haptics, keep-alive,
+ * config file management, and the 5-tap version easter egg.
  */
 
 private val GESTURE_SLOTS = listOf("G1", "G2", "G3", "G4")
@@ -55,11 +60,13 @@ fun SettingsScreen() {
     val app = HdApp.instance
     val palette = LocalHdPalette.current
     val actions = LocalPlatformActions.current
+    val haptics = LocalHaptics.current
     val config by app.configRepo.config.collectAsState()
     val settings = config.settings
     val status by app.configRepo.status.collectAsState()
     val statusIsError by app.configRepo.statusIsError.collectAsState()
     val gestures = app.gestures as GestureBackend
+    val hwProfile = remember { WatchDefaults.detect() }
     var caps by remember { mutableStateOf(gestures.capabilities()) }
     val boundSlots = remember { mutableStateMapOf<String, Symbol?>() }
     LaunchedEffect(settings.gestureSensorsEnabled) {
@@ -80,7 +87,36 @@ fun SettingsScreen() {
     }
 
     ScreenScaffold(title = stringResource(R.string.set_title)) {
+        SectionLabel(stringResource(R.string.set_section_appearance))
+        ThemeSelectorRow(
+            current = settings.theme,
+            onSelect = { preset ->
+                haptics.tick()
+                app.configRepo.updateSettings { it.copy(theme = preset) }
+            },
+        )
+        SwitchRow(
+            label = stringResource(R.string.set_switch_keep_screen_on),
+            checked = settings.keepScreenOn,
+            onCheckedChange = { on -> app.configRepo.updateSettings { it.copy(keepScreenOn = on) } },
+            hint = stringResource(R.string.set_switch_keep_screen_on_hint),
+        )
+        SwitchRow(
+            label = stringResource(R.string.set_switch_direct_labels),
+            checked = settings.showDirectKeyLabels,
+            onCheckedChange = { on -> app.configRepo.updateSettings { it.copy(showDirectKeyLabels = on) } },
+            hint = stringResource(R.string.set_switch_direct_labels_hint),
+        )
+
         SectionLabel(stringResource(R.string.set_section_rotation))
+        Text(
+            text = stringResource(R.string.set_watch_detected, hwProfile.label),
+            fontFamily = FontFamily.Monospace,
+            color = palette.muted,
+            fontSize = 8.5.sp,
+            maxLines = 1,
+            modifier = Modifier.padding(bottom = 3.dp),
+        )
         StepperRow(
             label = stringResource(R.string.set_step_rotate_threshold),
             value = settings.rotateThreshold.toLong(),
@@ -103,6 +139,28 @@ fun SettingsScreen() {
                 }
             },
         )
+        // Crown sensitivity multiplier stored as 0.25x steps (25..400 -> 0.25..4.00)
+        val scalePct = (settings.rotaryScale * 100f).roundToInt().toLong().coerceIn(25L, 400L)
+        StepperRow(
+            label = stringResource(R.string.set_step_rotary_scale),
+            value = scalePct,
+            formattedValue = String.format(java.util.Locale.US, "%.2f×", scalePct / 100f),
+            min = 25,
+            max = 400,
+            step = 25,
+            onChange = { v ->
+                app.configRepo.updateSettings { it.copy(rotaryScale = v / 100f) }
+            },
+        )
+        StepperRow(
+            label = stringResource(R.string.set_step_latch_debounce),
+            value = settings.rotaryLatchDebounceMs,
+            valueRes = R.string.set_step_value_ms,
+            min = 0,
+            max = 1500,
+            step = 100,
+            onChange = { v -> app.configRepo.updateSettings { it.copy(rotaryLatchDebounceMs = v) } },
+        )
         Row(
             modifier = Modifier.padding(top = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -113,6 +171,19 @@ fun SettingsScreen() {
                 onClick = {
                     app.configRepo.updateProfile(config.activeProfileId) {
                         it.copy(rotateThreshold = null)
+                    }
+                },
+            )
+            ActionButton(
+                text = stringResource(R.string.set_action_auto_watch),
+                onClick = {
+                    haptics.tick()
+                    app.configRepo.updateSettings {
+                        it.copy(
+                            invertRotation = hwProfile.invertRotation,
+                            rotateThreshold = hwProfile.rotateThreshold,
+                            rotaryScale = hwProfile.rotaryScale,
+                        )
                     }
                 },
             )
@@ -299,9 +370,79 @@ fun SettingsScreen() {
     }
 }
 
+/** Three curated console palettes with live color swatches. */
+@Composable
+private fun ThemeSelectorRow(
+    current: ThemePreset,
+    onSelect: (ThemePreset) -> Unit,
+) {
+    val palette = LocalHdPalette.current
+    HdPanel(
+        modifier = Modifier
+            .widthIn(min = 132.dp, max = 168.dp)
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = stringResource(R.string.set_theme_label),
+                color = palette.text,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+            Row(
+                modifier = Modifier.padding(top = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                ThemePreset.entries.forEach { preset ->
+                    val preview = paletteFor(preset)
+                    val selected = preset == current
+                    val label = when (preset) {
+                        ThemePreset.OROKIN -> stringResource(R.string.set_theme_orokin)
+                        ThemePreset.TACTICAL -> stringResource(R.string.set_theme_tactical)
+                        ThemePreset.PHOSPHOR -> stringResource(R.string.set_theme_phosphor)
+                    }
+                    HdPanel(
+                        shape = RoundedCornerShape(6.dp),
+                        pressed = selected,
+                        onClick = { onSelect(preset) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(6.dp)
+                                    .background(
+                                        if (selected) preview.onPrimary else preview.primary,
+                                        CircleShape,
+                                    ),
+                            )
+                            Text(
+                                text = label,
+                                fontSize = 9.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (selected) palette.onPrimary else palette.secondary,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 /**
- * 手势能力卡一行：状态色点 + 标签 + 详情 + 当前绑定符号；只有 AVAILABLE 可点，
- * 点击循环绑定 G1→G2→G3→G4→解绑（写入走 GestureBackend.bind）。
+ * Gesture capability row: status pip + label + binding cycle (G1→G2→G3→G4→none).
  */
 @Composable
 private fun GestureCapabilityRow(
@@ -367,13 +508,14 @@ private fun GestureCapabilityRow(
     }
 }
 
-/** 数值 ± 步进行：标题 + 减/值/加，值域钳制在 [min, max]。 */
+/** Numeric ± stepper row clamped to [min, max]. */
 @Composable
 private fun StepperRow(
     label: String,
     value: Long,
     valueRes: Int? = null,
     pluralRes: Int? = null,
+    formattedValue: String? = null,
     min: Long,
     max: Long,
     step: Long,
@@ -409,6 +551,7 @@ private fun StepperRow(
                 )
                 Text(
                     text = when {
+                        formattedValue != null -> formattedValue
                         pluralRes != null -> pluralStringResource(pluralRes, value.toInt(), value)
                         valueRes != null -> stringResource(valueRes, value)
                         else -> value.toString()

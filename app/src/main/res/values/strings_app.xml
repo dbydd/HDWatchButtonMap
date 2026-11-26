@@ -3,4 +3,18 @@
 <resources>
     <string name="app_profile_direct">Direct</string>
     <string name="app_profile_macro">Macros</string>
+
+    <!-- Built-in profile presets -->
+    <string name="app_preset_media">Slides · Media</string>
+    <string name="app_preset_media_hint">Arrows / F5 / Volume crown / Play</string>
+    <string name="app_preset_mouse">Mouse · Nav</string>
+    <string name="app_preset_mouse_hint">Clicks / Back·Fwd / Scroll crown</string>
+    <string name="app_preset_hotkeys">Hotkeys</string>
+    <string name="app_preset_hotkeys_hint">Copy / Paste / Undo / Snip / Lock</string>
+    <string name="app_macro_copy">Copy</string>
+    <string name="app_macro_paste">Paste</string>
+    <string name="app_macro_undo">Undo</string>
+    <string name="app_macro_redo">Redo</string>
+    <string name="app_macro_screenshot">Screenshot</string>
+    <string name="app_macro_lock">Lock PC</string>
 </resources>

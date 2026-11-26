@@ -30,4 +30,9 @@
     <string name="hid_cat_media">媒体键</string>
     <string name="hid_cat_function">功能键</string>
     <string name="hid_cat_numpad">小键盘</string>
+
+    <!-- 前台保活服务通知 -->
+    <string name="hid_notif_channel">HID 遥控</string>
+    <string name="hid_notif_title">HD 遥控运行中</string>
+    <string name="hid_notif_text">保持蓝牙 HID 注册与主机链路</string>
 </resources>

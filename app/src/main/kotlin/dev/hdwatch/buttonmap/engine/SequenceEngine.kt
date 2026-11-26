@@ -1,5 +1,6 @@
 package dev.hdwatch.buttonmap.engine
 
+import android.os.SystemClock
 import dev.hdwatch.buttonmap.config.Config
 import dev.hdwatch.buttonmap.config.ConfigRepository
 import dev.hdwatch.buttonmap.config.Macro
@@ -30,6 +31,9 @@ sealed interface EngineEvent {
 /** Where a symbol came from; rotary stays silent because it fires densely. */
 enum class InputSource { TOUCH, ROTARY, SENSOR }
 
+/** Active sequence timeout window, used by the dial HUD countdown arc. */
+data class SequenceTimer(val startedAtMs: Long, val durationMs: Long)
+
 /**
  * Input state machine over the *active profile*.
  *
@@ -42,12 +46,21 @@ enum class InputSource { TOUCH, ROTARY, SENSOR }
  *    matches nothing, its single mapping fires (Unmapped when not bound).
  */
 class SequenceEngine(
-    private val repo: ConfigRepository,
+    private val configProvider: () -> Config,
     private val runner: MacroRunner,
     private val scope: CoroutineScope,
     private val ring: ReportRing,
+    private val clock: () -> Long = { SystemClock.uptimeMillis() },
     private val onEvent: (EngineEvent, InputSource) -> Unit = { _, _ -> },
 ) {
+
+    constructor(
+        repo: ConfigRepository,
+        runner: MacroRunner,
+        scope: CoroutineScope,
+        ring: ReportRing,
+        onEvent: (EngineEvent, InputSource) -> Unit = { _, _ -> },
+    ) : this({ repo.config.value }, runner, scope, ring, { SystemClock.uptimeMillis() }, onEvent)
 
     private val lock = Any()
     private var buffer: List<Symbol> = emptyList()
@@ -65,6 +78,10 @@ class SequenceEngine(
     private val _hintFlow = MutableStateFlow<List<Symbol>>(emptyList())
     val hintState: StateFlow<List<Symbol>> = _hintFlow.asStateFlow()
 
+    private val _timerFlow = MutableStateFlow<SequenceTimer?>(null)
+    /** Non-null while a pending sequence countdown is active. */
+    val timerState: StateFlow<SequenceTimer?> = _timerFlow.asStateFlow()
+
     private var bufferSources: List<InputSource> = emptyList()
 
     private val _event = MutableStateFlow<EngineEvent>(EngineEvent.Idle)
@@ -77,7 +94,7 @@ class SequenceEngine(
 
     fun feed(symbol: Symbol, source: InputSource = InputSource.TOUCH) = synchronized(lock) {
         lastSource = source
-        val cfg = repo.config.value
+        val cfg = configProvider()
         val profile = cfg.activeProfile
 
         if (profile.kind == ProfileKind.KEYS) {
@@ -123,6 +140,7 @@ class SequenceEngine(
         matchExact(macros, listOf(symbol))?.let { macro ->
             finishBuffer()
             emit(EngineEvent.FiredMacro(macro))
+            runner.releaseHolds()
             runner.runMacro(macro)
             return
         }
@@ -151,9 +169,9 @@ class SequenceEngine(
         // firing per detent.
         val latchWindow = cfg.settings.rotaryLatchDebounceMs
         if (step is Step.Hold && lastSource == InputSource.ROTARY && latchWindow > 0) {
-            val now = android.os.SystemClock.uptimeMillis()
-            val prev = lastLatchAt[symbol] ?: 0L
-            if (now - prev < latchWindow) {
+            val now = clock()
+            val prev = lastLatchAt[symbol] ?: Long.MIN_VALUE
+            if (prev != Long.MIN_VALUE && now - prev < latchWindow) {
                 ring.log("ENG  '${symbol.code}' latch repeat ignored")
                 return
             }
@@ -169,6 +187,7 @@ class SequenceEngine(
         timeoutJob = null
         buffer = emptyList()
         bufferSources = emptyList()
+        _timerFlow.value = null
         publish()
         _event.value = EngineEvent.Idle
         runner.releaseHolds()
@@ -186,6 +205,7 @@ class SequenceEngine(
         timeoutJob = null
         buffer = emptyList()
         bufferSources = emptyList()
+        _timerFlow.value = null
         publish()
     }
 
@@ -200,8 +220,10 @@ class SequenceEngine(
 
     private fun restartTimeout(cfg: Config) {
         timeoutJob?.cancel()
+        val duration = cfg.settings.sequenceTimeoutMs.coerceIn(500, 15_000)
+        _timerFlow.value = SequenceTimer(clock(), duration)
         timeoutJob = scope.launch {
-            delay(cfg.settings.sequenceTimeoutMs.coerceIn(500, 15_000))
+            delay(duration)
             synchronized(lock) {
                 if (buffer.isNotEmpty()) {
                     ring.log("ENG  timeout, drop ${render(buffer)}")

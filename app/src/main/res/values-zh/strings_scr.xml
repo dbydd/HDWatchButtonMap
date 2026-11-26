@@ -16,6 +16,11 @@
     <string name="scr_menu_log">输入日志</string>
     <string name="scr_menu_reload">重载配置</string>
     <string name="scr_menu_import">从文件导入 JSON</string>
+    <string name="scr_menu_profile_hint">%1$s · 长按可移除</string>
+    <string name="scr_menu_confirm_delete_profile">再点一次移除「%1$s」</string>
+    <string name="scr_menu_presets_add">+ 添加预设模式</string>
+    <string name="scr_menu_presets_hide">收起预设</string>
+    <string name="scr_menu_preset_refresh">已有 · 点按重置（%1$s）</string>
 
     <!-- MappingScreens: list -->
     <string name="scr_map_list_title">单键映射 · 模式 %1$s</string>
@@ -41,6 +46,7 @@
     <string name="scr_map_media_next">下一曲</string>
     <string name="scr_map_media_prev">上一曲</string>
     <string name="scr_map_section_modifiers">修饰键</string>
+    <string name="scr_map_latch_toggle">锁存按住</string>
     <string name="scr_map_section_pick_key">选择键 · 先选类别</string>
     <string name="scr_map_section_pick_key_in">选择键 · %1$s</string>
     <string name="scr_map_key_count">%1$d 个键</string>

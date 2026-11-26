@@ -1,7 +1,6 @@
 package dev.hdwatch.buttonmap
 
 import android.app.Application
-import android.os.VibratorManager
 import dev.hdwatch.buttonmap.config.ConfigRepository
 import dev.hdwatch.buttonmap.engine.MacroRunner
 import dev.hdwatch.buttonmap.engine.SequenceEngine
@@ -37,9 +36,7 @@ class HdApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
-        val vibrator = runCatching {
-            getSystemService(VibratorManager::class.java).defaultVibrator
-        }.getOrNull()
+        val vibrator = dev.hdwatch.buttonmap.input.WatchDefaults.defaultVibrator(this)
         haptics = Haptics(
             vibrator = vibrator,
             onError = { msg -> ring.log("HAP  $msg") },

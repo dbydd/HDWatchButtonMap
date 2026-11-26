@@ -49,6 +49,8 @@ fun HidScreen() {
 
     val bluetooth = app.transports.bluetoothOrNull()
     val hasPermission = bluetooth?.hasConnectPermission() == true
+    val activeAddr by (bluetooth?.activeHostAddress ?: remember { kotlinx.coroutines.flow.MutableStateFlow<String?>(null) })
+        .collectAsState()
     val hosts: List<BluetoothDevice> =
         if (bluetooth != null && hasPermission) bluetooth.bondedHosts() else emptyList()
     val externalPath = app.configRepo.externalFile?.absolutePath
@@ -191,10 +193,16 @@ fun HidScreen() {
             )
         }
         hosts.forEach { device ->
+            val selected = activeAddr != null && runCatching { device.address }.getOrNull() == activeAddr
             HostRow(
-                label = bluetooth?.hostLabel(device) ?: device.address,
-                hint = stringResource(R.string.set_hid_tap_reconnect),
-            ) { bluetooth?.tryReconnect() }
+                label = (if (selected) "✓ " else "") + (bluetooth?.hostLabel(device) ?: device.address),
+                hint = if (selected) {
+                    stringResource(R.string.set_hid_host_selected)
+                } else {
+                    stringResource(R.string.set_hid_tap_reconnect)
+                },
+                accent = selected,
+            ) { bluetooth?.connectTo(device) }
         }
 
         SectionLabel(stringResource(R.string.set_hid_transport_mode))
@@ -240,11 +248,12 @@ fun HidScreen() {
     }
 }
 
-/** Paired-host row: monospace address, tap to reconnect. */
+/** Paired-host row: monospace address, tap to connect and remember as preferred host. */
 @Composable
 private fun HostRow(
     label: String,
     hint: String,
+    accent: Boolean = false,
     onClick: () -> Unit,
 ) {
     val palette = LocalHdPalette.current
@@ -264,7 +273,11 @@ private fun HostRow(
             Text(
                 text = label,
                 fontFamily = FontFamily.Monospace,
-                color = if (pressed) palette.onPrimary else palette.text,
+                color = when {
+                    pressed -> palette.onPrimary
+                    accent -> palette.primary
+                    else -> palette.text
+                },
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.5.sp,

@@ -98,4 +98,20 @@
     <string name="set_status_unlock_failed">Unlock failed: %1$s</string>
     <string name="set_status_external_file">external file %1$s</string>
     <string name="set_step_key_jitter">Key jitter (max)</string>
+
+    <!-- Added in v0.2: host highlight, themes, multi-watch tuning -->
+    <string name="set_hid_host_selected">Preferred host · tap to reconnect</string>
+    <string name="set_section_appearance">DIAL · DISPLAY</string>
+    <string name="set_theme_label">Palette</string>
+    <string name="set_theme_orokin">Orokin</string>
+    <string name="set_theme_tactical">Tactical</string>
+    <string name="set_theme_phosphor">Phosphor</string>
+    <string name="set_switch_keep_screen_on">Keep screen awake</string>
+    <string name="set_switch_keep_screen_on_hint">Prevents dimming while the dial pad is open</string>
+    <string name="set_switch_direct_labels">Keycap legends</string>
+    <string name="set_switch_direct_labels_hint">Show bound keys under arrows in Direct mode</string>
+    <string name="set_watch_detected">WATCH · %1$s</string>
+    <string name="set_step_rotary_scale">Crown sensitivity</string>
+    <string name="set_step_latch_debounce">Latch debounce</string>
+    <string name="set_action_auto_watch">Auto watch</string>
 </resources>

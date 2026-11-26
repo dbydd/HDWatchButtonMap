@@ -98,6 +98,23 @@ data class Profile(
     val ringSteps: Map<String, Step> = emptyMap(),
 )
 
+/** Curated dial/HUD palette presets (all dark, OLED-friendly). */
+enum class ThemePreset(val code: String) {
+    /** Signature deep teal-black with antique command gold & ivory. */
+    OROKIN("orokin"),
+
+    /** Matte obsidian slate with Helldivers tactical signal gold. */
+    TACTICAL("tactical"),
+
+    /** True black OLED stealth with crisp radar phosphor cyan-mint. */
+    PHOSPHOR("phosphor");
+
+    companion object {
+        fun fromCode(raw: String?): ThemePreset =
+            entries.firstOrNull { it.code.equals(raw?.trim(), ignoreCase = true) } ?: OROKIN
+    }
+}
+
 data class Settings(
     /**
      * Accumulated rotary-axis delta that produces one CW/CCW symbol.
@@ -105,6 +122,12 @@ data class Settings(
      * feel deliberate on the wrist (user-calibrated).
      */
     val rotateThreshold: Int = 3,
+    /**
+     * Multiplier applied to raw rotary axis deltas before threshold accumulation.
+     * Physical bezels emit ~1.0 per click (scale 1.0); fine-grained digital crowns
+     * (Pixel Watch, TicWatch) emit fractional deltas and benefit from 1.5–2.5x.
+     */
+    val rotaryScale: Float = 1.0f,
     /** GW6C sends clockwise as negative; invert maps it back to CROWN_CW. */
     val invertRotation: Boolean = true,
     /** Idle time that drops a half-typed sequence with no penalty. */
@@ -134,6 +157,12 @@ data class Settings(
     val gestureSensorsEnabled: Boolean = false,
     /** Keep HID registered through a foreground service while app is backgrounded. */
     val keepAliveService: Boolean = true,
+    /** Keep the watch screen awake while on the dial pad (prevents mid-use ambient dim). */
+    val keepScreenOn: Boolean = true,
+    /** Show compact keycap legends under the four directional arrows in Direct (KEYS) mode. */
+    val showDirectKeyLabels: Boolean = true,
+    /** Dial and console color palette. */
+    val theme: ThemePreset = ThemePreset.OROKIN,
     /** Master switch for every haptic pattern the app emits. */
     val vibrationEnabled: Boolean = true,
     val sensorToSymbol: Map<String, String> = emptyMap(),

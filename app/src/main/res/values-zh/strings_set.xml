@@ -97,4 +97,20 @@
     <string name="set_status_unlock_failed">解锁失败：%1$s</string>
     <string name="set_status_external_file">外部文件 %1$s</string>
     <string name="set_step_key_jitter">按键抖动（上限）</string>
+
+    <!-- v0.2 新增：首选主机、配色主题、多手表表冠校准 -->
+    <string name="set_hid_host_selected">首选主机 · 点击重连</string>
+    <string name="set_section_appearance">表盘 · 显示</string>
+    <string name="set_theme_label">配色风格</string>
+    <string name="set_theme_orokin">鎏金</string>
+    <string name="set_theme_tactical">战术</string>
+    <string name="set_theme_phosphor">荧光</string>
+    <string name="set_switch_keep_screen_on">盘面常亮</string>
+    <string name="set_switch_keep_screen_on_hint">操作表盘时不自动息屏变暗</string>
+    <string name="set_switch_direct_labels">键帽角标</string>
+    <string name="set_switch_direct_labels_hint">直控模式在四向箭头下显示绑定键名</string>
+    <string name="set_watch_detected">机型 · %1$s</string>
+    <string name="set_step_rotary_scale">表冠灵敏度</string>
+    <string name="set_step_latch_debounce">锁存去抖</string>
+    <string name="set_action_auto_watch">自动匹配机型</string>
 </resources>

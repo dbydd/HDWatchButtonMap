@@ -46,23 +46,31 @@ class HidForegroundService : Service() {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         runCatching {
             nm.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "HID 遥控", NotificationManager.IMPORTANCE_MIN),
+                NotificationChannel(
+                    CHANNEL_ID,
+                    getString(R.string.hid_notif_channel),
+                    NotificationManager.IMPORTANCE_MIN,
+                ),
             )
         }
         val notification: Notification = Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("HD 遥控运行中")
-            .setContentText("保持 HID 注册与主机链路")
+            .setContentTitle(getString(R.string.hid_notif_title))
+            .setContentText(getString(R.string.hid_notif_text))
             .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
             .setOngoing(true)
             .build()
         runCatching {
-            startForeground(
-                NOTIF_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE,
-            )
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(
+                    NOTIF_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE,
+                )
+            } else {
+                startForeground(NOTIF_ID, notification)
+            }
         }.onFailure {
-            // Older behavior path; still better than no service.
+            // Fallback path; still better than no service.
             runCatching { startForeground(NOTIF_ID, notification) }
         }
     }

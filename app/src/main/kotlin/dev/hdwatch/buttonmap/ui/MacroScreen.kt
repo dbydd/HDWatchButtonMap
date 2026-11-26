@@ -194,32 +194,42 @@ fun MacroListScreen() {
         }
     }
 
-    ScreenScaffold(title = stringResource(R.string.scr_macro_title)) {
+    LazyScreenScaffold(title = stringResource(R.string.scr_macro_title)) {
         if (config.activeProfile.kind != ProfileKind.MACRO) {
+            item(key = "__mode_warn__") {
+                Text(
+                    text = stringResource(R.string.scr_macro_not_macro_mode),
+                    color = palette.primary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+                )
+            }
+        }
+        item(key = "__status__") {
             Text(
-                text = stringResource(R.string.scr_macro_not_macro_mode),
-                color = palette.primary,
+                text = status,
+                color = if (statusIsError) palette.danger else palette.muted,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 4.dp),
             )
         }
-        Text(
-            text = status,
-            color = if (statusIsError) palette.danger else palette.muted,
-            fontSize = 11.sp,
-            maxLines = 2,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp),
-        )
         if (config.activeProfile.macros.isEmpty()) {
-            Text(stringResource(R.string.scr_macro_empty), color = palette.muted, fontSize = 11.sp, maxLines = 2)
+            item(key = "__empty__") {
+                Text(stringResource(R.string.scr_macro_empty), color = palette.muted, fontSize = 11.sp, maxLines = 2)
+            }
         }
-        config.activeProfile.macros.forEach { macro ->
+        items(
+            count = config.activeProfile.macros.size,
+            key = { idx -> config.activeProfile.macros[idx].id },
+        ) { idx ->
+            val macro = config.activeProfile.macros[idx]
             MacroCard(
                 macro = macro,
                 confirming = pendingDelete == macro.id,

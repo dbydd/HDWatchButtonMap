@@ -30,4 +30,9 @@
     <string name="hid_cat_media">Media keys</string>
     <string name="hid_cat_function">Function keys</string>
     <string name="hid_cat_numpad">Numpad</string>
+
+    <!-- Foreground keep-alive service notification -->
+    <string name="hid_notif_channel">HID Remote</string>
+    <string name="hid_notif_title">HD Remote Active</string>
+    <string name="hid_notif_text">Keeping Bluetooth HID link alive</string>
 </resources>

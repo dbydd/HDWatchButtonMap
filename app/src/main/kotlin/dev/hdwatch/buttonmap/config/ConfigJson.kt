@@ -69,6 +69,7 @@ object ConfigJson {
         root.put("version", Config.CURRENT_VERSION)
         root.put("settings", JSONObject().apply {
             put("rotateThreshold", config.settings.rotateThreshold)
+            put("rotaryScale", config.settings.rotaryScale.toDouble())
             put("invertRotation", config.settings.invertRotation)
             put("sequenceTimeoutMs", config.settings.sequenceTimeoutMs)
             put("textDelayMs", config.settings.textDelayMs)
@@ -78,6 +79,9 @@ object ConfigJson {
             put("forceLoggingTransport", config.settings.forceLoggingTransport)
             put("gestureSensorsEnabled", config.settings.gestureSensorsEnabled)
             put("keepAliveService", config.settings.keepAliveService)
+            put("keepScreenOn", config.settings.keepScreenOn)
+            put("showDirectKeyLabels", config.settings.showDirectKeyLabels)
+            put("theme", config.settings.theme.code)
             put("vibrationEnabled", config.settings.vibrationEnabled)
             put("sensorToSymbol", JSONObject(config.settings.sensorToSymbol as Map<*, *>))
         })
@@ -124,6 +128,7 @@ object ConfigJson {
             try {
                 when (k) {
                     "rotateThreshold" -> s = s.copy(rotateThreshold = o.getInt(k))
+                    "rotaryScale" -> s = s.copy(rotaryScale = o.getDouble(k).toFloat().coerceIn(0.25f, 8f))
                     "invertRotation" -> s = s.copy(invertRotation = o.getBoolean(k))
                     "sequenceTimeoutMs" -> s = s.copy(sequenceTimeoutMs = o.getLong(k))
                     "textDelayMs" -> s = s.copy(textDelayMs = o.getLong(k))
@@ -133,6 +138,9 @@ object ConfigJson {
                     "forceLoggingTransport" -> s = s.copy(forceLoggingTransport = o.getBoolean(k))
                     "gestureSensorsEnabled" -> s = s.copy(gestureSensorsEnabled = o.getBoolean(k))
                     "keepAliveService" -> s = s.copy(keepAliveService = o.getBoolean(k))
+                    "keepScreenOn" -> s = s.copy(keepScreenOn = o.getBoolean(k))
+                    "showDirectKeyLabels" -> s = s.copy(showDirectKeyLabels = o.getBoolean(k))
+                    "theme" -> s = s.copy(theme = ThemePreset.fromCode(o.getString(k)))
                     "vibrationEnabled" -> s = s.copy(vibrationEnabled = o.getBoolean(k))
                     "sensorToSymbol" -> {
                         val j = o.getJSONObject(k)

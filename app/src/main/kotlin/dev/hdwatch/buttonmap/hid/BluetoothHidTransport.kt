@@ -48,12 +48,17 @@ class BluetoothHidTransport(
     override val reportLog: SharedFlow<String> = ring.recent
     override val logHistory: List<String> get() = ring.history
 
+    private val prefs = app.getSharedPreferences("hdmap_bt", android.content.Context.MODE_PRIVATE)
     private val adapter: BluetoothAdapter? =
         app.getSystemService(BluetoothManager::class.java)?.adapter
 
     private var hidDevice: BluetoothHidDevice? = null
     private var registered = false
     private var target: BluetoothDevice? = null
+
+    private val _activeHostAddress = MutableStateFlow<String?>(prefs.getString(KEY_LAST_HOST, null))
+    /** Address of the currently connected or preferred host (for UI highlight). */
+    val activeHostAddress: StateFlow<String?> = _activeHostAddress.asStateFlow()
 
     /** Last sent payload per report id, replayed when the host GET_REPORTs. */
     private val lastReports = HashMap<Int, ByteArray>()
@@ -116,6 +121,7 @@ class BluetoothHidTransport(
             when (state) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     target = device
+                    rememberHost(device)
                     _status.value = TransportStatus(
                         TransportKind.BLUETOOTH,
                         TransportState.CONNECTED,
@@ -204,22 +210,34 @@ class BluetoothHidTransport(
     }
 
     fun hasConnectPermission(): Boolean =
-        app.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) ==
-            PackageManager.PERMISSION_GRANTED
+        dev.hdwatch.buttonmap.input.WatchDefaults.hasBluetoothConnectPermission(app)
 
-    /** Bonded devices we could offer as hosts (needs BLUETOOTH_CONNECT). */
+    /** Bonded devices we could offer as hosts (needs BLUETOOTH_CONNECT on API 31+). */
     fun bondedHosts(): List<BluetoothDevice> =
         if (!hasConnectPermission()) emptyList()
         else runCatching { adapter?.bondedDevices?.toList() ?: emptyList() }.getOrDefault(emptyList())
 
     fun hostLabel(device: BluetoothDevice): String = describe(device)
 
+    /** Connect explicitly to a user-selected bonded host and remember it. */
+    fun connectTo(device: BluetoothDevice) {
+        val dev = hidDevice ?: return
+        if (!hasConnectPermission()) return
+        val prev = target
+        if (prev != null && prev.address != device.address) {
+            runCatching { dev.disconnect(prev) }
+        }
+        target = device
+        rememberHost(device)
+        ring.log("BT  connect -> ${describe(device)}")
+        runCatching { dev.connect(device) }.onFailure { ring.log("BT  connect failed ${it.message}") }
+    }
+
     override fun tryReconnect() {
         val dev = hidDevice ?: return
-        val candidate = target ?: firstConnectedDevice()
-            ?: bondedHosts().firstOrNull()
-            ?: return
+        val candidate = preferredHost() ?: return
         if (!hasConnectPermission()) return
+        target = candidate
         ring.log("BT  connect -> ${describe(candidate)}")
         runCatching { dev.connect(candidate) }.onFailure { ring.log("BT  connect failed ${it.message}") }
     }
@@ -236,15 +254,30 @@ class BluetoothHidTransport(
             register()
             return
         }
-        val host = target ?: bondedHosts().firstOrNull {
-            runCatching { dev.getConnectionState(it) == BluetoothProfile.STATE_CONNECTED }.getOrDefault(false)
-        } ?: bondedHosts().firstOrNull() ?: return
+        val host = preferredHost() ?: return
         target = host
         val state = runCatching { dev.getConnectionState(host) }.getOrDefault(BluetoothProfile.STATE_DISCONNECTED)
         if (state == BluetoothProfile.STATE_DISCONNECTED) {
             ring.log("BT  watchdog: reconnect ${describe(host)}")
             runCatching { dev.connect(host) }
         }
+    }
+
+    private fun preferredHost(): BluetoothDevice? {
+        target?.let { return it }
+        firstConnectedDevice()?.let { return it }
+        val savedAddr = prefs.getString(KEY_LAST_HOST, null)
+        val bonded = bondedHosts()
+        if (savedAddr != null) {
+            bonded.firstOrNull { it.address == savedAddr }?.let { return it }
+        }
+        return bonded.firstOrNull()
+    }
+
+    private fun rememberHost(device: BluetoothDevice) {
+        val addr = runCatching { device.address }.getOrNull() ?: return
+        prefs.edit().putString(KEY_LAST_HOST, addr).apply()
+        _activeHostAddress.value = addr
     }
 
     fun disconnectTarget() {
@@ -331,6 +364,7 @@ class BluetoothHidTransport(
         const val SDP_NAME = "HD Watch Remote"
         const val SDP_DESCRIPTION = "Wear OS button map HID"
         const val SDP_PROVIDER = "hdwatch"
+        private const val KEY_LAST_HOST = "last_host_addr"
 
         /** Intent action the host needs while pairing: make us discoverable. */
         const val REQUEST_DISCOVERABLE_SECONDS = 120

@@ -196,7 +196,7 @@ class OctagonShape(private val corner: Dp) : Shape {
             val start = curr + vPrev * (r / dPrev)
             val end = curr + vNext * (r / dNext)
             if (i == 0) path.moveTo(start.x, start.y) else path.lineTo(start.x, start.y)
-            path.quadraticBezierTo(curr.x, curr.y, end.x, end.y)
+            path.quadraticTo(curr.x, curr.y, end.x, end.y)
         }
         path.close()
         return Outline.Generic(path)
